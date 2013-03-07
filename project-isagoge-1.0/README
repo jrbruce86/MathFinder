@@ -1,0 +1,7 @@
+============================================================
+README - Project Isagoge
+============================================================
+
+Before running ./configure, first run ./autogen.sh. 
+
+See INSTALL for further instructions
