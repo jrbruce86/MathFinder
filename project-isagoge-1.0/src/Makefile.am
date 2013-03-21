@@ -1,6 +1,8 @@
 bin_PROGRAMS = isagoge
 
-SUBDIRS = Tesseract
+SUBDIRS = Tesseract Page_Selection_Tools/select_random \
+Page_Selection_Tools/select_training \
+Page_Selection_Tools
 
 isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/ccmain -ITesseract/ccstruct \

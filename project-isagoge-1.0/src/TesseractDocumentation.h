@@ -24,6 +24,47 @@
 #ifndef TESSERACTDOCUMENTATION_H_
 #define TESSERACTDOCUMENTATION_H_
 
+
+/*
+ * Tesseract Equation Detector partition painting function:
+
+// Debugger function that renders ColPartitions on the input image, where:
+// parts labeled as PT_EQUATION will be painted in red, PT_INLINE_EQUATION
+// will be painted in green, and other parts will be painted in blue.
+void EquationDetect::PaintColParts(const STRING& outfile) const {
+  Pix *pix = pixConvertTo32(lang_tesseract_->BestPix());
+  ColPartitionGridSearch gsearch(part_grid_);
+  gsearch.StartFullSearch();
+  ColPartition* part = NULL;
+  while ((part = gsearch.NextFullSearch()) != NULL) {
+    const TBOX& tbox = part->bounding_box();
+    Box *box = boxCreate(tbox.left(), pixGetHeight(pix) - tbox.top(),
+                         tbox.width(), tbox.height());
+    if (part->type() == PT_EQUATION) {
+      pixRenderBoxArb(pix, box, 5, 255, 0, 0);
+    } else if (part->type() == PT_INLINE_EQUATION) {
+      pixRenderBoxArb(pix, box, 5, 0, 255, 0);
+    } else {
+      pixRenderBoxArb(pix, box, 5, 0, 0, 255);
+    }
+    boxDestroy(&box);
+  }
+
+  pixWrite(outfile.string(), pix, IFF_TIFF_LZW);
+  pixDestroy(&pix);
+}
+
+*/
+
+
+
+
+
+
+
+
+
+
 /**
  * enum of the elements of the page hierarchy, used in ResultIterator
  * to provide functions that operate on each level without having to

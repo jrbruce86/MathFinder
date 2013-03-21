@@ -218,8 +218,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = src
-EXTRA_DIST = autogen.sh small_group_test_images/input
-DIST_DIR = dist
+EXTRA_DIST = autogen.sh 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

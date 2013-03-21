@@ -43,6 +43,13 @@ public:
   virtual int FindEquationParts(ColPartitionGrid* part_grid,
                                 ColPartitionSet** best_columns);
 
+
+  //TODO
+  void PreComputeThresholds();
+
+  //TODO
+  void FeatureRecognition();
+
 };
 
 #endif // EQUATION_DETECT_SVMH__

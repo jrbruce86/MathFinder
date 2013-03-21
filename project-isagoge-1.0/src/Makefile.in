@@ -221,7 +221,10 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = Tesseract
+SUBDIRS = Tesseract Page_Selection_Tools/select_random \
+Page_Selection_Tools/select_training \
+Page_Selection_Tools
+
 isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/ccmain -ITesseract/ccstruct \
 -ITesseract/ccutil -ITesseract/classify \
