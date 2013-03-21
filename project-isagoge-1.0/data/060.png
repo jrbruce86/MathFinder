@@ -1,0 +1,11 @@
+#! /bin/bash
+
+mkdir ../"z"
+files=$(ls | wc -l)
+for (( i=0; i < $files; i++))
+do
+    curfile=$(ls -1h|tail -n 1)
+    mv $curfile "../z/"$(printf '%03d' $i )".png";
+done
+
+mv ../"z"/*".png" .
