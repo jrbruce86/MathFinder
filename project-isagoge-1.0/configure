@@ -2730,7 +2730,8 @@ am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Page_Selection_Tools/select_random/Makefile src/Page_Selection_Tools/select_training/Makefile src/Page_Selection_Tools/Makefile"
+# Make files and scripts
+ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Data_Generation_Tools/select_random/Makefile src/Data_Generation_Tools/select_training/Makefile src/Data_Generation_Tools/Makefile"
 
 
 
@@ -5426,7 +5427,7 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 #
 # INIT-COMMANDS
 #
-chmod +x src/Page_Selection_Tools/removealpha
+chmod +x src/Data_Generation_Tools/removealpha
 AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"
 
 _ACEOF
@@ -5440,9 +5441,9 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/Tesseract/Makefile") CONFIG_FILES="$CONFIG_FILES src/Tesseract/Makefile" ;;
-    "src/Page_Selection_Tools/select_random/Makefile") CONFIG_FILES="$CONFIG_FILES src/Page_Selection_Tools/select_random/Makefile" ;;
-    "src/Page_Selection_Tools/select_training/Makefile") CONFIG_FILES="$CONFIG_FILES src/Page_Selection_Tools/select_training/Makefile" ;;
-    "src/Page_Selection_Tools/Makefile") CONFIG_FILES="$CONFIG_FILES src/Page_Selection_Tools/Makefile" ;;
+    "src/Data_Generation_Tools/select_random/Makefile") CONFIG_FILES="$CONFIG_FILES src/Data_Generation_Tools/select_random/Makefile" ;;
+    "src/Data_Generation_Tools/select_training/Makefile") CONFIG_FILES="$CONFIG_FILES src/Data_Generation_Tools/select_training/Makefile" ;;
+    "src/Data_Generation_Tools/Makefile") CONFIG_FILES="$CONFIG_FILES src/Data_Generation_Tools/Makefile" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
 
@@ -6040,12 +6041,12 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
 
   case $ac_file$ac_mode in
-    "Makefile":F) src/Page_Selection_Tools/removealpha ;;
-    "src/Makefile":F) src/Page_Selection_Tools/removealpha ;;
-    "src/Tesseract/Makefile":F) src/Page_Selection_Tools/removealpha ;;
-    "src/Page_Selection_Tools/select_random/Makefile":F) src/Page_Selection_Tools/removealpha ;;
-    "src/Page_Selection_Tools/select_training/Makefile":F) src/Page_Selection_Tools/removealpha ;;
-    "src/Page_Selection_Tools/Makefile":F) src/Page_Selection_Tools/removealpha ;;
+    "Makefile":F) src/Data_Generation_Tools/removealpha ;;
+    "src/Makefile":F) src/Data_Generation_Tools/removealpha ;;
+    "src/Tesseract/Makefile":F) src/Data_Generation_Tools/removealpha ;;
+    "src/Data_Generation_Tools/select_random/Makefile":F) src/Data_Generation_Tools/removealpha ;;
+    "src/Data_Generation_Tools/select_training/Makefile":F) src/Data_Generation_Tools/removealpha ;;
+    "src/Data_Generation_Tools/Makefile":F) src/Data_Generation_Tools/removealpha ;;
     "depfiles":C) test x"$AMDEP_TRUE" != x"" || {
   # Autoconf 2.62 quotes --file arguments for eval, but not when files
   # are listed without --file.  Let's play safe and only enable the eval

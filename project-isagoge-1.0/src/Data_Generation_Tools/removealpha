@@ -1,0 +1,21 @@
+#! /bin/bash
+
+# usage: convert_pdfpages <pdfname> <imgname> <startpage> <endpage> <res>
+if [ $# -ne  1 ]; then
+    echo "usage: removealpha <pdfname>";
+    echo "do not include extension!";
+else
+    num=600
+#$(ls $1*png | wc -l) 
+    echo $num
+    for (( i=0; i<$num; i++ ))
+    do
+        imname=$1"_00"$( printf '%03d' $i )".png";
+        convert -flatten $imname $imname;
+    done
+fi
+
+#convert -flatten img1.png img1-white.png
+    
+#convert -verbose -density 300 Statistics.pdf -quality 100 Statistics_%0d.png
+

@@ -5,18 +5,20 @@ AC_PREREQ([2.68])
 AC_INIT([Project Isagoge], [1.0], [jrbruce86@gmail.com])
 AM_INIT_AUTOMAKE
 
+# Make files and scripts
 AC_CONFIG_FILES([Makefile
                 src/Makefile
                 src/Tesseract/Makefile
-                src/Page_Selection_Tools/select_random/Makefile
-                src/Page_Selection_Tools/select_training/Makefile
-                src/Page_Selection_Tools/Makefile],
-                [src/Page_Selection_Tools/removealpha],
-                [chmod +x src/Page_Selection_Tools/removealpha],
-                [src/Page_Selection_Tools/rename_pngs],
-                [chmod +x src/Page_Selection_Tools/rename_pngs],
-                [src/Page_Selection_Tools/convert_pdfpages],
-                [chmod +x src/Page_Selection_Tools/convert_pdfpages])
+                src/Data_Generation_Tools/select_random/Makefile 
+                src/Data_Generation_Tools/select_training/Makefile
+                src/Data_Generation_Tools/Makefile],
+                [src/Data_Generation_Tools/removealpha],
+                [chmod +x src/Data_Generation_Tools/removealpha],
+                [src/Data_Generation_Tools/rename_pngs],
+                [chmod +x src/Data_Generation_Tools/rename_pngs],
+                [src/Data_Generation_Tools/convert_pdfpages],
+                [chmod +x src/Data_Generation_Tools/convert_pdfpages],
+                [chmod +x sr/Data_Generation_Tools/Equation_Labeler/qbuild])
 
 AC_CONFIG_SRCDIR([src/EquationDetectorSVM.cpp])
 AC_CONFIG_HEADERS([config.h])
