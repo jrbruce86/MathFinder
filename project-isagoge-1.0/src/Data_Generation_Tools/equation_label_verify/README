@@ -1,0 +1,5 @@
+
+equation_label_verify
+- Takes the output of equation_labeler and corresponding images as input
+  and draws the displayed and embedded expression regions with different
+  colors. Like equation_labeler, requires Qt.

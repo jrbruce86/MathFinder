@@ -11,6 +11,3 @@ else
     done
 fi
 
-    
-#convert -verbose -density 300 Statistics.pdf -quality 100 Statistics_%0d.png
-
