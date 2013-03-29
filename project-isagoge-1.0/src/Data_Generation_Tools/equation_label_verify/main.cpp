@@ -74,14 +74,17 @@ int main() {
 
   while(!dataStream.atEnd()) {
     curData = dataStream.readLine();
-    curFile = curData.mid(5, curData.indexOf(":") - 5);
-    curFileNum = curFile.toInt();
+    
+    const QStringList lst = curData.split(" ");
+
+    curFile = lst[0];
+    curFileNum = curFile.mid(0, curFile.indexOf(".")).toInt();
 
     // load new and save previous image
     if(curFileNum != prevFileNum) {
       if(prevFileNum != -1)
         img.save(QString::fromStdString(subdirfile));
-      subdirfile = subdirname + "/" + curFile.toStdString(); 
+      subdirfile = subdirname + "/" + curFile.toStdString();
       exec("cp " + curFile.toStdString() + " " + subdirname);
       if(!img.load(QString::fromStdString(subdirfile))) {
         qDebug() << "ERROR: could not load " << curFile;
@@ -91,32 +94,26 @@ int main() {
       prevFileNum = curFileNum;
     }
     
-    // get the important indexes
-    const int colon1 = curData.indexOf(":") + 1;
-    const int colon2 = curData.indexOf(":", colon1) + 1;
-    
     // get the expression type
-    const QString exptype = curData.mid(colon1 + 1, colon2 - colon1 - 3);
+    const QString exptype = lst[1];
     
     // get the points of the rectangle for the current line
-    const int left = (curData.mid(colon2 + 1, curData.indexOf(",", colon2) - colon2 - 1)).toInt();
-    int from = curData.indexOf(",", colon2) + 1;
-    const int right = (curData.mid(curData.indexOf("(tl)", from) + 5, curData.indexOf(",", from + 1) 
-                                   - curData.indexOf("(tl)", from) - 5)).toInt();
-    int to = curData.indexOf(")", colon2);
-    const int top = (curData.mid(from, to - from)).toInt();
-    from = curData.indexOf(",", to) + 1;
-    to = curData.indexOf(")", from);
-    const int bottom = (curData.mid(from, to - from)).toInt(); 
+    const int left = lst[2].toInt();
+    const int top = lst[3].toInt();
+    const int right = lst[4].toInt();
+    const int bottom = lst[5].toInt(); 
     
-    // draw the right colored rectangle on the image (red for displayed, blue for embedded) 
+    // draw the right colored rectangle on the image (red for displayed, 
+    // green for expression labels, blue for embedded) 
     QPainter paint(&img);
     QPen pen;
     pen.setWidth(8);
     if(exptype[0] == 'd')
       pen.setColor(QColor(255,0,0));
-    else
+    else if(exptype[0] == 'e')
       pen.setColor(QColor(0,0,255));
+    else
+      pen.setColor(QColor(0,255,0));
     paint.setPen(pen);
     for(int i = 0; i < 3; ++i) {
       paint.drawLine(left + i, top + i, right + i, top +i); 

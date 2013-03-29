@@ -7,3 +7,6 @@ Equation_Labeler
 
 - Requires Qt. If you have Qt installed run qbuild script to compile
 
+- GroundTruth.dat (outputfile) format:
+ddd.png embedded/displayed/label topleft_x topleft_y bottomright_x bottomright_y 
+

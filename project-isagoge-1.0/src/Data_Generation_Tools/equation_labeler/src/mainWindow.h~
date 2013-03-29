@@ -153,8 +153,6 @@ public slots:
 
 	void writecoordsemb();
 
-  void writecoordslabel();
-
 
 												//VIEW MENU SLOTS//
 	//=================================================================
@@ -316,9 +314,8 @@ private:
 	QAction *action_fileT_ocr;
 	QAction *action_fileT_print;
 	QAction *action_fileT_img2math;
-	QAction *action_writecoordsdisp; // displayed expressions
-	QAction *action_writecoordsemb; // embedded expressions
-  QAction *action_writecoordslabel; // displayed expression label
+	QAction *action_writecoordsdisp; // label displayed expressions
+	QAction *action_writecoordsemb; // label embedded expressions
 	
 	// Edit Menu
 	QAction *action_edit_font;

@@ -135,11 +135,10 @@ void mainWindow::writecoordsdisp() {
 	int tl_y = scaledRect.topLeft().y();
 	int br_x = scaledRect.bottomRight().x();
 	int br_y = scaledRect.bottomRight().y();
-	gtWrite << currentTab->getImageFilename().c_str() << " " << "displayed" << " " \
-          << tl_x << " " << tl_y << " " << br_x << " " << br_y << "\n";
+	gtWrite << "Image" << currentTab->getImageFilename().c_str() << 
+	": displayed expression :" << "(" << tl_x << "," << tl_y << ")(tl)" <<
+	"(" << br_x << "," << br_y << ")(br)\n";
 	gtWrite.flush();
-  qDebug() << currentTab->getImageFilename().c_str() << " " << "displayed" << " " \
-          << tl_x << " " << tl_y << " " << br_x << " " << br_y;
 }
 
 void mainWindow::writecoordsemb() {
@@ -149,25 +148,10 @@ void mainWindow::writecoordsemb() {
 	int tl_y = scaledRect.topLeft().y();
 	int br_x = scaledRect.bottomRight().x();
 	int br_y = scaledRect.bottomRight().y();
-	gtWrite << currentTab->getImageFilename().c_str() << " " << "embedded" << " " \
-          << tl_x << " " << tl_y << " " << br_x << " " << br_y << "\n";
+	gtWrite << "Image" << currentTab->getImageFilename().c_str() << 
+	": embedded expression :" << "(" << tl_x << "," << tl_y << ")(tl)" <<
+	"(" << br_x << "," << br_y << ")(br)\n";
 	gtWrite.flush();
-  qDebug() << currentTab->getImageFilename().c_str() << " " << "embedded" << " " \
-          << tl_x << " " << tl_y << " " << br_x << " " << br_y; 
-}
-
-void mainWindow::writecoordslabel() {
-	qreal resizefactor = (qreal)currentTab->resizeFactor; 
-	scaledRect = QRect(QPoint(rect.topLeft() / resizefactor), QPoint(rect.bottomRight() / resizefactor));
-	int tl_x = scaledRect.topLeft().x();
-	int tl_y = scaledRect.topLeft().y();
-	int br_x = scaledRect.bottomRight().x();
-	int br_y = scaledRect.bottomRight().y();
-	gtWrite <<  currentTab->getImageFilename().c_str() << " " << "label" << " " \
-          << tl_x << " " << tl_y << " " << br_x << " " << br_y << "\n";
-	gtWrite.flush(); 
-  qDebug() << currentTab->getImageFilename().c_str() << " " << "label" << " " \
-          << tl_x << " " << tl_y << " " << br_x << " " << br_y;
 }
 
 void mainWindow::file_exit()
@@ -292,16 +276,10 @@ void mainWindow::createActions()
 	connect( action_fileT_open, SIGNAL(triggered()), this, SLOT(file_open()) );
 
 	action_writecoordsdisp = new QAction(QIcon(":/icons/ptmd.png"), tr("write disp coordinates"), this);
-  action_writecoordsdisp->setShortcut(tr("s"));
 	connect(action_writecoordsdisp, SIGNAL(triggered()), this, SLOT(writecoordsdisp())); 
 
 	action_writecoordsemb = new QAction(QIcon(":/icons/ptm.png"), tr("write emb coordinates"), this);
-  action_writecoordsemb->setShortcut(tr("d"));
 	connect(action_writecoordsemb, SIGNAL(triggered()), this, SLOT(writecoordsemb())); 
-
-  action_writecoordslabel = new QAction(QIcon(":/icons/label.png"), tr("write label coordinates"), this);
-  action_writecoordslabel->setShortcut(tr("f"));
-  connect(action_writecoordslabel, SIGNAL(triggered()), this, SLOT(writecoordslabel()));
 
 	
 	//View Menu
@@ -386,7 +364,6 @@ void mainWindow::createToolbars()
 	file_toolbar->addAction(action_fileT_open);
 	file_toolbar->addAction(action_writecoordsdisp);
 	file_toolbar->addAction(action_writecoordsemb);
-  file_toolbar->addAction(action_writecoordslabel);
 	file_toolbar->setIconSize(iconSize);
 
 	//View Toolbar
