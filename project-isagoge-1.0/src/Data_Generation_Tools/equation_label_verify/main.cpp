@@ -9,7 +9,8 @@
  *    manually labeled and appended to a file called "GroundTruth.dat",
  *    create new copies of each image in a subdirectory, with the 
  *    labeled regions drawn on top with colored rectangles (red if
- *    equation has been labeled as "displayed", and blue otherwise).
+ *    equation has been labeled as "displayed", and blue if "embedded",
+ *    and green if it's an expression label).
  */
 
 #include <QFile>
@@ -25,9 +26,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sstream>
 #include <string>
 #include <iostream>
 using namespace std;
+
+template <typename T>
+T string_to_num(string str) {
+  stringstream s(str);
+  T res;
+  return s >> res ? res : 0;
+}
 
 string exec(const string cmd) {
   FILE* stdout = popen(cmd.c_str(), "r");
@@ -56,7 +65,16 @@ void exec_display(string cmd) {
   return;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  int offset = 0;
+  if(argc == 2) 
+    offset = string_to_num<int>((string)argv[1]);
+  if(argc > 2) {
+    cout << "Usage:\n";
+    cout << "equation_label_verify [optional integer offset]\n";
+    cout << "the optional integer offset is the page to start on (so not all ";
+    cout << "images are redrawn every time.\n";
+  }
   const string subdirname = "Labeled";
   exec("mkdir " + subdirname);
   QFile dataFile("GroundTruth.dat");
@@ -79,6 +97,8 @@ int main() {
 
     curFile = lst[0];
     curFileNum = curFile.mid(0, curFile.indexOf(".")).toInt();
+    if(curFileNum < offset)
+      continue;
 
     // load new and save previous image
     if(curFileNum != prevFileNum) {
