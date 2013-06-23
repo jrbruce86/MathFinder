@@ -1,2 +1,2 @@
 SUBDIRS = src
-EXTRA_DIST = autogen.sh data thesis log
+EXTRA_DIST = autogen.sh data thesis log design
