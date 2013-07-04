@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['uch_5fset',['uch_set',['../a00396.html#a053a2aeeddc26a93a41a04fa08dd688a',1,'WERD_RES']]],
+  ['underlines',['underlines',['../a00373.html#abe8092e46729fbddf38f16ad7ca07318',1,'TO_BLOCK']]],
+  ['unichar_5fambigs',['unichar_ambigs',['../a00070.html#aea55f12febe34f7fec0f2300ef5ab418',1,'tesseract::CCUtil']]],
+  ['unichar_5fid',['unichar_id',['../a00291.html#ac067f8f00b90b65e9e8348355a771736',1,'ScoredClass::unichar_id()'],['../a00384.html#a403559d5097fc81a0fa4afb823759ba9',1,'tesseract::UnicharAndFonts::unichar_id()'],['../a00239.html#a78996dbb100ea5ec27f77c192d2b9db7',1,'tesseract::NodeChild::unichar_id()'],['../a00075.html#a24af551ad80e76f6f7d504caced974d4',1,'CHAR_FRAGMENT_INFO::unichar_id()']]],
+  ['unicharset',['unicharset',['../a00244.html#a78ebdae52f3c685095b56790598ad97c',1,'OSResults::unicharset()'],['../a00070.html#a69c5179ac5f10a24f3f97e16ca09460f',1,'tesseract::CCUtil::unicharset()']]],
+  ['unicharset_5fsize_5f',['unicharset_size_',['../a00122.html#a96b429ef5449ad3cab057eb27d199c66',1,'tesseract::Dawg']]],
+  ['unicode_5frepr',['unicode_repr',['../a00351.html#a26571c64aee9fc53688c36e7b636f442',1,'tesseract::TESS_CHAR']]],
+  ['universal_5fid',['universal_id',['../a00163.html#ad2cae2ec3808b77f313acc0c07c8ead2',1,'tesseract::FontInfo']]],
+  ['unlv_5fcrunch_5fmode',['unlv_crunch_mode',['../a00396.html#a82d32a9f59bc1c08da9537303c56615b',1,'WERD_RES']]],
+  ['unlv_5ftilde_5fcrunching',['unlv_tilde_crunching',['../a00360.html#a8a848e8a83e73f182d0ef7324afc741f',1,'tesseract::Tesseract']]],
+  ['unrecognised_5fchar',['unrecognised_char',['../a00360.html#a9c5ed322bd66f42a04c80d960a56abb0',1,'tesseract::Tesseract']]],
+  ['updated',['updated',['../a00392.html#ad2fa280d4fe085d1b0d9fd7899a109fb',1,'tesseract::ViterbiStateEntry::updated()'],['../a00045.html#aafafff1dc54426c831781fc7388e769f',1,'tesseract::BestChoiceBundle::updated()']]],
+  ['updated_5factive_5fdawgs',['updated_active_dawgs',['../a00123.html#a22401edd1d7628e9dc9838d3a405f408',1,'tesseract::DawgArgs']]],
+  ['updated_5fconstraints',['updated_constraints',['../a00123.html#a658a2b769e438412581f944c694834fb',1,'tesseract::DawgArgs']]],
+  ['updated_5fflags_5f',['updated_flags_',['../a00214.html#aed42c03dd8277f48a39ce957ade1af29',1,'tesseract::LanguageModel']]],
+  ['upper_5fpattern_5f',['upper_pattern_',['../a00378.html#a6a9287a8e75f94462c17b13966ed2669',1,'tesseract::Trie']]],
+  ['use_5fambigs_5ffor_5fadaption',['use_ambigs_for_adaption',['../a00070.html#aec36b71d7fc8a6e11c4c09e7cb5fb608',1,'tesseract::CCUtil']]],
+  ['use_5fdefinite_5fambigs_5ffor_5fclassifier',['use_definite_ambigs_for_classifier',['../a00070.html#ad4b9e31122e8da543bb91e90ccbc2ec4',1,'tesseract::CCUtil']]],
+  ['use_5fnew_5fstate_5fcost',['use_new_state_cost',['../a00401.html#ab5afccbd096fe5f2ce5e3a7ada77a698',1,'tesseract::Wordrec']]],
+  ['use_5fonly_5ffirst_5fuft8_5fstep',['use_only_first_uft8_step',['../a00129.html#aa45bac6fe79a370226cf119c66d2fe7e',1,'tesseract::Dict']]],
+  ['used_5fdm_5fmodel',['used_dm_model',['../a00374.html#ac15e16917be6a2151f255c2f92f06b1b',1,'TO_ROW']]],
+  ['user_5fpatterns_5fsuffix',['user_patterns_suffix',['../a00129.html#a503479ae064fd0f67f2bd71a3a4c3c47',1,'tesseract::Dict']]],
+  ['user_5fwords_5fsuffix',['user_words_suffix',['../a00129.html#ada6d04f60ef05aee517f3d24c6d6e9c9',1,'tesseract::Dict']]]
+];

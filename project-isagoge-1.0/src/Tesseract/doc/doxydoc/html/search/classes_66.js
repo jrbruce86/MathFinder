@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['fcoord',['FCOORD',['../a00150.html',1,'']]],
+  ['feature_5fdefs_5fstruct',['FEATURE_DEFS_STRUCT',['../a00151.html',1,'']]],
+  ['feature_5fdesc_5fstruct',['FEATURE_DESC_STRUCT',['../a00152.html',1,'']]],
+  ['feature_5fext_5fstruct',['FEATURE_EXT_STRUCT',['../a00153.html',1,'']]],
+  ['feature_5fset_5fstruct',['FEATURE_SET_STRUCT',['../a00154.html',1,'']]],
+  ['feature_5fstruct',['FEATURE_STRUCT',['../a00155.html',1,'']]],
+  ['featurebase',['FeatureBase',['../a00156.html',1,'tesseract']]],
+  ['featurebmp',['FeatureBmp',['../a00157.html',1,'tesseract']]],
+  ['featurechebyshev',['FeatureChebyshev',['../a00158.html',1,'tesseract']]],
+  ['featurehybrid',['FeatureHybrid',['../a00159.html',1,'tesseract']]],
+  ['fill_5fspec',['FILL_SPEC',['../a00160.html',1,'']]],
+  ['fill_5fswitch',['FILL_SWITCH',['../a00161.html',1,'']]],
+  ['floatunion',['FLOATUNION',['../a00162.html',1,'']]],
+  ['fontinfo',['FontInfo',['../a00163.html',1,'tesseract']]],
+  ['fontpairsizeinfo',['FontPairSizeInfo',['../a00164.html',1,'tesseract']]],
+  ['fontset',['FontSet',['../a00165.html',1,'tesseract']]],
+  ['fontspacinginfo',['FontSpacingInfo',['../a00166.html',1,'tesseract']]],
+  ['fpcutpt',['FPCUTPT',['../a00167.html',1,'']]],
+  ['fpoint',['FPOINT',['../a00168.html',1,'']]],
+  ['fpsegpt',['FPSEGPT',['../a00169.html',1,'']]],
+  ['fragment',['FRAGMENT',['../a00170.html',1,'tesseract']]],
+  ['frect',['FRECT',['../a00171.html',1,'']]]
+];
