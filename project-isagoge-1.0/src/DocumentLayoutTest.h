@@ -57,8 +57,10 @@ class DocumentLayoutTester {
   * arg1 - relative path to root of directory structure
   * arg2 - name of the subdirectory with the inputs and outputs
   * arg3- the image extension (i.e. png, jpg, etc). all should be the same
+  *        in a given subdir
   *
-  * Assumes all images in the input dir are named 1.ext,2.ext,3.ext,..... etc
+  * Assumes all images in the input dir are named 1.ext,2.ext,3.ext,.....
+  * (i.e. they start from 1 not 0)
   **************************************************************************/
   void setFileStructure(string topdir_, string subdir_, string ext_);
 

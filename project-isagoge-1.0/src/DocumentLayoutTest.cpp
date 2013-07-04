@@ -82,7 +82,7 @@ void DocumentLayoutTester::activateNonScrollView() {
   deActivateScrollView();
 }
 
-// Get tesseract layout results on the entire directory structure
+// Get tesseract layout results on the directory structure denoted by 'subdir'
 void DocumentLayoutTester::runTessLayout() {
   // set input and output paths
   if(!fileCount(topdir + "output/"))

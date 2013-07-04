@@ -28,21 +28,23 @@
 using namespace std;
 
 int main() {
-  string topdir = "../small_group_test_images/";
+  string topdir = "../test_sets/";
   DocumentLayoutTester google_test;
-  google_test.setFileStructure(topdir, "google/", ".TIFF");
+  google_test.setFileStructure(topdir, "single_image_1/", ".png");
   google_test.activateNonScrollView();
+  //google_test.activateAllBoolParams();
 
   // run layout analysis on google's test images first:
   google_test.runTessLayout();
 
+  /*
   DocumentLayoutTester scan_test;
   scan_test.setFileStructure(topdir, "scanned_text/", ".png");
   scan_test.activateNonScrollView();
 
   // run layout analysis on my scanned test images second:
   scan_test.runTessLayout();
-
+*/
   /*
    // ResultIterator* page = api.GetIterator();
    page->Begin(); // move to the beginning of the page
