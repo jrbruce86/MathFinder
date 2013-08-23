@@ -1,0 +1,31 @@
+This is how a normal, non-verbose metric file is formated:
+// region-wide statistics:
+[# correctly segemented regions] / [total # regions]
+[# regions completely missed (fn)]
+[# regions completely wrongly detected (fp)]
+
+// stats on oversegmentations and undersegmentations:
+[# oversegmented regions]
+[# total oversegmentations for all regions]
+[# avg oversegmentations per oversegmented groundtruth region]
+[# undersegmented regions]
+[# total undersegmentations for all regions]
+[# avg undersegmentations for undersegmented hypothesis region]
+
+// pixel counts:
+[# total foreground pix (tp+fp+tn+fn)]
+[# total positively detected pix (tp+fp)]
+[# total negatively detected pix (tn+fn)]
+[# total true positive pix (tp)]
+[# total false negative pix (fn)]
+[# total true negative pix (tn)]
+[# total false positive pix (fp)]
+
+// metrics based on pixel counts (all between 0 and 1)
+[TPR/Recall/Sensitivity/Hit_Rate = tp/(tp+fn)]
+[Precision/Positive_Predictive_Value = tp/(tp+fp)]
+[Accuracy = (tp+tn)/(tp+fn+tn+fp)]
+[FPR/Fallout = fp/(fp+tn)]
+[False_Discovery_Rate = fp/(fp+tp)]
+[TNR/Specificity = tn/(fp+tn)]
+[Negative_Predictive_Value = tn/(tn+fn)]

@@ -11,7 +11,6 @@
 // Created: 04 April 2008
 
 #define OCR_VERSION 0 // 0 comparison, 1 key_gen
-
 #include <QtGui>
 #include <QApplication>
 #include <QMainWindow>
@@ -31,348 +30,349 @@
 
 using namespace std;
 
-class MouseEventEater; // class prototype
+class MouseEventEater;
+// class prototype
 
-class mainWindow: public QMainWindow
-{
-	Q_OBJECT
+class mainWindow: public QMainWindow {
+Q_OBJECT
 public:
-	//=================================================================
-	//	<pre>Constructor for GUI's main window. Calls several 
-	//	functions to set up the layout of the main window (menus,
-	//	toolbars, statusbar) and initializes the tab layout as the
-	//	central widget.</pre>
-	//=================================================================
-	mainWindow();
+  //=================================================================
+  //	<pre>Constructor for GUI's main window. Calls several
+  //	functions to set up the layout of the main window (menus,
+  //	toolbars, statusbar) and initializes the tab layout as the
+  //	central widget.</pre>
+  //=================================================================
+  mainWindow();
 
-	bool highlightdone;
+  bool highlightdone;
 
-	QFile* mathCoordFile;
+  QFile* mathCoordFile;
 
-	QTextStream gtWrite; // write the ground truths for the coordinates of an equation to a file
-	
-	//= ocr_out: name of tesseract text file result
-	string ocr_out;
+  QTextStream gtWrite; // write the ground truths for the coordinates of an equation to a file
 
-	//= store lines into buffer for processing
-	QString storage;
+  //= ocr_out: name of tesseract text file result
+  string ocr_out;
 
-	//= splitting one string into individual string
-	QStringList text_list;
+  //= store lines into buffer for processing
+  QString storage;
 
-	// public data
-	//= inZoomMode: flag to tell the event handler when the user is in zoom mode
-	bool inZoomMode; 
+  //= splitting one string into individual string
+  QStringList text_list;
 
-	//= inSelectMode: flag to tell event handler when the user is in select mode
-	bool inSelectMode; 
+  // public data
+  //= inZoomMode: flag to tell the event handler when the user is in zoom mode
+  bool inZoomMode;
 
-	//=selecting: When the user is in select mode and has clicked the mouse but not yet released it
-	bool selecting; 
+  //= inSelectMode: flag to tell event handler when the user is in select mode
+  bool inSelectMode;
 
-	//=initRect: The starting QPoint for a user-selected rectangle
-	QPoint initRect;
+  //=selecting: When the user is in select mode and has clicked the mouse but not yet released it
+  bool selecting;
 
-	//=endRect: The ending QPoint for a user-selected rectangle
-	QPoint endRect;
+  //=initRect: The starting QPoint for a user-selected rectangle
+  QPoint initRect;
 
-	//=rect: The QRect used to represent the user-selected rectangle
-	QRect rect;
+  //=endRect: The ending QPoint for a user-selected rectangle
+  QPoint endRect;
 
-	//=scaledRect: The QRect that delineates where in the actual image (if scaled down) that the rectangle will be located
-	QRect scaledRect;	
+  //=rect: The QRect used to represent the user-selected rectangle
+  QRect rect;
 
-	//=zoomcount: The number of times a user has zoomed in (+) or out (-) for the image
-	int zoomcount;	
+  //=scaledRect: The QRect that delineates where in the actual image (if scaled down) that the rectangle will be located
+  QRect scaledRect;
 
-	//=scaleFactor: The factor by which the image is scaled during the zoom process
-	double scaleFactor;
+  //=zoomcount: The number of times a user has zoomed in (+) or out (-) for the image
+  int zoomcount;
 
-	//=currentTab: The tab that the user is currently viewing
-	pageTab* currentTab;
+  //=scaleFactor: The factor by which the image is scaled during the zoom process
+  double scaleFactor;
 
-	//=filter: The event filter that looks for various events from the mouse if in zoom or select mode
-	MouseEventEater* filter;
+  //=currentTab: The tab that the user is currently viewing
+  pageTab* currentTab;
 
-	//== paintEvent: virtual function from Qt, redefined here so that it draws the current rectangle onto the image.
-	// when a new rectangle is being drawn, it redraws the original pixmap onto the qlabel, so there is
-	// only one rectangle at a time.
-	void paintEvent(QPaintEvent *);
+  //=filter: The event filter that looks for various events from the mouse if in zoom or select mode
+  MouseEventEater* filter;
+
+  //== paintEvent: virtual function from Qt, redefined here so that it draws the current rectangle onto the image.
+  // when a new rectangle is being drawn, it redraws the original pixmap onto the qlabel, so there is
+  // only one rectangle at a time.
+  void paintEvent(QPaintEvent *);
 
 public slots:
-														//TAB SLOTS//
-	//=================================================================
-	// 	<pre>This slot is activated and run whenever the user
-	//	switches to a new tab.  The function checks the type of file(s)
-	//	included in the current tab, and enables/checks the layout
-	//	views that appropriate/currently shown.</pre>
-	//=================================================================
-	void tab_changed();
+  //TAB SLOTS//
+  //=================================================================
+  // 	<pre>This slot is activated and run whenever the user
+  //	switches to a new tab.  The function checks the type of file(s)
+  //	included in the current tab, and enables/checks the layout
+  //	views that appropriate/currently shown.</pre>
+  //=================================================================
+  void tab_changed();
 
-	//=================================================================
-	// <pre>This slot responds to the signal sent out whenever
-	// a tab is closed by the user, thus closing that tab.</pre>
-	//=================================================================
-	void closeTab(int index);
-	
-														//FILE SLOTS//
-	//=================================================================
-	// <pre>This slot is activated and run when the user wishes
-	//	to create an empty, new tab.  The function adds the tab to the
-	//	tab list and sets it as the current tab.  This function is
-	//	currently not implemented (File->New is disabled).</pre>
-	//=================================================================
-	void file_new();
+  //=================================================================
+  // <pre>This slot responds to the signal sent out whenever
+  // a tab is closed by the user, thus closing that tab.</pre>
+  //=================================================================
+  void closeTab(int index);
 
-	//================================================================
-	// <pre>This slot is activated and run when the user
-	//	selects to open a file.  A QFileDialog is open and allows
-	//	the user to select which file to open.  A tab with image or text
-	//	info is created based on his selection, added to the tab list,
-	//	and set as the current tab.
-	//	Currently supports *.png *.pnm *.tif *.txt *.html *.xml *.gif
-	//	</pre>
-	//=================================================================
-	void file_open();
+  //FILE SLOTS//
+  //=================================================================
+  // <pre>This slot is activated and run when the user wishes
+  //	to create an empty, new tab.  The function adds the tab to the
+  //	tab list and sets it as the current tab.  This function is
+  //	currently not implemented (File->New is disabled).</pre>
+  //=================================================================
+  void file_new();
 
-	//================================================================
-	//	<pre>This slot is activated and run when the user
-	//	selects to import an image file to the current tab.  A
-	//	QFileDialog allows the user to select which file to open and
-	//	adds the file's information and the image to the current tab.</pre>
-	//=================================================================
-	void import_image();
+  //================================================================
+  // <pre>This slot is activated and run when the user
+  //	selects to open a file.  A QFileDialog is open and allows
+  //	the user to select which file to open.  A tab with image or text
+  //	info is created based on his selection, added to the tab list,
+  //	and set as the current tab.
+  //	Currently supports *.png *.pnm *.tif *.txt *.html *.xml *.gif
+  //	</pre>
+  //=================================================================
+  void file_open();
 
-	//=================================================================
-	// 	<pre>Clears all the pagetabs from memory and exits the
-	//	main window.</pre>
-	//=================================================================
-	void file_exit();
+  void openGroundTruth();
 
-	void writecoordsdisp();
+  //================================================================
+  //	<pre>This slot is activated and run when the user
+  //	selects to import an image file to the current tab.  A
+  //	QFileDialog allows the user to select which file to open and
+  //	adds the file's information and the image to the current tab.</pre>
+  //=================================================================
+  void import_image();
 
-	void writecoordsemb();
+  //=================================================================
+  // 	<pre>Clears all the pagetabs from memory and exits the
+  //	main window.</pre>
+  //=================================================================
+  void file_exit();
+
+  void writecoordsdisp();
+
+  void writecoordsemb();
 
   void writecoordslabel();
 
+  //VIEW MENU SLOTS//
+  //=================================================================
+  //	<pre>Check box that allows the user the option to
+  //	view or not to view the file toolbar</pre>
+  //=================================================================
+  void view_tool_file();
 
-												//VIEW MENU SLOTS//
-	//=================================================================
-	//	<pre>Check box that allows the user the option to 
-	//	view or not to view the file toolbar</pre>
-	//=================================================================
-	void view_tool_file();
+  //================================================================
+  // 	<pre>Allows the user to enter into zoom mode. In this
+  //	mode, the cursor appears as a magnifying glass. The user can
+  //	zoom in and out by scrolling the mouse forward and backward
+  //	respectively.</pre>
+  //=================================================================
+  void zoomMode();
 
-	//================================================================
-	// 	<pre>Allows the user to enter into zoom mode. In this 
-	//	mode, the cursor appears as a magnifying glass. The user can 
-	//	zoom in and out by scrolling the mouse forward and backward 
-	//	respectively.</pre>
-	//=================================================================
-	void zoomMode();
+  //=================================================================
+  // 	<pre>Allows the user to enter into rectangular select mode.
+  //	In this mode, the cursor appears as a cross bar. When the user
+  //	clicks the mouse a rectangle will start being drawn on the screen.
+  //	The user can resize the rectangle by moving it right left up or
+  //	down while holding the right mouse button.</pre>
+  //=================================================================
+  void selectMode();
 
-	//=================================================================
-	// 	<pre>Allows the user to enter into rectangular select mode. 
-	//	In this mode, the cursor appears as a cross bar. When the user
-	//	clicks the mouse a rectangle will start being drawn on the screen.
-	//	The user can resize the rectangle by moving it right left up or 
-	//	down while holding the right mouse button.</pre>
-	//=================================================================
-	void selectMode();
+  //=================================================================
+  // <pre>Allows the user to go back to the normal, default
+  //	mode. The cursor appears as normal and scrolling the mouse will
+  //	move the scroll bar up or down rather than zooming in or out.
+  //	The select feature is turned off in this mode.</pre>
+  //=================================================================
+  void normalMode();
 
-	//=================================================================
-	// <pre>Allows the user to go back to the normal, default
-	//	mode. The cursor appears as normal and scrolling the mouse will
-	//	move the scroll bar up or down rather than zooming in or out.
-	//	The select feature is turned off in this mode.</pre>
-	//=================================================================
-	void normalMode();														
+  //=================================================================
+  // <pre>This function is called whenever the user zooms in
+  //	by either clicking the mouse or moving the mouse scroll bar forward
+  //	while in zoom mode.
+  //	TODO: Implement hot key for zooming in </pre>
+  //=================================================================
+  void zoomIn();
 
-	//=================================================================
-	// <pre>This function is called whenever the user zooms in
-	//	by either clicking the mouse or moving the mouse scroll bar forward
-	//	while in zoom mode. 
-	//	TODO: Implement hot key for zooming in </pre>
-	//=================================================================
-	void zoomIn();
+  //=================================================================
+  // 	<pre>This function is called whenever the user zooms out
+  //	by either clicking the mouse or moving the mouse scroll bar back
+  //	while in zoom mode.
+  //	TODO: Implement hot key for zooming out </pre>
+  //=================================================================
+  void zoomOut();
 
-	//=================================================================
-	// 	<pre>This function is called whenever the user zooms out
-	//	by either clicking the mouse or moving the mouse scroll bar back
-	//	while in zoom mode. 
-	//	TODO: Implement hot key for zooming out </pre>
-	//=================================================================
-	void zoomOut();
+  //DOCUMENT MENU SLOTS//
+  //=================================================================
+  // 	<pre>The user should select this checkbox if they only
+  //	want to view the image and not the OCR text for the current tab.
+  //	This menu item is not stable and needs to be evaluated further.</pre>
+  //=================================================================
+  void doc_img_only();
 
-											//DOCUMENT MENU SLOTS//
-	//=================================================================
-	// 	<pre>The user should select this checkbox if they only 
-	//	want to view the image and not the OCR text for the current tab. 
-	//	This menu item is not stable and needs to be evaluated further.</pre>
-	//=================================================================
-	void doc_img_only();
-
-										//WINDOW MENU SLOTS//
-	//=================================================================
-	// <pre>Closes the current tab. This function, however, is
-	// obsolete now since the tabs are set as closable, much like the 
-	// tabs in most web browsers.</pre>
-	//=================================================================	
-	void closePage();
-
+  //WINDOW MENU SLOTS//
+  //=================================================================
+  // <pre>Closes the current tab. This function, however, is
+  // obsolete now since the tabs are set as closable, much like the
+  // tabs in most web browsers.</pre>
+  //=================================================================
+  void closePage();
 
 private:
-	// Data
-	bool isImageLoaded;
-	string ocrProg;
-	list<pageTab*> tabList;
-	
-	// Functions
-	//=================================================================
-	//	<pre>Initializes the tab layout (central view) to a new
-	//	QTabWidget.</pre>
-	//=================================================================
-	void createViews();
+  // Data
+  bool isImageLoaded;
+  string ocrProg;
+  list<pageTab*> tabList;
 
-	//=================================================================
-	// 	<pre>Initializes the QAction pointers for this class to 
-	//	new objects.  These actions are used for the menu options and 
-	//	toolbar buttons.  Each action is also connected to its 
-	//	associated function/slot.  They are also enabled/disabled as 
-	//	appropriate (i.e. functionalities not currently implemented are
-	//	disabled).</pre>
-	//=================================================================
-	void createActions();
+  // Functions
+  //=================================================================
+  //	<pre>Initializes the tab layout (central view) to a new
+  //	QTabWidget.</pre>
+  //=================================================================
+  void createViews();
 
-	//=================================================================
-	// 	<pre>Creates the menu objects and adds them to the
-	//	window's menu bar.  Each menu's associated actions are
-	//	inserted into the menu.</pre>
-	//=================================================================
-	void createMenus();
+  //=================================================================
+  // 	<pre>Initializes the QAction pointers for this class to
+  //	new objects.  These actions are used for the menu options and
+  //	toolbar buttons.  Each action is also connected to its
+  //	associated function/slot.  They are also enabled/disabled as
+  //	appropriate (i.e. functionalities not currently implemented are
+  //	disabled).</pre>
+  //=================================================================
+  void createActions();
 
-	//=================================================================
-	// 	<pre>Adds the file and read toolbars to the window and 
-	//	inserts the actions associated with each into the appropriate 
-	//	toolbar.  These actions appear as buttons in the toolbar 
-	//	(most have icons associated with them)</pre>
-	//=================================================================
-	void createToolbars();
+  //=================================================================
+  // 	<pre>Creates the menu objects and adds them to the
+  //	window's menu bar.  Each menu's associated actions are
+  //	inserted into the menu.</pre>
+  //=================================================================
+  void createMenus();
 
-	//=================================================================
-	// <pre>Initialize the text in the window's status bar to "Ready".</pre>
-	//=================================================================
-	void createStatusBar();
+  //=================================================================
+  // 	<pre>Adds the file and read toolbars to the window and
+  //	inserts the actions associated with each into the appropriate
+  //	toolbar.  These actions appear as buttons in the toolbar
+  //	(most have icons associated with them)</pre>
+  //=================================================================
+  void createToolbars();
 
-	//=================================================================
-	// 	<pre>Whenever the user zooms in or out this function is
-	//	called to scale the QLabel appropriately.</pre>
-	//=================================================================
-	void scaleImage(double factor);
+  //=================================================================
+  // <pre>Initialize the text in the window's status bar to "Ready".</pre>
+  //=================================================================
+  void createStatusBar();
 
-	//=================================================================
-	// 	<pre>Whenever the user zooms in or out this function is
-	//	called to adjust the scroll bar appropriately</pre>
-	//=================================================================
-	void adjustScrollBar(QScrollBar *scrollBar, double factor);
+  //=================================================================
+  // 	<pre>Whenever the user zooms in or out this function is
+  //	called to scale the QLabel appropriately.</pre>
+  //=================================================================
+  void scaleImage(double factor);
 
-	//========================
-	// Menu Objects
-	//========================
-	QMenu *file_menu;
-	QMenu *edit_menu;
-	QMenu *view_menu;
-	QMenu *view_toolbar_menu;
-	QMenu *document_menu;
-	QMenu *read_menu;
-	QMenu *read_highlight_menu;
-	QMenu *window_menu;
-	QMenu *help_menu;
+  //=================================================================
+  // 	<pre>Whenever the user zooms in or out this function is
+  //	called to adjust the scroll bar appropriately</pre>
+  //=================================================================
+  void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
-	//========================
-	// Toolbar Objects
-	//=========================
-	QToolBar *file_toolbar;
-	QToolBar *view_toolbar;
-	QToolBar *read_toolbar;
-	
-	// Action Objects
-	// File Menu
-	QAction *action_file_new;
-	QAction *action_file_open;
-	QAction *action_file_save;
-	QAction *action_file_save_as;
-	QAction *action_file_scan;
-	QAction *action_file_import_img;
-	QAction *action_file_import_text;
-	QAction *action_file_ocr;
-	QAction *action_file_print;
-	QAction *action_file_img2math;
-	QAction *action_file_exit;
-	// File Toolbar (with icons)
-	QAction *action_fileT_open;
-	QAction *action_fileT_save;
-	QAction *action_fileT_scan;
-	QAction *action_fileT_ocr;
-	QAction *action_fileT_print;
-	QAction *action_fileT_img2math;
-	QAction *action_writecoordsdisp; // displayed expressions
-	QAction *action_writecoordsemb; // embedded expressions
+  //========================
+  // Menu Objects
+  //========================
+  QMenu *file_menu;
+  QMenu *edit_menu;
+  QMenu *view_menu;
+  QMenu *view_toolbar_menu;
+  QMenu *document_menu;
+  QMenu *read_menu;
+  QMenu *read_highlight_menu;
+  QMenu *window_menu;
+  QMenu *help_menu;
+
+  //========================
+  // Toolbar Objects
+  //=========================
+  QToolBar *file_toolbar;
+  QToolBar *view_toolbar;
+  QToolBar *read_toolbar;
+
+  // Action Objects
+  // File Menu
+  QAction *action_file_new;
+  QAction *action_file_open;
+  QAction *action_GT_open;
+  QAction *action_file_save;
+  QAction *action_file_save_as;
+  QAction *action_file_scan;
+  QAction *action_file_import_img;
+  QAction *action_file_import_text;
+  QAction *action_file_ocr;
+  QAction *action_file_print;
+  QAction *action_file_img2math;
+  QAction *action_file_exit;
+  // File Toolbar (with icons)
+  QAction *action_fileT_open;
+  QAction *action_fileT_save;
+  QAction *action_fileT_scan;
+  QAction *action_fileT_ocr;
+  QAction *action_fileT_print;
+  QAction *action_fileT_img2math;
+  QAction *action_writecoordsdisp; // displayed expressions
+  QAction *action_writecoordsemb; // embedded expressions
   QAction *action_writecoordslabel; // displayed expression label
-	
-	// Edit Menu
-	QAction *action_edit_font;
 
-	// Read Menu
-	QAction *action_read_highlight_word;
-	QAction *action_read_highlight_sent;
-	QAction *action_read_highlight_para;
-	QAction *action_read_start;
-	QAction *action_read_pause;
-	QAction *action_read_prev;
-	QAction *action_read_next;
-	// Read Toolbar (with icons)
-	QAction *action_readT_highlight;
-	QAction *action_readT_start;
-	QAction *action_readT_pause;
-	QAction *action_readT_prev;
-	QAction *action_readT_next;
-	
-	// View Menu
-	QAction *action_view_tool_file;
-	QAction *action_view_tool_read;
-	QAction *setZoomMode;
-	QAction *zoomin;
-	QAction *zoomout;
-	QAction *setSelectMode;
-	QAction *setNormalMode;
-	QAction *action_changeColor; //Change Color (added in by Gia)
+  // Edit Menu
+  QAction *action_edit_font;
 
-	// View Toolbar
-	QAction* action_viewT_zoom;
-	QAction* action_viewT_select;
-	QAction* action_viewT_normal;
+  // Read Menu
+  QAction *action_read_highlight_word;
+  QAction *action_read_highlight_sent;
+  QAction *action_read_highlight_para;
+  QAction *action_read_start;
+  QAction *action_read_pause;
+  QAction *action_read_prev;
+  QAction *action_read_next;
+  // Read Toolbar (with icons)
+  QAction *action_readT_highlight;
+  QAction *action_readT_start;
+  QAction *action_readT_pause;
+  QAction *action_readT_prev;
+  QAction *action_readT_next;
 
-	// Document Menu
-	QAction *action_doc_img_only;
-	QAction *action_doc_text_only;
-	QAction *action_doc_dual_view;
-	QAction *action_doc_ocr_ocropus;
-	QAction *action_doc_ocr_tesseract;
-	QAction *action_doc_ocr_gocr;
-	QAction *action_doc_ocr_ocrad;
-	
-	// Window Menu
-	QAction *action_win_close_page;
-	
-	// Help Menu
-	QAction *action_help_doc;
-	QAction *action_help_about;
-	
-	//========================
-	// windows/views
-	//========================
-	QTabWidget *tabLayout;
+  // View Menu
+  QAction *action_view_tool_file;
+  QAction *action_view_tool_read;
+  QAction *setZoomMode;
+  QAction *zoomin;
+  QAction *zoomout;
+  QAction *setSelectMode;
+  QAction *setNormalMode;
+  QAction *action_changeColor; //Change Color (added in by Gia)
+
+  // View Toolbar
+  QAction* action_viewT_zoom;
+  QAction* action_viewT_select;
+  QAction* action_viewT_normal;
+
+  // Document Menu
+  QAction *action_doc_img_only;
+  QAction *action_doc_text_only;
+  QAction *action_doc_dual_view;
+  QAction *action_doc_ocr_ocropus;
+  QAction *action_doc_ocr_tesseract;
+  QAction *action_doc_ocr_gocr;
+  QAction *action_doc_ocr_ocrad;
+
+  // Window Menu
+  QAction *action_win_close_page;
+
+  // Help Menu
+  QAction *action_help_doc;
+  QAction *action_help_about;
+
+  //========================
+  // windows/views
+  //========================
+  QTabWidget *tabLayout;
 };
 
 //===========================================================================================================
@@ -386,13 +386,13 @@ private:
 //		- If the user has pressed down and held the mouse key inside the QLabel (the QLabel is what this filter is
 //		installed for) then a rectangle will be drawn in the area that the user is selecting.</pre>
 //=============================================================================================================
-class MouseEventEater : public QObject {
-	Q_OBJECT
- public:
-	MouseEventEater(mainWindow* parent);
-	mainWindow* myparent;
- protected:
-	bool eventFilter(QObject* obj, QEvent* event);
+class MouseEventEater: public QObject {
+Q_OBJECT
+public:
+  MouseEventEater(mainWindow* parent);
+  mainWindow* myparent;
+protected:
+  bool eventFilter(QObject* obj, QEvent* event);
 };
 
 #endif

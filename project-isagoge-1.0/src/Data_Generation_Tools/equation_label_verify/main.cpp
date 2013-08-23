@@ -67,17 +67,33 @@ void exec_display(string cmd) {
 
 int main(int argc, char* argv[]) {
   int offset = 0;
-  if(argc == 2) 
-    offset = string_to_num<int>((string)argv[1]);
-  if(argc > 2) {
-    cout << "Usage:\n";
-    cout << "equation_label_verify [optional integer offset]\n";
-    cout << "the optional integer offset is the page to start on (so not all ";
-    cout << "images are redrawn every time.\n";
+  int end = 0;
+  if(argc > 3) 
+    offset = string_to_num<int>((string)argv[3]);
+  if(argc >= 5)
+    end = string_to_num<int>((string)argv[4]);
+  if(argc > 6 || argc < 2) {
+    cout << "* Usage:\n";
+    cout << "** equation_label_verify [GroundTruth filename] [Output Directory]"; 
+    cout << "[optional integer offset] [optional integer ending] [optional line thickness]\n";
+    cout << "*** the groundtruth filename is the name of the txt file which has all the info\n";
+    cout << "*** the output directory is where the resulting labeled images will be placed\n";
+    cout << "*** the optional integer offset is the page to start on (so not all \n";
+    cout << "    images are redrawn every time. the optional integer ending allows you to \n";
+    cout << "    specify what the last file is to be processed (i.e. if you just want to process \n";
+    cout << "    file 10, do ./equation_label_verify gtfilename outputdir 10 10.\n";
+    cout << "*** the optional line thickness specifies how much width the lines should be drawn with\n";
+    cout << "    the default width is 8 pixels, but you can make it anything with this argument.\n";
+    exit(EXIT_SUCCESS);
   }
-  const string subdirname = "Labeled";
+  int thickness = 8;
+  if(argc == 6) {
+    thickness = atoi(argv[5]);
+  } 
+  const string subdirname = (string)argv[2];
   exec("mkdir " + subdirname);
-  QFile dataFile("GroundTruth.dat");
+  string datafilename = (string)argv[1];
+  QFile dataFile(datafilename.c_str());
   if(!dataFile.open(QIODevice::ReadOnly))
     qDebug() << "ERROR: could not open data file!";
   QTextStream dataStream(&dataFile);
@@ -86,7 +102,10 @@ int main(int argc, char* argv[]) {
   QImage img;
   int curFileNum = -1, prevFileNum = -1;
 
-  int num_expressions = QString::fromStdString(exec("cat GroundTruth.dat | wc -l")).toInt();
+  int num_expressions = QString::fromStdString(exec((string)"cat " \
+                                                    + datafilename \
+                                                    + (string)\
+                                                    " | wc -l")).toInt();
   int curlinenum = 0;
   cout << "Total of " << num_expressions << " to be processed.\n";
 
@@ -97,8 +116,12 @@ int main(int argc, char* argv[]) {
 
     curFile = lst[0];
     curFileNum = curFile.mid(0, curFile.indexOf(".")).toInt();
+
+    // only process what we want to
     if(curFileNum < offset)
       continue;
+    if(curFileNum > end && end > 0)
+      break;
 
     // load new and save previous image
     if(curFileNum != prevFileNum) {
@@ -127,7 +150,7 @@ int main(int argc, char* argv[]) {
     // green for expression labels, blue for embedded) 
     QPainter paint(&img);
     QPen pen;
-    pen.setWidth(8);
+    pen.setWidth(thickness);
     if(exptype[0] == 'd')
       pen.setColor(QColor(255,0,0));
     else if(exptype[0] == 'e')
@@ -135,7 +158,7 @@ int main(int argc, char* argv[]) {
     else
       pen.setColor(QColor(0,255,0));
     paint.setPen(pen);
-    for(int i = 0; i < 3; ++i) {
+    for(int i = 0; i < 1; ++i) {
       paint.drawLine(left + i, top + i, right + i, top +i); 
       paint.drawLine(right +i, top + i, right + i, bottom + i);
       paint.drawLine(right + i, bottom + i, left + i, bottom + i);

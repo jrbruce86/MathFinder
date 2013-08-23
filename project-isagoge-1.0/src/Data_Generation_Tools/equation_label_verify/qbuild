@@ -3,6 +3,14 @@
 if hash qmake; then
     qmake
 else
+    echo -e "\n****************************************************"
+    echo "the command, qmake, was not found. trying qmake-qt4 "
+    echo "(some installs use this executable name for some "
+    echo "strange reason...) If you can't find it try the "
+    echo "command, 'locate qmake' and see what comes up. " 
+    echo "Make sure you installed qt dev tools using your " 
+    echo "package manager!"
+    echo -e "****************************************************\n"
     qmake-qt4
 make
 fi

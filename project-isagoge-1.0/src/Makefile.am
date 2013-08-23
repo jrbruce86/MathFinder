@@ -22,7 +22,5 @@ Tesseract/api/.libs/libtesseract.so
 
 isagoge_SOURCES = DocumentLayoutTest.cpp DocumentLayoutTest.h \
 	EquationDetectorSVM.cpp EquationDetectorSVM.h IsagogeMain.cpp \
-	TesseractDocumentation.h
-
-
-
+	TesseractDocumentation.h Lept_Utils.h Lept_Utils.cpp Basic_Utils.h \
+  Basic_Utils.cpp BipartiteGraph.h BipartiteGraph.cpp

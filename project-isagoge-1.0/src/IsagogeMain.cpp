@@ -25,26 +25,46 @@
 #include "DocumentLayoutTest.h"
 
 #include <iostream>
+#include <string>
 using namespace std;
+
+void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
   DocumentLayoutTester google_test;
-  google_test.setFileStructure(topdir, "single_image_1/", ".png");
+
+  google_test.setFileStructure(topdir, "smallertestset1_nolabels", ".png");
+  //google_test.colorGroundTruthBlobs();
   google_test.activateNonScrollView();
-  //google_test.activateAllBoolParams();
+  //google_test.activateBoolParam("textord_tabfind_show_partitions");
+  //google_test.activateBoolParam("textord_tabfind_show_blocks");
+  //google_test.activateBoolParam("textord_debug_images");
+  //google_test.activateAllParams();
+  //google_test.activateIntParam("textord_tabfind_show_images");
+  // deactivate dumping table images (requires input file to have
+  // specific name "test1.tif")
+  google_test.deActivateBoolParam("textord_dump_table_images");
+  //google_test.deActivateBoolParam("textord_debug_images");
+
+
+  string default_test = "default_test";
 
   // run layout analysis on google's test images first:
-  google_test.runTessLayout();
+  google_test.runTessLayout(default_test);
 
+
+  google_test.evalTessLayout(default_test, true);
+
+  //dbgColorCount(&google_test);
   /*
   DocumentLayoutTester scan_test;
   scan_test.setFileStructure(topdir, "scanned_text/", ".png");
   scan_test.activateNonScrollView();
 
   // run layout analysis on my scanned test images second:
-  scan_test.runTessLayout();
-*/
+  scan_test.runTessLayout();*/
+
   /*
    // ResultIterator* page = api.GetIterator();
    page->Begin(); // move to the beginning of the page
@@ -54,5 +74,15 @@ int main() {
   return 0;
 }
 
-
+void dbgColorCount(DocumentLayoutTester* dlt) {
+  cout << "True Positive Pixels: " \
+       << dlt->dbgColorCount((string)"Eval_DBG.png", LayoutEval::RED) \
+       << endl;
+  cout << "False Positive Pixels: " \
+       << dlt->dbgColorCount((string)"Eval_DBG.png", LayoutEval::BLUE) \
+       << endl;
+  cout << "False Negative Pixels: " \
+       << dlt->dbgColorCount((string)"Eval_DBG.png", LayoutEval::GREEN) \
+       << endl;
+}
 

@@ -1,0 +1,9 @@
+#! /bin/bash
+
+if hash qmake; then
+    qmake
+else
+    echo "the command, qmake, was not found. trying qmake-qt4 (some installs use this executable name for some strange reason...annoying :/. If you can't find it try the command, locate qmake and see what comes up, and make sure you installed qt dev tools using your package manager!)"
+    qmake-qt4
+make
+fi
