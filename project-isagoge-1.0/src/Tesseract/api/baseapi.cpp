@@ -1690,6 +1690,7 @@ int TessBaseAPI::FindLines() {
 
   if (tesseract_->textord_equation_detect) {
     if (equ_detect_ == NULL && datapath_ != NULL) {
+      // use default
       equ_detect_ = new EquationDetect(datapath_->string(), NULL);
     }
     tesseract_->SetEquationDetect(equ_detect_);
@@ -2232,4 +2233,9 @@ int TessBaseAPI::NumDawgs() const {
 CubeRecoContext *TessBaseAPI::GetCubeRecoContext() const {
   return (tesseract_ == NULL) ? NULL : tesseract_->GetCubeRecoContext();
 }
+
+void TessBaseAPI::setEquationDetector(EquationDetectBase* equ_detect) {
+  equ_detect_ = equ_detect;
+}
+
 }  // namespace tesseract.

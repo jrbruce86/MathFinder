@@ -1537,4 +1537,37 @@ void EquationDetect::PrintSpecialBlobsDensity(const ColPartition* part) const {
   tprintf("\n");
 }
 
+void EquationDetect::RenderSpecialText(Pix* pix,
+                                           BLOBNBOX* blob) {
+  ASSERT_HOST(pix != NULL && pixGetDepth(pix) == 32 && blob != NULL);
+  const TBOX& tbox = blob->bounding_box();
+  int height = pixGetHeight(pix);
+  const int box_width = 5;
+
+  // Coordinate translation: tesseract use left bottom as the original, while
+  // leptonica uses left top as the original.
+  Box *box = boxCreate(tbox.left(), height - tbox.top(),
+                         tbox.width(), tbox.height());
+  switch (blob->special_text_type()) {
+    case BSTT_MATH:  // Red box.
+      pixRenderBoxArb(pix, box, box_width, 255, 0, 0);
+      break;
+    case BSTT_DIGIT:  // cyan box.
+      pixRenderBoxArb(pix, box, box_width, 0, 255, 255);
+      break;
+    case BSTT_ITALIC:  // Green box.
+      pixRenderBoxArb(pix, box, box_width, 0, 255, 0);
+      break;
+    case BSTT_UNCLEAR:  // blue box.
+      pixRenderBoxArb(pix, box, box_width, 0, 255, 0);
+      break;
+    case BSTT_NONE:
+    default:
+      // yellow box.
+      pixRenderBoxArb(pix, box, box_width, 255, 255, 0);
+      break;
+  }
+  boxDestroy(&box);
+}
+
 };  // namespace tesseract

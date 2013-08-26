@@ -33,16 +33,18 @@
 #include <vector>
 #include <baseapi.h> // tesseract api
 #include <allheaders.h> // leptonica api
-#include "EquationDetectorSVM.h"
 using namespace std;
 using namespace tesseract;
 
+// My equation detection implementations:
+#include "EquationDetectorSVM.h"
+
+// Data structure/algorithms used for evaluation
+#include "BipartiteGraph.h"
+
 #include "Basic_Utils.h"
 using namespace Basic_Utils;
-
 #include "Lept_Utils.h"
-
-#include "BipartiteGraph.h"
 
 class DocumentLayoutTester : public Lept_Utils {
  public:
@@ -52,18 +54,24 @@ class DocumentLayoutTester : public Lept_Utils {
   * then initalizes Tesseract in auto-segmentation mode so
   * that the appropriate equation detector will be utilized on
   * the input document. Terminates program execution if the
-  * segmentation mode of Tesseract was not properly set
+  * segmentation mode of Tesseract was not properly set. By
+  * default the test will be run on Tesseract's 2011 equation
+  * detector. If an equation detector is passed into the
+  * constructor, however, then that one will be used by
+  * Tesseract instead.
   *
-  * Is designed to be used for a single test only. Comparing
-  * the results of two tests involves passing in the two
-  * corresponding instantiations of this class
+  * This is designed to be used for a single evaluation only.
+  * Comparing the results of two tests involves passing in
+  * results of the two corresponding instantiations of this
+  * class into the comparison algorithm.
   **********************************************************/
-  DocumentLayoutTester();
+  DocumentLayoutTester(EquationDetectBase* equ_detect);
 
   /**************************************************************************
   * Set the desired file directory structure so that the right
   * files can be processed by runTessLayout.
   * WARNING: Make sure to include trailing slash for all directory names!!
+  * (use checkTrailingSlash() method of BasicUtils.h)
   * The directory structure format is as follows:
   *                               topdir
   *           input                             output
@@ -185,14 +193,14 @@ class DocumentLayoutTester : public Lept_Utils {
   *                               topdir/                                         *
   *                             groundtruth/                                      *
   *           subdir1/                             subdir2/                       *
-  * 1.png 2.png 3.png etc. colorblobs/    1.png 2.png 3.png etc. colorblobs/
-  *
-  * Arguments are as follows:
-  * arg1 - output_results_subdir_ -> same as specified in runTessLayout(). This
-  *                                  is the name of the test being run which also
-  *                                  specifies the directory where the results
-  *                                  for this test will be placed. The test is
-  *                                  run on the images in the    *
+  * 1.png 2.png 3.png etc. colorblobs/    1.png 2.png 3.png etc. colorblobs/      *
+  *                                                                               *
+  * Arguments are as follows:                                                     *
+  * arg1 - output_results_subdir_ -> same as specified in runTessLayout(). This   *
+  *                                  is the name of the test being run which also *
+  *                                  specifies the directory where the results    *
+  *                                  for this test will be placed. The test is    *
+  *                                  run on the images in the                     *
   ********************************************************************************/
   void evalTessLayout(string testname, bool layoutdone=false);
 
@@ -358,7 +366,8 @@ class DocumentLayoutTester : public Lept_Utils {
   string page_seg_mode; // tesseract's page segmentation mode
                         // (rather than just resetting all of them on each iteration)
   TessBaseAPI api; // the Tesseract API
-  EquationDetectorSVM* equ;
+  EquationDetectBase* new_equ_detector;
+  //EquationDetectorSVM* equ;
 };
 
 // TODO: Move all defunct code to some other file (incase it may

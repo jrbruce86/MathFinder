@@ -15,7 +15,6 @@ noinst_HEADERS = \
     ccnontextdetect.h cjkpitch.h colfind.h colpartition.h colpartitionset.h \
     colpartitiongrid.h \
     devanagari_processing.h drawedg.h drawtord.h edgblob.h edgloop.h \
-    equationdetectbase.h \
     fpchop.h gap_map.h imagefind.h linefind.h makerow.h oldbasel.h \
     pithsync.h pitsync1.h scanedg.h sortflts.h strokewidth.h \
     tabfind.h tablefind.h tabvector.h \
@@ -44,7 +43,6 @@ libtesseract_textord_la_SOURCES = \
     ccnontextdetect.cpp cjkpitch.cpp colfind.cpp colpartition.cpp colpartitionset.cpp \
     colpartitiongrid.cpp devanagari_processing.cpp \
     drawedg.cpp drawtord.cpp edgblob.cpp edgloop.cpp \
-    equationdetectbase.cpp \
     fpchop.cpp gap_map.cpp imagefind.cpp linefind.cpp makerow.cpp oldbasel.cpp \
     pithsync.cpp pitsync1.cpp scanedg.cpp sortflts.cpp strokewidth.cpp \
     tabfind.cpp tablefind.cpp tabvector.cpp \

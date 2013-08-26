@@ -30,6 +30,7 @@
 #include "ocrclass.h"
 #include "textord.h"
 #include "wordrec.h"
+#include "equationdetectbase.h"
 
 class PAGE_RES;
 class PAGE_RES_IT;
@@ -96,7 +97,7 @@ class ColumnFinder;
 class CubeLineObject;
 class CubeObject;
 class CubeRecoContext;
-class EquationDetect;
+class EquationDetectBase;
 class Tesseract;
 class TesseractCubeCombiner;
 
@@ -150,7 +151,7 @@ class Tesseract : public Wordrec {
   void ResetDocumentDictionary();
 
   // Set the equation detector.
-  void SetEquationDetect(EquationDetect* detector);
+  void SetEquationDetect(EquationDetectBase* detector);
 
   // Simple accessors.
   const FCOORD& reskew() const {
@@ -953,7 +954,7 @@ class Tesseract : public Wordrec {
   CubeRecoContext* cube_cntxt_;
   TesseractCubeCombiner *tess_cube_combiner_;
   // Equation detector. Note: this pointer is NOT owned by the class.
-  EquationDetect* equ_detect_;
+  EquationDetectBase* equ_detect_;
 };
 
 }  // namespace tesseract

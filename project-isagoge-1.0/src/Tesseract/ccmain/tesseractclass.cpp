@@ -424,7 +424,7 @@ void Tesseract::Clear() {
     sub_langs_[i]->Clear();
 }
 
-void Tesseract::SetEquationDetect(EquationDetect* detector) {
+void Tesseract::SetEquationDetect(EquationDetectBase* detector) {
   equ_detect_ = detector;
   equ_detect_->SetLangTesseract(this);
 }

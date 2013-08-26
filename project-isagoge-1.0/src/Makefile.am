@@ -9,7 +9,7 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/ccutil -ITesseract/classify \
 -ITesseract/config -ITesseract/contrib \
 -ITesseract/cube -ITesseract/cutil \
--ITesseract/dict\ -ITesseract/doc \
+-ITesseract/dict -ITesseract/doc \
 -ITesseract/image -ITesseract/java \
 -ITesseract/m4 -ITesseract/neural_networks \
 -ITesseract/po -ITesseract/tessdata \

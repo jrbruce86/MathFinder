@@ -3,8 +3,11 @@
  * File name:		EquationDetectorSVM.h
  * Written by:	Jake Bruce, Copyright (C) 2013
  * History: 		Created Feb 28, 2013 9:08:15 PM
- * Description: TODO
- * 
+ * ------------------------------------------------------------------------
+ * Description: This equation detector overrides Tesseract's default one which
+ *              was implemented in the 2011 release. TODO: update this
+ *              description.
+ * ------------------------------------------------------------------------
  * This file is part of Project Isagoge.
  * 
  * Project Isagoge is free software: you can redistribute it and/or modify
@@ -24,9 +27,11 @@
 #ifndef EQUATIONDETECTORSVM_H_
 #define EQUATIONDETECTORSVM_H_
 
-#include <cstddef>
+#include <cstddef> // defines NULL keyword
+#include <iostream>
 #include <equationdetectbase.h>
 using namespace tesseract;
+using namespace std;
 
 class EquationDetectorSVM : public EquationDetectBase {
 public:
@@ -36,20 +41,16 @@ public:
   // Iterate over the blobs inside to_block, and set the blobs that we want to
   // process to BSTT_NONE. (By default, they should be BSTT_SKIP). The function
   // returns 0 upon success.
-  virtual int LabelSpecialText(TO_BLOCK* to_block);
+  int LabelSpecialText(TO_BLOCK* to_block);
 
   // Interface to find possible equation partition grid from part_grid. This
   // should be called after IdentifySpecialText function.
-  virtual int FindEquationParts(ColPartitionGrid* part_grid,
+  int FindEquationParts(ColPartitionGrid* part_grid,
                                 ColPartitionSet** best_columns);
 
-
-  //TODO
-  void PreComputeThresholds();
-
-  //TODO
-  void FeatureRecognition();
-
+  // Reset the lang_tesseract_ pointer. This function should be called before we
+  // do any detector work.
+  void SetLangTesseract(Tesseract* lang_tesseract);
 };
 
 #endif // EQUATION_DETECT_SVMH__

@@ -138,9 +138,10 @@ LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 @USING_MULTIPLELIBS_TRUE@	../cube/libtesseract_cube.la
 am_libtesseract_main_la_OBJECTS = adaptions.lo applybox.lo control.lo \
 	cube_control.lo cube_reco_context.lo cubeclassifier.lo \
-	docqual.lo equationdetect.lo fixspace.lo fixxht.lo imgscale.lo \
-	ltrresultiterator.lo osdetect.lo output.lo pageiterator.lo \
-	pagesegmain.lo pagewalk.lo paragraphs.lo paramsd.lo pgedit.lo \
+	docqual.lo equationdetect.lo fixspace.lo fixxht.lo \
+	equationdetectbase.lo imgscale.lo ltrresultiterator.lo \
+	osdetect.lo output.lo pageiterator.lo pagesegmain.lo \
+	pagewalk.lo paragraphs.lo paramsd.lo pgedit.lo \
 	recogtraining.lo reject.lo resultiterator.lo scaleimg.lo \
 	tesseract_cube_combiner.lo tessbox.lo tessedit.lo \
 	tesseractclass.lo tessvars.lo tfacepp.lo thresholder.lo \
@@ -361,6 +362,7 @@ include_HEADERS = \
 noinst_HEADERS = \
     control.h cube_reco_context.h cubeclassifier.h docqual.h \
     equationdetect.h fixspace.h imgscale.h mutableiterator.h osdetect.h \
+equationdetectbase.h \
     output.h paragraphs.h paragraphs_internal.h paramsd.h pgedit.h \
     reject.h scaleimg.h tessbox.h tessedit.h tesseractclass.h \
     tesseract_cube_combiner.h tessvars.h tfacep.h tfacepp.h werdit.h
@@ -383,6 +385,7 @@ libtesseract_main_la_SOURCES = \
     adaptions.cpp applybox.cpp \
     control.cpp cube_control.cpp cube_reco_context.cpp cubeclassifier.cpp \
     docqual.cpp equationdetect.cpp fixspace.cpp fixxht.cpp \
+equationdetectbase.cpp \
     imgscale.cpp ltrresultiterator.cpp \
     osdetect.cpp output.cpp pageiterator.cpp pagesegmain.cpp \
     pagewalk.cpp paragraphs.cpp paramsd.cpp pgedit.cpp recogtraining.cpp \
@@ -490,6 +493,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cubeclassifier.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/docqual.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/equationdetect.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/equationdetectbase.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fixspace.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fixxht.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imgscale.Plo@am__quote@

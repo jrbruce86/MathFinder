@@ -279,7 +279,7 @@ man_MANS = cntraining.1  combine_tessdata.1  mftraining.1  tesseract.1 \
 	unicharset.5 ambiguous_words.1 shapeclustering.1 dawg2wordlist.1
 
 EXTRA_DIST = $(man_MANS) MOCRadaptingtesseract2.pdf \
-	PageLayoutAnalysisICDAR2.pdf tesseracticdar2007.pdf Doxyfile doxydoc
+	PageLayoutAnalysisICDAR2.pdf tesseracticdar2007.pdf Doxyfile #doxydoc
 
 all: all-am
 

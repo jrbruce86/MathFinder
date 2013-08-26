@@ -3,8 +3,12 @@
  * File name:		isagoge_main.cpp
  * Written by:	Jake Bruce, Copyright (C) 2013
  * History: 		Created Feb 28, 2013 9:34:34 PM 
- * Description: TODO
- * 
+ * ------------------------------------------------------------------------
+ * Description: Main file from which evaluations of various equation
+ *              detectors on various datasets and experiments are run.
+ *              Primarily uses DocumentLayoutTester class functions to
+ *              perform tests. See DocumentLayoutTest.h for more info.
+ * ------------------------------------------------------------------------
  * This file is part of Project Isagoge.
  * 
  * Project Isagoge is free software: you can redistribute it and/or modify
@@ -28,50 +32,61 @@
 #include <string>
 using namespace std;
 
+// Runs evaluation test on the given detector for the given dataset
+// which should be within the "topdir" specified (if detector is null
+// then uses Tesseract's default one. The testname is the name of
+// the test to be run on the dataset (this name should be indicative
+// of which equation detector is being used)
+void evaluateDataSet(EquationDetectBase* detector, \
+    string topdir, string dataset, string testname, \
+    string extension=(string)".png");
+
+// For debugging the evaluator
 void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
-  DocumentLayoutTester google_test;
+  string dataset = "single_image_1";
 
-  google_test.setFileStructure(topdir, "smallertestset1_nolabels", ".png");
-  //google_test.colorGroundTruthBlobs();
-  google_test.activateNonScrollView();
-  //google_test.activateBoolParam("textord_tabfind_show_partitions");
-  //google_test.activateBoolParam("textord_tabfind_show_blocks");
-  //google_test.activateBoolParam("textord_debug_images");
-  //google_test.activateAllParams();
-  //google_test.activateIntParam("textord_tabfind_show_images");
+  // Test tesseract's default equation detector
+  //evaluateDataSet(NULL, topdir, dataset, "default_test");
+
+  // Test my equation detector
+  EquationDetectBase* mydetector = new EquationDetectorSVM();
+  evaluateDataSet(mydetector, topdir, dataset, "my_detector");
+
+  // TODO: Compare the results!
+
+  return 0;
+}
+
+void evaluateDataSet(EquationDetectBase* detector, \
+    string topdir, string dataset, string testname, \
+    string extension) {
+  DocumentLayoutTester test(detector);
+
+  test.setFileStructure(topdir, dataset, extension);
+  //test.colorGroundTruthBlobs();
+  test.activateNonScrollView();
+  //test.activateBoolParam("textord_tabfind_show_partitions");
+  //test.activateBoolParam("textord_tabfind_show_blocks");
+  //test.activateBoolParam("textord_debug_images");
+  //test.activateAllParams();
+  //test.activateIntParam("textord_tabfind_show_images");
   // deactivate dumping table images (requires input file to have
   // specific name "test1.tif")
-  google_test.deActivateBoolParam("textord_dump_table_images");
-  //google_test.deActivateBoolParam("textord_debug_images");
-
-
-  string default_test = "default_test";
+  test.deActivateBoolParam("textord_dump_table_images");
+  //test.deActivateBoolParam("textord_debug_images");
 
   // run layout analysis on google's test images first:
-  google_test.runTessLayout(default_test);
+  test.runTessLayout(testname);
 
 
-  google_test.evalTessLayout(default_test, true);
+  test.evalTessLayout(testname, true);
 
-  //dbgColorCount(&google_test);
-  /*
-  DocumentLayoutTester scan_test;
-  scan_test.setFileStructure(topdir, "scanned_text/", ".png");
-  scan_test.activateNonScrollView();
-
-  // run layout analysis on my scanned test images second:
-  scan_test.runTessLayout();*/
-
-  /*
-   // ResultIterator* page = api.GetIterator();
-   page->Begin(); // move to the beginning of the page
-   Pix* im = page->GetBinaryImage(RIL_PARA);
-   pixDisplay(im, 100, 100);
-   */
-  return 0;
+  // TODO: Modify DocumentLayoutTester's destructor to avoid
+  //       memory leaks!!!
+  //dbgColorCount(&test);
 }
 
 void dbgColorCount(DocumentLayoutTester* dlt) {

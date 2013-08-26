@@ -71,6 +71,16 @@ class EquationDetect : public EquationDetectBase {
   // Reset the resolution of the processing image. TEST only function.
   void SetResolution(const int resolution);
 
+  // Debug function: Render a bounding box on pix based on the value of its
+  // special_text_type, specifically:
+  // BSTT_MATH: red box
+  // BSTT_DIGIT: cyan box
+  // BSTT_ITALIC: green box
+  // BSTT_UNCLEAR: blue box
+  // All others: yellow box
+  static void RenderSpecialText(Pix* pix, BLOBNBOX* blob);
+
+
  protected:
   // Identify the special text type for one blob, and update its field. When
   // height_th is set (> 0), we will label the blob as BSTT_NONE if its height

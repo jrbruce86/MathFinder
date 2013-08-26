@@ -25,10 +25,18 @@
 
 #define debug 0
 
-DocumentLayoutTester::DocumentLayoutTester() : layoutruns(0), numfiles(0) {
-  equ = new EquationDetectorSVM();
+DocumentLayoutTester::DocumentLayoutTester(EquationDetectBase* equ_detect) \
+    : layoutruns(0), numfiles(0) {
+  // set the equation detector (or just stick to the default)
+  if(equ_detect)
+    new_equ_detector = equ_detect;
+  else
+    new_equ_detector = NULL;
+
+  // initialize tesseract
   setTesseractParams();
   api.Init("/usr/local/share/", "eng");
+
   // Choose the page segmentation mode as PSM_AUTO
   // Fully automatic page segmentation, but no OSD
   // (Orientation and Script Detection).
@@ -40,6 +48,10 @@ DocumentLayoutTester::DocumentLayoutTester() : layoutruns(0), numfiles(0) {
   int psm = 0;
   api.GetIntVariable(page_seg_mode.c_str(), &psm);
   assert(psm == PSM_AUTO);
+
+  // Set the equation detector
+  if(new_equ_detector)
+    api.setEquationDetector(new_equ_detector);
 }
 
 // set up the file structure holding all the groundtruth,
@@ -298,7 +310,7 @@ void DocumentLayoutTester::evalTessLayout(string testname_, bool layoutdone) {
   }
 
   // Now we are ready to carry out the evaluation!
-  for(int i = 1; i < numfiles; i++) {
+  for(int i = 1; i <= numfiles; i++) {
     getEvaluationMetrics(testname_, results_type, (string)"displayed",\
         i, hypboxfile);
     getEvaluationMetrics(testname_, results_type, (string)"embedded",\
@@ -1144,8 +1156,7 @@ void DocumentLayoutTester::setTesseractParams() {
   /******************* Massive List of Parameters to Play With!!!!*********************************/
   // WARNING: THESE ARE HARDCODED.. DON'T MODIFY!!!!!!!!!!!!
   ////////////Settings paramaters////////////
-  // Activate Tesseract's equation detection setting and any debug parameters that
-  // may be of interest.
+  // This just lists all of the possible settings. They are set or unset later.
   boolparams.reserve(20);
   boolparams.push_back("textord_equation_detect"); // turns on the equation detection
 

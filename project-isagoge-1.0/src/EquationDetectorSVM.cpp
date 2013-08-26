@@ -29,238 +29,14 @@ EquationDetectorSVM::EquationDetectorSVM() {
 
 int EquationDetectorSVM::FindEquationParts(ColPartitionGrid* part_grid,
     ColPartitionSet** best_columns) {
-  // precompute some thresholds
- // PreComputeThresholds();
 
 
-  // run through each blob to determine its features
-
-  // run classifier
-
-  // display result for debugging and evaluation
-
-  return 0;
-}
-
-// Assume all blobs in image are stored in __________
-// Compute the following for the entire page:
-// 1. Average vertical/horizontal distance in pixels between vertically adjacent nearest neighbor
-// 2. Average character height
-// 3. Average language confidence level for all characters
-void EquationDetectorSVM::PreComputeThresholds() {
-/*
-      // variables for precomputing average of displayed feature #1 for normal text
-      // as described at top of this file
-      bool prevNormal = false;
-      int filenum = -1;
-      int prevrowbottomy = -1;
-      int rowbottomy = -1;
-      double wstotal = 0;
-      int wscount = 0;
-
-      // variables for precomputing average of displayed feature #2 for normal text
-      // as described at top of this file
-      double totalrowheight = 0;
-      int rowheightcount = 0;
-
-      // variables for precomputing average of embedded exp. feature #1 for normal text
-      // as described at top of this file
-      double conf = -1;
-      double totalconfidence = 0;
-      int confidencecount = 0;
-
-      // variables for precomputing average of embedded exp. feature #2 for normal text
-      // as described at top of this file (word level as opposed to row level)
-      int filenum_ = -1;
-      QString filename;
-      IplImage *img = 0; // the image file
-      IplImage *rgbIn; // an rgb version (required to use cvblob)
-      IplImage *labelim; // the labeled image (required by cvblob)
-      CvBlobs blobs; // holds the blobs within a word
-      uchar* data; // representation of the image used for inverting it's colors
-      int left, right, top, bottom;
-      bool init = true;
-      // for calculating inter-character gaps
-      int prevblobright = -1;
-      int gap;
-      double gaptotal = 0;
-      int gapcount = 0;
-
-      vector< pair<CvLabel, CvBlob*> > blobList;
-
-
-
-
-
-        /* Computing the average vertical distance in pixels between
-           two rows of normal/embedded text
-        if((filenum != curfilenum) || (rowbottomy != currowbottomy)) { // new file or row
-          rowbottomy = currowbottomy;
-          if(filenum != curfilenum) {
-      filenum = curfilenum;
-      if(curLabel == "Normal Text" || curLabel == "Embedded Expression") {
-        prevNormal = true;
-        prevrowbottomy = currowbottomy;
-      }
-      else
-        prevNormal = false;
-          }
-          else if(curLabel == "Normal Text" || curLabel == "Embedded Expression") {
-      if(prevNormal) {
-        if(prevrowbottomy == -1) {
-          qDebug() << "BUG: a white space distance being computed without a bottom y";
-          return -1;
-        }
-        if((currowtopy - prevrowbottomy) >= 0) {
-          wstotal += (currowtopy-prevrowbottomy);
-          wscount++;
-        }
-      }
-      prevNormal = true;
-      prevrowbottomy = currowbottomy;
-          }
-          else
-      prevNormal = false;
-
-          /* Computing the average height for a row of normal/embedded
-       text.
-          if(curLabel == "Normal Text" || curLabel == "Embedded Expression") {
-      if((currowbottomy-currowtopy) >= 0) {
-        if((currowbottomy - currowtopy) <= 100) {
-          totalrowheight += (currowbottomy - currowtopy);
-          rowheightcount++;
-        }
-      }
-          }
-        }
-
-        /* Computing the average confidence level for all normal
-           text.
-        if(curLabel == "Normal Text") {
-          // get the confidence for the current word
-          from = colon4;
-          to = colon5 - 1;
-          conf = (curData.mid(from, to - from)).toDouble();
-          if(conf > (double)-100) {
-      totalconfidence += conf;
-      confidencecount++;
-          }
-        }
-
-        /* Computing the average inter-character gaps within each
-           word of normal text.
-        if((filenum_ != curfilenum) || init) {
-          if(!init) {
-      cvReleaseImage(&img);
-      cvReleaseImage(&rgbIn);
-      cvReleaseImage(&labelim);
-          }
-          filenum_ = curfilenum;
-          init = false;
-          filename = QString::number(curfilenum);
-          filename.append(".png");
-          // read in and invert the colors in the image
-          img = cvLoadImage(filename.toStdString().c_str(), CV_LOAD_IMAGE_GRAYSCALE);
-          data = (uchar *)img->imageData;
-          for(int i = 0; i < img->height; i++)
-      for(int j = 0;j < img->width; j++)
-        for(int k = 0; k < img->nChannels; k++)
-          data[(i * img->widthStep) + (j * img->nChannels) + k] =
-            255 - data[(i*img->widthStep) + (j*img->nChannels) + k];
-          rgbIn = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
-          cvCvtColor(img, rgbIn, CV_GRAY2BGR);
-        }
-        if((curLabel == "Normal Text") ){ // && (conf > (double)(-.1))) {
-          // grab the left, top, right, and bottom coordinates of the word
-          from = colon2 + 1;
-          to = curData.indexOf(",", from);
-          left = (curData.mid(from, to - from)).toInt();
-          from = to + 1;
-          to = curData.indexOf(")", from);
-          top = (curData.mid(from, to - from)).toInt();
-          from = to + 6;
-          to = curData.indexOf(",", from);
-          right = (curData.mid(from, to - from)).toInt();
-          from = to + 1;
-          to = curData.indexOf(")", from);
-          bottom = (curData.mid(from, to - from)).toInt();
-
-          // make sure word's rectangle isn't junk (sometimes tesseract outputs junk)
-          CvRect rect = cvRect(left, top, right - left, bottom - top);
-          if(!(rect.width >= 0 && rect.height >= 0 && rect.x < img->width
-         && rect.y < img->height && rect.x + rect.width >= (int)(rect.width > 0)
-         && rect.y + rect.height >= (int)(rect.height > 0)))
-      continue;
-
-          // set the region of interest to the word's bounding box
-          cvSetImageROI(img, cvRect(left, top, right - left, bottom - top));
-
-          labelim = cvCreateImage(cvGetSize(img), IPL_DEPTH_LABEL, 1);
-          cvZero(labelim);
-
-          // get the blobs
-          cvLabel(img, labelim, blobs);
-
-          // sort the blobs from left to right
-          blobList.erase(blobList.begin(), blobList.end());
-          copy(blobs.begin(), blobs.end(), back_inserter(blobList));
-          sort(blobList.begin(), blobList.end(), cmpX);
-
-          // find the inter-character gaps
-          for (unsigned int i=0; i<blobList.size(); i++) {
-      if(prevblobright != -1) {
-        if(prevblobright < (int)blobList[i].second->minx) {
-          gap = ((int)blobList[i].second->minx - prevblobright);
-          gaptotal += gap;
-          gapcount++;
-        }
-      }
-      prevblobright = blobList[i].second->maxx;
-          }
-          prevblobright = -1;
-        }
-      }
-
-      double average_ws = wstotal / (double)wscount;
-      double average_height = totalrowheight / (double)rowheightcount;
-      double average_conf = totalconfidence / (double)confidencecount;
-      double average_gap = gaptotal / (double)gapcount;
-
-      qDebug() << "Average white space between normal/embedded text: " << average_ws;
-      qDebug() << "Average row height for normal/embedded text: " << average_height;
-      qDebug() << "Average normal text confidence rating: " << average_conf;
-      qDebug() << "Average normal text inter-character gap: " << average_gap;
-
-      outputStream << "Average vertical pixels between normal/embedded text rows:"
-             << QString::number(average_ws) << "\n";
-
-      outputStream << "Average height of normal/embedded text rows:"
-             << QString::number(average_height) << "\n";
-
-      outputStream << "Average confidence rating of normal text:"
-             << QString::number(average_conf) << "\n";
-
-      outputStream << "Average horizontal inter-character gap for normal text:"
-             << QString::number(average_gap) << "\n";
-
-      return 0;
-    }
-
-
-
-
-
-  bool cmpX(const pair<CvLabel, CvBlob*> &p1, const pair<CvLabel, CvBlob*> &p2) {
-    return p1.second->centroid.x < p2.second->centroid.x;
-  }*/
-}
-
-void EquationDetectorSVM::FeatureRecognition() {
+  cout << "TEST: in my implementation of FindEquationParts!!!!\n";
   // measure distance from center of character to center of other character
 
 
 
-  /// need to come up with better ideas. look at text. study it for patterns. what are recognizable features??
+  // need to come up with better ideas. look at text. study it for patterns. what are recognizable features??
 
    //maybe a good idea to start from feature recognition then come back to precomputing if necessary or it seems like it will improve results. also review term paper and gerrain's work.
 
@@ -290,6 +66,51 @@ void EquationDetectorSVM::FeatureRecognition() {
 
     // 2.
 
+
+
+
+
+
+
+
+
+
+  // precompute some thresholds
+ // PreComputeThresholds();
+
+
+  // run through each blob to determine its features
+
+  // run classifier
+
+  // display result for debugging and evaluation
+
+  return 0;
+}
+
+// I kept this as the default implementation provided with Tesseract
+int EquationDetectorSVM::LabelSpecialText(TO_BLOCK* to_block) {
+  if (to_block == NULL) {
+    tprintf("Warning: input to_block is NULL!\n");
+    return -1;
+  }
+
+  GenericVector<BLOBNBOX_LIST*> blob_lists;
+  blob_lists.push_back(&(to_block->blobs));
+  blob_lists.push_back(&(to_block->large_blobs));
+  for (int i = 0; i < blob_lists.size(); ++i) {
+    BLOBNBOX_IT bbox_it(blob_lists[i]);
+    for (bbox_it.mark_cycle_pt (); !bbox_it.cycled_list();
+         bbox_it.forward()) {
+      bbox_it.data()->set_special_text_type(BSTT_NONE);
+    }
+  }
+
+  return 0;
+}
+
+
+void EquationDetectorSVM::SetLangTesseract(Tesseract* lang_tesseract) {}
 
 
 
@@ -896,40 +717,217 @@ void openNewImage() {
 
 
 
+/*
+// Assume all blobs in image are stored in __________
+// Compute the following for the entire page:
+// 1. Average vertical/horizontal distance in pixels between vertically adjacent nearest neighbor
+// 2. Average character height
+// 3. Average language confidence level for all characters
+void EquationDetectorSVM::PreComputeThresholds() {
+      // variables for precomputing average of displayed feature #1 for normal text
+      // as described at top of this file
+      bool prevNormal = false;
+      int filenum = -1;
+      int prevrowbottomy = -1;
+      int rowbottomy = -1;
+      double wstotal = 0;
+      int wscount = 0;
+
+      // variables for precomputing average of displayed feature #2 for normal text
+      // as described at top of this file
+      double totalrowheight = 0;
+      int rowheightcount = 0;
+
+      // variables for precomputing average of embedded exp. feature #1 for normal text
+      // as described at top of this file
+      double conf = -1;
+      double totalconfidence = 0;
+      int confidencecount = 0;
+
+      // variables for precomputing average of embedded exp. feature #2 for normal text
+      // as described at top of this file (word level as opposed to row level)
+      int filenum_ = -1;
+      QString filename;
+      IplImage *img = 0; // the image file
+      IplImage *rgbIn; // an rgb version (required to use cvblob)
+      IplImage *labelim; // the labeled image (required by cvblob)
+      CvBlobs blobs; // holds the blobs within a word
+      uchar* data; // representation of the image used for inverting it's colors
+      int left, right, top, bottom;
+      bool init = true;
+      // for calculating inter-character gaps
+      int prevblobright = -1;
+      int gap;
+      double gaptotal = 0;
+      int gapcount = 0;
+
+      vector< pair<CvLabel, CvBlob*> > blobList;
 
 
 
 
 
+        /* Computing the average vertical distance in pixels between
+           two rows of normal/embedded text
+        if((filenum != curfilenum) || (rowbottomy != currowbottomy)) { // new file or row
+          rowbottomy = currowbottomy;
+          if(filenum != curfilenum) {
+      filenum = curfilenum;
+      if(curLabel == "Normal Text" || curLabel == "Embedded Expression") {
+        prevNormal = true;
+        prevrowbottomy = currowbottomy;
+      }
+      else
+        prevNormal = false;
+          }
+          else if(curLabel == "Normal Text" || curLabel == "Embedded Expression") {
+      if(prevNormal) {
+        if(prevrowbottomy == -1) {
+          qDebug() << "BUG: a white space distance being computed without a bottom y";
+          return -1;
+        }
+        if((currowtopy - prevrowbottomy) >= 0) {
+          wstotal += (currowtopy-prevrowbottomy);
+          wscount++;
+        }
+      }
+      prevNormal = true;
+      prevrowbottomy = currowbottomy;
+          }
+          else
+      prevNormal = false;
 
+          /* Computing the average height for a row of normal/embedded
+       text.
+          if(curLabel == "Normal Text" || curLabel == "Embedded Expression") {
+      if((currowbottomy-currowtopy) >= 0) {
+        if((currowbottomy - currowtopy) <= 100) {
+          totalrowheight += (currowbottomy - currowtopy);
+          rowheightcount++;
+        }
+      }
+          }
+        }
 
+        /* Computing the average confidence level for all normal
+           text.
+        if(curLabel == "Normal Text") {
+          // get the confidence for the current word
+          from = colon4;
+          to = colon5 - 1;
+          conf = (curData.mid(from, to - from)).toDouble();
+          if(conf > (double)-100) {
+      totalconfidence += conf;
+      confidencecount++;
+          }
+        }
 
+        /* Computing the average inter-character gaps within each
+           word of normal text.
+        if((filenum_ != curfilenum) || init) {
+          if(!init) {
+      cvReleaseImage(&img);
+      cvReleaseImage(&rgbIn);
+      cvReleaseImage(&labelim);
+          }
+          filenum_ = curfilenum;
+          init = false;
+          filename = QString::number(curfilenum);
+          filename.append(".png");
+          // read in and invert the colors in the image
+          img = cvLoadImage(filename.toStdString().c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+          data = (uchar *)img->imageData;
+          for(int i = 0; i < img->height; i++)
+      for(int j = 0;j < img->width; j++)
+        for(int k = 0; k < img->nChannels; k++)
+          data[(i * img->widthStep) + (j * img->nChannels) + k] =
+            255 - data[(i*img->widthStep) + (j*img->nChannels) + k];
+          rgbIn = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
+          cvCvtColor(img, rgbIn, CV_GRAY2BGR);
+        }
+        if((curLabel == "Normal Text") ){ // && (conf > (double)(-.1))) {
+          // grab the left, top, right, and bottom coordinates of the word
+          from = colon2 + 1;
+          to = curData.indexOf(",", from);
+          left = (curData.mid(from, to - from)).toInt();
+          from = to + 1;
+          to = curData.indexOf(")", from);
+          top = (curData.mid(from, to - from)).toInt();
+          from = to + 6;
+          to = curData.indexOf(",", from);
+          right = (curData.mid(from, to - from)).toInt();
+          from = to + 1;
+          to = curData.indexOf(")", from);
+          bottom = (curData.mid(from, to - from)).toInt();
 
-}
+          // make sure word's rectangle isn't junk (sometimes tesseract outputs junk)
+          CvRect rect = cvRect(left, top, right - left, bottom - top);
+          if(!(rect.width >= 0 && rect.height >= 0 && rect.x < img->width
+         && rect.y < img->height && rect.x + rect.width >= (int)(rect.width > 0)
+         && rect.y + rect.height >= (int)(rect.height > 0)))
+      continue;
 
+          // set the region of interest to the word's bounding box
+          cvSetImageROI(img, cvRect(left, top, right - left, bottom - top));
 
-// I kept this as the default implementation provided with Tesseract
-int EquationDetectorSVM::LabelSpecialText(TO_BLOCK* to_block) {
-  if (to_block == NULL) {
-    tprintf("Warning: input to_block is NULL!\n");
-    return -1;
-  }
+          labelim = cvCreateImage(cvGetSize(img), IPL_DEPTH_LABEL, 1);
+          cvZero(labelim);
 
-  GenericVector<BLOBNBOX_LIST*> blob_lists;
-  blob_lists.push_back(&(to_block->blobs));
-  blob_lists.push_back(&(to_block->large_blobs));
-  for (int i = 0; i < blob_lists.size(); ++i) {
-    BLOBNBOX_IT bbox_it(blob_lists[i]);
-    for (bbox_it.mark_cycle_pt (); !bbox_it.cycled_list();
-         bbox_it.forward()) {
-      bbox_it.data()->set_special_text_type(BSTT_NONE);
+          // get the blobs
+          cvLabel(img, labelim, blobs);
+
+          // sort the blobs from left to right
+          blobList.erase(blobList.begin(), blobList.end());
+          copy(blobs.begin(), blobs.end(), back_inserter(blobList));
+          sort(blobList.begin(), blobList.end(), cmpX);
+
+          // find the inter-character gaps
+          for (unsigned int i=0; i<blobList.size(); i++) {
+      if(prevblobright != -1) {
+        if(prevblobright < (int)blobList[i].second->minx) {
+          gap = ((int)blobList[i].second->minx - prevblobright);
+          gaptotal += gap;
+          gapcount++;
+        }
+      }
+      prevblobright = blobList[i].second->maxx;
+          }
+          prevblobright = -1;
+        }
+      }
+
+      double average_ws = wstotal / (double)wscount;
+      double average_height = totalrowheight / (double)rowheightcount;
+      double average_conf = totalconfidence / (double)confidencecount;
+      double average_gap = gaptotal / (double)gapcount;
+
+      qDebug() << "Average white space between normal/embedded text: " << average_ws;
+      qDebug() << "Average row height for normal/embedded text: " << average_height;
+      qDebug() << "Average normal text confidence rating: " << average_conf;
+      qDebug() << "Average normal text inter-character gap: " << average_gap;
+
+      outputStream << "Average vertical pixels between normal/embedded text rows:"
+             << QString::number(average_ws) << "\n";
+
+      outputStream << "Average height of normal/embedded text rows:"
+             << QString::number(average_height) << "\n";
+
+      outputStream << "Average confidence rating of normal text:"
+             << QString::number(average_conf) << "\n";
+
+      outputStream << "Average horizontal inter-character gap for normal text:"
+             << QString::number(average_gap) << "\n";
+
+      return 0;
     }
+
+
+
+
+
+  bool cmpX(const pair<CvLabel, CvBlob*> &p1, const pair<CvLabel, CvBlob*> &p2) {
+    return p1.second->centroid.x < p2.second->centroid.x;
   }
-
-  return 0;
-}
-
-
-
+}*/
 
 

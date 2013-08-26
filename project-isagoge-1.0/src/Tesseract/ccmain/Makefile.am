@@ -17,6 +17,7 @@ include_HEADERS = \
 noinst_HEADERS = \
     control.h cube_reco_context.h cubeclassifier.h docqual.h \
     equationdetect.h fixspace.h imgscale.h mutableiterator.h osdetect.h \
+equationdetectbase.h \
     output.h paragraphs.h paragraphs_internal.h paramsd.h pgedit.h \
     reject.h scaleimg.h tessbox.h tessedit.h tesseractclass.h \
     tesseract_cube_combiner.h tessvars.h tfacep.h tfacepp.h werdit.h
@@ -43,6 +44,7 @@ libtesseract_main_la_SOURCES = \
     adaptions.cpp applybox.cpp \
     control.cpp cube_control.cpp cube_reco_context.cpp cubeclassifier.cpp \
     docqual.cpp equationdetect.cpp fixspace.cpp fixxht.cpp \
+equationdetectbase.cpp \
     imgscale.cpp ltrresultiterator.cpp \
     osdetect.cpp output.cpp pageiterator.cpp pagesegmain.cpp \
     pagewalk.cpp paragraphs.cpp paramsd.cpp pgedit.cpp recogtraining.cpp \

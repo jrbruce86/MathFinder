@@ -71,7 +71,7 @@ namespace tesseract {
 class CubeRecoContext;
 class Dawg;
 class Dict;
-class EquationDetect;
+class EquationDetectBase;
 class LTRResultIterator;
 class MutableIterator;
 class Tesseract;
@@ -681,6 +681,8 @@ class TESS_API TessBaseAPI {
   static void DeleteBlockList(BLOCK_LIST* block_list);
  /* @} */
 
+  void setEquationDetector(EquationDetectBase* equ_detect);
+
  protected:
 
   /** Common code for setting the image. Returns true if Init has been called. */
@@ -758,7 +760,9 @@ class TESS_API TessBaseAPI {
  protected:
   Tesseract*        tesseract_;       ///< The underlying data object.
   Tesseract*        osd_tesseract_;   ///< For orientation & script detection.
-  EquationDetect*   equ_detect_;      ///<The equation detector.
+  EquationDetectBase* equ_detect_; // interface to equation detector
+                                            // so you can override default one
+  //EquationDetect*   equ_detect_;      ///<The default equation detector.
   ImageThresholder* thresholder_;     ///< Image thresholding module.
   GenericVector<ParagraphModel *>* paragraph_models_;
   BLOCK_LIST*       block_list_;      ///< The page layout.
