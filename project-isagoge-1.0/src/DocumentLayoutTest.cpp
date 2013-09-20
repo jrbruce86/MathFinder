@@ -65,10 +65,12 @@ void DocumentLayoutTester::setFileStructure(string topdir_, \
   ext = ext_;
   exec((string)"mkdir " + topdir + (string)"groundtruth/");
   groundtruthdir = topdir + (string)"groundtruth/" + subdir;
-  groundtruthtxt = groundtruthdir + (string)"GroundTruth.dat";
-  exec((string)"mkdir " + groundtruthdir + (string)"colorblobs/");
-  gt_blobsdir = groundtruthdir + (string)"colorblobs/";
   exec((string)"mkdir " + groundtruthdir, false);
+  groundtruthtxt = groundtruthdir + (string)"*.dat";
+  groundtruthtxt = exec((string)"ls " + groundtruthtxt \
+        + (string)" | tail -n 1 | tr -d '\n'");
+  gt_blobsdir = groundtruthdir + (string)"colorblobs/";
+  exec((string)"mkdir " + gt_blobsdir);
   inputdir = topdir + (string)"input/" + subdir;
   exec((string)"mkdir " + topdir + (string)"output/", false);
   outputdir = topdir + (string)"output/" + subdir;
@@ -161,13 +163,15 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
 
   // all_results_dir is located at
   // [topdir]/output/[subdir]/[out_res_subdir]
+  // allresults dir holds all images output by the layout analysis
+  // module, even ones which may not be relevant
   string all_results_dir = out_res_dir + (string)"allresults/";
   if(!layout_alreadydone)
     exec((string)"mkdir " + all_results_dir);
 
   string inputfile_name; // name of given input file
-  string inputfile_path; // the path to the given file
-  string outputfile_path; // path to the output for a given file
+  string inputfile_path; // the path to the given input file
+  string outputfile_path; // path to the output for a given input file
 
   for (int i = 1; i <= numfiles; i++) {
     // set paths
@@ -186,7 +190,7 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
     exec((string) "mv *.png " + outputfile_path);
     exec((string) "mv *.tif " + outputfile_path);
     exec((string) "cp " + outputfile_path + "*merge*" + " " \
-        + out_res_dir);
+        + out_res_dir); // move all the relevent stuff up a directory
     cout << "Ran layout analysis on file " << i << " of " << numfiles << "\n";
   }
 
@@ -196,7 +200,7 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
   if(!layout_alreadydone) {
     exec((string)"mkdir " + mathresdir); // make anew
     exec((string)"mv " + out_res_dir + "*merge*" + \
-        " " + mathresdir);
+        " " + mathresdir); // move all relevant outputs to mathdir
 
     // now run script to rename all the images
     exec((string)"cp " + topdir + (string)"rename_pngs" \
@@ -256,7 +260,7 @@ void DocumentLayoutTester::evalTessLayout(string testname_, bool layoutdone) {
   if(groundtruthready) {
     // check to make sure the GroundTruth.dat file exists where it should
     if(!existsFile(groundtruthtxt)) {
-      cout << "ERROR: GroundTruth.dat is required in " \
+      cout << "ERROR: a file ending with the .dat extension is required in " \
            << groundtruthdir << endl;
       exit(EXIT_FAILURE);
     }
@@ -280,7 +284,7 @@ void DocumentLayoutTester::evalTessLayout(string testname_, bool layoutdone) {
 
   // Make sure the hypothesis test results are ready for evaluation
   const string results_type = "math_results/";
-  const string colorblobs  = "colorblobs/";
+  const string colorblobs = "colorblobs/";
   const string evaldir = outputdir + testname + results_type \
       + colorblobs;
   const string hypboxfile = evaldir + (string)"Rectangles.dat";
@@ -331,47 +335,56 @@ void DocumentLayoutTester::getEvaluationMetrics(string testname, \
   if(!existsDirectory(outfile_dir)) {
     exec((string)"mkdir " + outfile_dir);
   }
-   string outfile = outfile_dir + intToString(filenum) + (string)"_metrics";
-   FILE* out;
-   if(!(out = fopen(outfile.c_str(), "w"))) {
-     cout << "ERROR: Could not create " << outfile << " file\n";
-     exit(EXIT_FAILURE);
-   }
-   string outfile_verbose = outfile_dir + intToString(filenum) +\
-       (string)"_metrics_verbose";
-   FILE* out_verbose;
-   if(!(out_verbose = fopen(outfile_verbose.c_str(), "w"))) {
-     cout << "ERROR: Could not create " << outfile_verbose << " file\n";
-     exit(EXIT_FAILURE);
-   }
-   const string colorblobs  = "colorblobs/";
-   const string evaldir = outputdir + testname + results_type \
-       + colorblobs;
+  string outfile_dir_verbose = outfile_dir + (string)"verbose/";
+  if(!existsDirectory(outfile_dir_verbose))
+    exec((string)"mkdir " + outfile_dir_verbose);
+  string dbgdir = checkTrailingSlash(outfile_dir) + (string)"dbg/";
+  if(!existsDirectory(dbgdir))
+    exec((string)"mkdir " + dbgdir);
+  string outfile = outfile_dir + intToString(filenum) + (string)"_metrics";
+  FILE* out;
+  if(!(out = fopen(outfile.c_str(), "w"))) {
+    cout << "ERROR: Could not create " << outfile << " file\n";
+    exit(EXIT_FAILURE);
+  }
+  string outfile_verbose = outfile_dir_verbose + intToString(filenum) +\
+      (string)"_metrics_verbose";
+  FILE* out_verbose;
+  if(!(out_verbose = fopen(outfile_verbose.c_str(), "w"))) {
+    cout << "ERROR: Could not create " << outfile_verbose << " file\n";
+    exit(EXIT_FAILURE);
+  }
+  const string colorblobs  = "colorblobs/";
+  const string evaldir = checkTrailingSlash(outputdir + \
+      testname + results_type + colorblobs);
 
-   // The first step is to create the bipartite graph data structure
-   // for the image
-   string filename = intToString(filenum) + ext;
-   GraphInput gi;
-   gi.gtboxfile = groundtruthtxt;
-   gi.gtimg = leptReadImg(gt_blobsdir + filename);
-   gi.hypboxfile = hypboxfile;
-   gi.hypimg = leptReadImg(evaldir + filename);
-   gi.imgname = filename;
-   Pix* inimg = leptReadImg(inputdir + filename);
-   inimg = pixConvertTo32(inimg);
-   gi.inimg = inimg;
-   BipartiteGraph pixelGraph(typenamespec, gi);
+  // The first step is to create the bipartite graph data structure
+  // for the image
+  string filename = intToString(filenum) + ext;
+  GraphInput gi;
+  gi.gtboxfile = groundtruthtxt;
+  gi.gtimg = leptReadImg(gt_blobsdir + filename);
+  gi.hypboxfile = hypboxfile;
+  gi.hypimg = leptReadImg(evaldir + filename);
+  gi.imgname = filename;
+  Pix* inimg = leptReadImg(inputdir + filename);
+  inimg = pixConvertTo32(inimg);
+  gi.inimg = inimg;
+  BipartiteGraph pixelGraph(typenamespec, gi);
 
-   // Now get and print the metrics
-   pixelGraph.getHypothesisMetrics();
-   pixelGraph.printMetrics(out);
-   pixelGraph.printMetricsVerbose(out_verbose);
+  // Now get and print the metrics
+  pixelGraph.getHypothesisMetrics();
+  // move the dbg image to its dir
+  exec((string)"cp " + (string)"Eval_DBG_" + typenamespec + \
+      (string)"* " + checkTrailingSlash(dbgdir));
+  pixelGraph.printMetrics(out);
+  pixelGraph.printMetricsVerbose(out_verbose);
 
-   // Clear the memory and close the file
-   pixelGraph.clear();
-   fclose(out);
-   cout << "Finished evaluating " << typenamespec << " type of " \
-        << results_type << " for image " << filename << endl;
+  // Clear the memory and close the file
+  pixelGraph.clear();
+  fclose(out);
+  cout << "Finished evaluating " << typenamespec << " type of " \
+      << results_type << " for image " << filename << endl;
 }
 
 void DocumentLayoutTester::colorFoundBlobs(string labeledinputdir, \
@@ -489,7 +502,7 @@ void DocumentLayoutTester::colorFoundBlobs(string labeledinputdir, \
 void DocumentLayoutTester::colorGroundTruthBlobs() {
   // open the groundtruth text file which holds all of the math rectangles
   ifstream gtfile;
-  string gtfilename = groundtruthdir + (string)"GroundTruth.dat";
+  string gtfilename = groundtruthtxt;
   gtfile.open(gtfilename.c_str(), ifstream::in);
   if((gtfile.rdstate() & ifstream::failbit) != 0) {
     cout << "ERROR: Could not open Groundtruth.dat in " \

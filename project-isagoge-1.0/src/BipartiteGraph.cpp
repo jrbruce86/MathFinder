@@ -483,18 +483,46 @@ void BipartiteGraph::getHypothesisMetrics() {
 
   // now to calculate the specificity (TN/N) and make sure it is
   // the same as 1-FPR
+  // FPR = FP/N
+  // SPC = TN/N
+  // N/N - FP/N = TN/N -> N-FP=TN
   double specificity = (double)hyp_true_negatives/\
       (double)gt_true_negatives;
 
   //assert(specificity == (1.-hypmetrics.total_fallout));
-  if(specificity != (1.-hypmetrics.total_fallout)) {
+  double oneminusfpr = (double)1- (double)hypmetrics.total_fallout;
+  //cout << hypmetrics.total_fallout * 1173355 << endl;
+  //exit(EXIT_FAILURE);
+  if(specificity != oneminusfpr) {
+    if((gt_true_negatives - hypmetrics.total_false_positive_pix) \
+        == hyp_true_negatives) {
+      cout << "WARNING: The specificity and 1-FPR are not equal, however ";
+      cout << "the false positive and true negative pixels add up to the ";
+      cout << "total negatives in the groundtruth.\n";
+      cout.precision(20);
+      cout << "The specificity and 1-FPR are only off by " \
+           << specificity-oneminusfpr << endl;
+      // something weird happened with division... if the false positives
+      // and true negatives add up then there should be nothing wrong!!
+      goto noerror;
+    }
     cout << "ERROR:: for some reason the specificity does not equal 1-FPR!!!\n";
     cout << "image: " << filename << endl;
+    cout.precision(20);
     cout << "specificity: " << specificity << endl;
-    cout << "1-FPR: " << (1.-hypmetrics.total_fallout) << endl;
+    cout << "1-FPR      : " << oneminusfpr << endl;
+    cout << "specificity is " << (double)hyp_true_negatives \
+         << " / " << (double)gt_true_negatives << endl;
+    cout << "1-FPR is " << (double)1 << " - " \
+         << (double)hypmetrics.total_fallout << endl;
+    cout << "FPR         : " << hypmetrics.total_fallout << endl;
+    cout << "Expected FPR: " << (double)hypmetrics.total_false_positive_pix /\
+        (double)gt_true_negatives << endl;
     cout << "False positives in hypothesis: " << hypmetrics.total_false_positive_pix << endl;
+    cout << "True positives in hypothesis: " << hypmetrics.total_true_positive_fg_pix << endl;
     cout << "true negatives in the hypothesis: " << hyp_true_negatives << endl;
     cout << "true negatives in the groundtruth: " << gt_true_negatives << endl;
+    cout << "gt_negative_fg_pix: " << gt_negative_fg_pix << endl;
     cout << "false negatives in the hypothesis: " << total_false_neg_pix << endl;
     cout << "positives in the hypothesis: " << total_positive_fg << endl;
     cout << "positives in the groundtruth: " << gtmetrics.total_seg_fg_pixels << endl;
@@ -522,6 +550,7 @@ void BipartiteGraph::getHypothesisMetrics() {
     specificity = (1.-hypmetrics.total_fallout);
     exit(EXIT_FAILURE); // (the above solution is a no more than a band-aid... need to figure it out..)
   }
+  noerror:
   hypmetrics.specificity = specificity;
 
   // now calculate the negative predictive value (TN/TN+FN)

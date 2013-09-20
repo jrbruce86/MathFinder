@@ -46,14 +46,16 @@ void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
-  string dataset = "single_image_1";
+  string dataset = "advcalc1_without_labels";
 
-  // Test tesseract's default equation detector
-  //evaluateDataSet(NULL, topdir, dataset, "default_test");
+  // Test Tesseract's default equation detector
+  evaluateDataSet(NULL, topdir, dataset, "tessdefault");
 
+  /*
   // Test my equation detector
   EquationDetectBase* mydetector = new EquationDetectorSVM();
   evaluateDataSet(mydetector, topdir, dataset, "my_detector");
+  */
 
   // TODO: Compare the results!
 
@@ -63,8 +65,9 @@ int main() {
 void evaluateDataSet(EquationDetectBase* detector, \
     string topdir, string dataset, string testname, \
     string extension) {
+  // constructor sets the equation detector
   DocumentLayoutTester test(detector);
-
+  // create the file structure
   test.setFileStructure(topdir, dataset, extension);
   //test.colorGroundTruthBlobs();
   test.activateNonScrollView();
@@ -78,7 +81,8 @@ void evaluateDataSet(EquationDetectBase* detector, \
   test.deActivateBoolParam("textord_dump_table_images");
   //test.deActivateBoolParam("textord_debug_images");
 
-  // run layout analysis on google's test images first:
+  // run layout analysis on the images first (this includes
+  // running the equation detection as well)
   test.runTessLayout(testname);
 
 

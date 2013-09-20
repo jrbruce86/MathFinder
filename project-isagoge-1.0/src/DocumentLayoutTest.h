@@ -342,7 +342,7 @@ class DocumentLayoutTester : public Lept_Utils {
   string subdir; // the name of the subdirectory file structure
   string ext; // image extension (ie png, jpg, etc)
   string groundtruthdir; // this points to [topdir]/groundtruth/[subdir]/
-  string groundtruthtxt; // this points to [topdir]/groundtruth/[GroundTruth.dat]
+  string groundtruthtxt; // this points to [topdir]/groundtruth/[subdir]/[*.dat]
   string gt_blobsdir; // points to [topdir]/groundtruth/[subdir]/colorblobs/
   string inputdir; // this points to [topdir]/input/[subdir]/
   string outputdir; // this points to [topdir]/output/[subdir]/
