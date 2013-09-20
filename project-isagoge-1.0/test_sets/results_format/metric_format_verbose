@@ -1,0 +1,19 @@
+Verbose metric files give pixel accurate metrics on each individual region:
+[Box #] [Set #] // box is the region #, set is either 0 or 1 (0 for hypothesis, 1 for groundtruth)
+  // region dimensions
+  [Box area]
+  [Box width]
+  [Box height]
+  // overlapping groundtruth boxes to this hypothesis box
+  [# overlapping groundtruth boxes]
+  // pixel counts
+  [# total foreground pix (tp+fp+tn+fn)]
+  [# total positively detected pix (tp+fp)]
+  [# total true positive pix (tp)]
+  [# total false negative pix (fn)]
+  [# total false positive pix (fp)]
+  // metrics based on the pixel counts
+  [TPR/Recall/Sensitivity/Hit_Rate = tp/(tp+fn)]
+  [Precision/Positive_Predictive_Value = tp/(tp+fp)]
+  [FPR/Fallout = fp/(fp+tn)]
+  [False_Discovery_Rate = fp/(fp+tp)]
