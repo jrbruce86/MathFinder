@@ -120,9 +120,15 @@ int Lept_Utils::countFalsePositives(BOX* box1, vector<BOX*> box2, \
       // we increment the counter
       curpixel = startpixel + l_uint32((i*imwidth) + j);
       if(getPixelColor(curpixel) == color) {
+        // make sure it hasn't been counted already (used dbg image for this)
+        // TODO: rename 'dbg' image to something else.. this clearly serves
+        //       a higher purpose than just debugging now since it allows me
+        //       to avoid double counting pixels
+        curpixdbg = startpxdbg + l_uint32((i*imwidth)+j);
+        if(getPixelColor(curpixdbg) == LayoutEval::BLUE)
+          continue; // already got this one.. don't double count!!
         color_non_overlap++;
         if(dbg) {
-          curpixdbg = startpxdbg + l_uint32((i*imwidth)+j);
           setPixelRGB(dbg, curpixdbg, j, i, LayoutEval::BLUE);
         }
       }

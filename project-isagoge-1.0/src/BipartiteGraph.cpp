@@ -253,8 +253,58 @@ void BipartiteGraph::getHypothesisMetrics() {
 
   PIX* dbg = pixCreate(gtimg->w, gtimg->h, 32);
 
-  // first iterate through the hypothesis boxes (vertices) to get
+  // go ahead and count (and color if debugging) all the true negative
+  // pixels in the hypothesis
+  int counted_truenegatives = 0;
+  l_uint32* cur_gt_pixel;
+  l_uint32* cur_hyp_pixel;
+  l_uint32* cur_dbg_pixel;
+  l_uint32* startpixel_gt = pixGetData(gtimg);
+  l_uint32* startpixel_hyp = pixGetData(hypimg);
+  l_uint32* startpixel_dbg = pixGetData(dbg);
+  for(l_int32 i = 0; i < gtimg->h; i++) {
+    for(l_int32 j = 0; j < gtimg->w; j++) {
+      cur_gt_pixel = startpixel_gt + l_uint32((i*gtimg->w) + j);
+      cur_hyp_pixel = startpixel_hyp + l_uint32((i*hypimg->w) + j);
+      cur_dbg_pixel = startpixel_dbg + l_uint32((i*dbg->w) + j);
+      rgbtype pixcolorgt;
+      lu.getPixelRGB(cur_gt_pixel, &pixcolorgt);
+      LayoutEval::Color colorgt = lu.getColor(&pixcolorgt);
+      if((!lu.isColorSignificant(colorgt) && lu.isDark(&pixcolorgt))\
+          // ^^checks for an actual negative in the groundtruth that is
+          // simply a foreground pixel. below we check
+          // for a pixel that may be significant but isn't what we are
+          // looking at now (i.e. an embedded pixel when we are evaluating
+          // for displayed expressions)
+          || (lu.isColorSignificant(colorgt) && (colorgt != color))) {
+        // negative detected from the groundtruth
+        // if the hypothesis pixel here is also negative then we have
+        // a true negative!
+        LayoutEval::Color colorhyp = lu.getPixelColor(cur_hyp_pixel);
+        if(colorgt != color && colorhyp != color) {
+          // found a true negative!!!
+          counted_truenegatives++;
+          // set the true negative to orange in the debug image
+          if(dbg) {
+            composeRGBPixel(255, 127, 0, cur_dbg_pixel);
+            pixSetPixel(dbg, j, i, *cur_dbg_pixel);
+          }
+        }
+      }
+    }
+  }
+  //pixDisplay(dbg, 100, 100);
+
+  // iterate through the hypothesis boxes (vertices) to get
   // metrics on each individual one
+  /*  cout << "the image has " << Hypothesis.size() << " hypothesis boxes.\n";
+  for(vector<Vertex>::iterator hyp_it = Hypothesis.begin(); \
+      hyp_it != Hypothesis.end(); hyp_it++) {
+    static int ___i = 0;
+    cout << "hypbox " << ___i << ": " << hyp_it->rect->x << ", " << hyp_it->rect->y \
+         << ", width: " << hyp_it->rect->w << ", height: " << hyp_it->rect->h << endl;
+    ___i++;
+  }*/
   for(vector<Vertex>::iterator hyp_it = Hypothesis.begin(); \
       hyp_it != Hypothesis.end(); hyp_it++) {
 
@@ -287,17 +337,23 @@ void BipartiteGraph::getHypothesisMetrics() {
     if(num_edges == 0) {
       // no intersections with the groundtruth
       // all the pixels in this region are false positives
-      int falsepositive_pix = hyp_box_fg_pix;
-      double fallout = (double)hyp_box_fg_pix \
-          / (double)gt_negative_fg_pix;
+      vector<BOX*> bv;
+      BOX* b = boxCreate(0,0,0,0);
+      bv.push_back(b);
+      int falsepositive_pix = lu.countFalsePositives(hyp_box, \
+          bv, hypimg, color, dbg);
+      double fallout = (double)falsepositive_pix /\
+          (double)gt_negative_fg_pix;
       hyp_box_desc.fallout = fallout;
       hypmetrics.falsepositives++;
       hyp_box_desc.false_positive_pix = falsepositive_pix;
+      //cout << "false pos: " << falsepositive_pix << endl;
     }
     else if(num_edges >= 1) {
       // there is at least one region in the groundtruth
       // that intersects with this one. If there is more
-      // than one then we know the region is undersegmented.
+      //cout << hypmetrics.total_fallout * 1173355 << endl;
+      //exit(EXIT_FAILURE);    // than one then we know the region is undersegmented.
       // each overlapping groundtruth region is either a
       // correct segmentation or is only partially correct.
       // it may also have false positives and negatives as well.
@@ -474,10 +530,26 @@ void BipartiteGraph::getHypothesisMetrics() {
   // the total actual negatives are known from the groundtruth
   // metrics and the true negatives found in the hypothesis can
   // be either a subset of the actual negatives or their entirety
-  // if the accuracy was perfect
+  // if the specificity was perfect
   const int total_false_neg_pix = hypmetrics.total_false_negative_pix;
   const int hyp_true_negatives = total_hyp_negative -\
       total_false_neg_pix;
+  if(hyp_true_negatives != counted_truenegatives) {
+    cout << "ERROR: the total false negatives and true negatives " \
+         << "counted don't add up to the total negatives " \
+         << "(i.e. total_foreground - total_positive)!\n";
+    cout << "hyp_true_negatives: " << hyp_true_negatives << endl;
+    cout << "counted true negatives: " << counted_truenegatives << endl;
+    cout << "false negatives: " << total_false_neg_pix << endl;
+    cout << "false positives: " << hypmetrics.total_false_positive_pix << endl;\
+    cout << "total_fg - false negatives: " << total_hyp_negative << endl;
+    cout << "negatives in the groundtruth: " \
+         << gtmetrics.total_nonseg_fg_pixels << endl;
+    cout << "positives in the groundtruth: " \
+         << gtmetrics.total_seg_fg_pixels << endl;
+    pixDisplay(dbg, 100, 100);
+    exit(EXIT_FAILURE);
+  }
   hypmetrics.total_true_negative_fg_pix = hyp_true_negatives;
   const int gt_true_negatives = gtmetrics.total_nonseg_fg_pixels;
 
@@ -491,8 +563,6 @@ void BipartiteGraph::getHypothesisMetrics() {
 
   //assert(specificity == (1.-hypmetrics.total_fallout));
   double oneminusfpr = (double)1- (double)hypmetrics.total_fallout;
-  //cout << hypmetrics.total_fallout * 1173355 << endl;
-  //exit(EXIT_FAILURE);
   if(specificity != oneminusfpr) {
     if((gt_true_negatives - hypmetrics.total_false_positive_pix) \
         == hyp_true_negatives) {

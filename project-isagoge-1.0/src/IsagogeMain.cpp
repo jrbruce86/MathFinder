@@ -35,7 +35,8 @@ using namespace std;
 // Runs evaluation test on the given detector for the given dataset
 // which should be within the "topdir" specified (if detector is null
 // then uses Tesseract's default one. The testname is the name of
-// the test to be run on the dataset (this name should be indicative
+// the test to be run on the dataset and the name of directory
+// wherein the test results will be held (this name should be indicative
 // of which equation detector is being used)
 void evaluateDataSet(EquationDetectBase* detector, \
     string topdir, string dataset, string testname, \
@@ -83,7 +84,7 @@ void evaluateDataSet(EquationDetectBase* detector, \
 
   // run layout analysis on the images first (this includes
   // running the equation detection as well)
-  test.runTessLayout(testname);
+  //test.runTessLayout(testname);
 
 
   test.evalTessLayout(testname, true);

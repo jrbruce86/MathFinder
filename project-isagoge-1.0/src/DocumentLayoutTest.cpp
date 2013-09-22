@@ -230,7 +230,7 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
   vector<LayoutEval::Color> significantcolors;
   significantcolors.push_back(LayoutEval::RED);
   significantcolors.push_back(LayoutEval::GREEN);
-  colorFoundBlobs(mathresdir, inputdir, 6, \
+  colorFoundBlobs(mathresdir, inputdir, 5, \
       significantcolors, (string)".tif");
 
   layoutruns++;
