@@ -25,8 +25,8 @@
  * along with Project Isagoge.  If not, see <http://www.gnu.org/licenses/>.  
  ***************************************************************************/
 
-#include "allheaders.h"
-#include "DocumentLayoutTest.h"
+#include <allheaders.h>
+#include <DocumentLayoutTest.h>
 
 #include <iostream>
 #include <string>
@@ -47,7 +47,7 @@ void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
-  string dataset = "advcalc1_without_labels";
+  string dataset = "advcalc1_without_labels_img1";
 
   // Test Tesseract's default equation detector
   evaluateDataSet(NULL, topdir, dataset, "tessdefault");
@@ -71,23 +71,28 @@ void evaluateDataSet(EquationDetectBase* detector, \
   // create the file structure
   test.setFileStructure(topdir, dataset, extension);
   //test.colorGroundTruthBlobs();
-  test.activateNonScrollView();
+  //test.activateNonScrollView();
   //test.activateBoolParam("textord_tabfind_show_partitions");
   //test.activateBoolParam("textord_tabfind_show_blocks");
   //test.activateBoolParam("textord_debug_images");
   //test.activateAllParams();
+  test.activateBoolParam("textord_tabfind_show_initial_partitions");
+  test.activateBoolParam("textord_tabfind_show_columns");
   //test.activateIntParam("textord_tabfind_show_images");
   // deactivate dumping table images (requires input file to have
   // specific name "test1.tif")
-  test.deActivateBoolParam("textord_dump_table_images");
+  //test.deActivateBoolParam("textord_dump_table_images");
   //test.deActivateBoolParam("textord_debug_images");
 
   // run layout analysis on the images first (this includes
   // running the equation detection as well)
-  //test.runTessLayout(testname);
+  // WARNING: All output .png images (and maybe .tifs?)
+  // from tesseract get cut and pasted to the test
+  // set's output directory!!
+  test.runTessLayout(testname);
 
 
-  test.evalTessLayout(testname, true);
+//  test.evalTessLayout(testname, true);
 
   // TODO: Modify DocumentLayoutTester's destructor to avoid
   //       memory leaks!!!

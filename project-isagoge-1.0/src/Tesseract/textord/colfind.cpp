@@ -390,9 +390,19 @@ int ColumnFinder::FindBlocks(PageSegMode pageseg_mode,
     SetPartitionTypes();
   }
   if (textord_tabfind_show_initial_partitions) {
-    ScrollView* part_win = MakeWindow(100, 300, "InitialPartitions");
+    ScrollView* part_win = MakeWindow(100, 300, "InitialPartitions (right before equation and table detection)");
     part_grid_.DisplayBoxes(part_win);
     DisplayTabVectors(part_win);
+    char c = 'a';
+    char pc = 'b';
+    while(c != 'c') {
+      if(pc != c && c != '\n') {
+        printf("Press 'c' and then enter to continue! ");
+        printf("Put here so the debug window doesn't disappear too fast...\n");
+      }
+      pc = c;
+      scanf("%c", &c);
+    }
   }
 
   if (!PSM_SPARSE(pageseg_mode)) {
@@ -586,6 +596,16 @@ bool ColumnFinder::MakeColumns(bool single_column) {
     AssignColumns(part_sets);
     if (textord_tabfind_show_columns) {
       DisplayColumnBounds(&part_sets);
+      char c = 'a';
+      char pc = 'b';
+      while(c != 'c') {
+        if(pc != c && c != '\n') {
+          printf("Press 'c' and then enter to continue! ");
+          printf("Put here so the debug window doesn't disappear too fast...\n");
+        }
+        pc = c;
+        scanf("%c", &c);
+      }
     }
     ComputeMeanColumnGap();
     ColPartition_LIST parts;

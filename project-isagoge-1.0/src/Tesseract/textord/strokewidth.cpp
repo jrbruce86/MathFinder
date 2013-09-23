@@ -380,6 +380,7 @@ void StrokeWidth::GradeBlobsIntoPartitions(const FCOORD& rerotation,
     ScrollView* line_blobs_win = MakeWindow(0, 0, "Initial textline Blobs");
     projection_->PlotGradedBlobs(&block->blobs, line_blobs_win);
     projection_->PlotGradedBlobs(&block->small_blobs, line_blobs_win);
+    projection_->DisplayProjection();
   }
   projection_->MoveNonTextlineBlobs(&block->blobs, &block->noise_blobs);
   projection_->MoveNonTextlineBlobs(&block->small_blobs, &block->noise_blobs);

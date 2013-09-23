@@ -4,23 +4,27 @@
 AC_PREREQ([2.68])
 AC_INIT([Project Isagoge], [1.0], [jrbruce86@gmail.com])
 AM_INIT_AUTOMAKE
+LT_INIT #libtool
 
 # Make files and scripts
 AC_CONFIG_FILES([Makefile
                 src/Makefile
                 src/Tesseract/Makefile
-                src/Data_Generation_Tools/select_random/Makefile 
-                src/Data_Generation_Tools/select_training/Makefile
-                src/Data_Generation_Tools/Makefile],
-                [src/Data_Generation_Tools/removealpha],
-                [chmod +x src/Data_Generation_Tools/removealpha],
-                [src/Data_Generation_Tools/rename_pngs],
-                [chmod +x src/Data_Generation_Tools/rename_pngs],
-                [src/Data_Generation_Tools/convert_pdfpages],
-                [chmod +x src/Data_Generation_Tools/convert_pdfpages],
-                [chmod +x sr/Data_Generation_Tools/Equation_Labeler/qbuild])
+                src/Groundtruth_Generation/select_random/Makefile 
+                src/Groundtruth_Generation/select_training/Makefile
+                src/Groundtruth_Generation/Makefile
+                src/Utils/Makefile
+                src/Evaluation/Makefile
+                src/MEDS/Makefile],
+                [src/Groundtruth_Generation/removealpha],
+                [chmod +x src/Groundtruth_Generation/removealpha],
+                [src/Groundtruth_Generation/rename_pngs],
+                [chmod +x src/Groundtruth_Generation/rename_pngs],
+                [src/Groundtruth_Generation/convert_pdfpages],
+                [chmod +x src/Groundtruth_Generation/convert_pdfpages],
+                [chmod +x src/Groundtruth_Generation/Equation_Labeler/qbuild])
 
-AC_CONFIG_SRCDIR([src/EquationDetectorSVM.cpp])
+AC_CONFIG_SRCDIR([src/IsagogeMain.cpp])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.

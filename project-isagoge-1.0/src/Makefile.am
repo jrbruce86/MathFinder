@@ -1,8 +1,8 @@
 bin_PROGRAMS = isagoge
 
-SUBDIRS = Tesseract Data_Generation_Tools/select_random \
-Data_Generation_Tools/select_training \
-Data_Generation_Tools
+SUBDIRS = Tesseract Groundtruth_Generation/select_random \
+Groundtruth_Generation/select_training \
+Groundtruth_Generation Evaluation Utils MEDS
 
 isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/ccmain -ITesseract/ccstruct \
@@ -15,12 +15,12 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/po -ITesseract/tessdata \
 -ITesseract/testing -ITesseract/textord \
 -ITesseract/training -ITesseract/viewer \
--ITesseract/wordrec
+-ITesseract/wordrec -IEvaluation -IMEDS -IUtils
 
 isagoge_LDADD = /usr/local/lib/liblept.so \
-Tesseract/api/.libs/libtesseract.so
+Tesseract/api/libtesseract.la \
+Utils/libUtils.la \
+Evaluation/libevaluation.la \
+MEDS/libMEDS.la
 
-isagoge_SOURCES = DocumentLayoutTest.cpp DocumentLayoutTest.h \
-	EquationDetectorSVM.cpp EquationDetectorSVM.h IsagogeMain.cpp \
-	TesseractDocumentation.h Lept_Utils.h Lept_Utils.cpp Basic_Utils.h \
-  Basic_Utils.cpp BipartiteGraph.h BipartiteGraph.cpp
+isagoge_SOURCES = IsagogeMain.cpp

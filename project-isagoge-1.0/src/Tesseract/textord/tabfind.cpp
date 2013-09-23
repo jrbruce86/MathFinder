@@ -470,6 +470,16 @@ bool TabFind::FindTabVectors(TabVector_LIST* hlines,
       DisplayTabs("FinalTabs", tab_win);
     }
     tab_win = DisplayTabVectors(tab_win);
+    char c = 'a';
+    char pc = 'b';
+    while(c != 'c') {
+      if(pc != c && c != '\n') {
+        printf("Press 'c' and then enter to continue! ");
+        printf("Put here so the debug window doesn't disappear too fast...\n");
+      }
+      pc = c;
+      scanf("%c", &c);
+    }
   }
   #endif  // GRAPHICS_DISABLED
   return true;

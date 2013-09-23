@@ -68,6 +68,7 @@ void TextlineProjection::ConstructProjection(TO_BLOCK* input_block,
   pix_ = pixCreate(width, height, 8);
   ProjectBlobs(&input_block->blobs, rotation, image_box, nontext_map);
   ProjectBlobs(&input_block->large_blobs, rotation, image_box, nontext_map);
+
   Pix* final_pix = pixBlockconv(pix_, 1, 1);
 //  Pix* final_pix = pixBlockconv(pix_, 2, 2);
   pixDestroy(&pix_);
