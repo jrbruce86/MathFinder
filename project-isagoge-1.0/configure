@@ -785,7 +785,7 @@ CXXFLAGS
 CCC
 CXXCPP
 LIBLEPT_HEADERSDIR'
-ac_subdirs_all='src/Tesseract'
+ac_subdirs_all='src/Tesseract src/dlib-18.4'
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -11527,7 +11527,7 @@ CC="$lt_save_CC"
  #libtool
 
 # Make files and scripts
-ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/MEDS/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile"
 
 
 
@@ -15990,7 +15990,7 @@ $as_echo_n "checking for leptonica... " >&6; }
 
 
 
-subdirs="$subdirs src/Tesseract"
+subdirs="$subdirs src/Tesseract src/dlib-18.4"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -17111,6 +17111,7 @@ do
     "src/Groundtruth_Generation/Makefile") CONFIG_FILES="$CONFIG_FILES src/Groundtruth_Generation/Makefile" ;;
     "src/Utils/Makefile") CONFIG_FILES="$CONFIG_FILES src/Utils/Makefile" ;;
     "src/Evaluation/Makefile") CONFIG_FILES="$CONFIG_FILES src/Evaluation/Makefile" ;;
+    "src/dlib-18.4/Makefile") CONFIG_FILES="$CONFIG_FILES src/dlib-18.4/Makefile" ;;
     "src/MEDS/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Makefile" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
 
@@ -18606,6 +18607,7 @@ _LT_EOF
     "src/Groundtruth_Generation/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Utils/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Evaluation/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/dlib-18.4/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/MEDS/Makefile":F) src/Groundtruth_Generation/removealpha ;;
 
   esac

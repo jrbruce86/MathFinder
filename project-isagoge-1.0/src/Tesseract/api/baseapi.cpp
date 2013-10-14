@@ -707,8 +707,10 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
     return -1;
   if (FindLines() != 0)
     return -1;
-  if (page_res_ != NULL)
+  if (page_res_ != NULL) {
     delete page_res_;
+    page_res_ = NULL;
+  }
   if (block_list_->empty()) {
     page_res_ = new PAGE_RES(block_list_, &tesseract_->prev_word_best_choice_);
     return 0; // Empty page.
@@ -1457,6 +1459,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char* wordstr) {
     if (text[t] != '\0' || wordstr[w] != '\0') {
       // No match.
       delete page_res_;
+      page_res_ = NULL;
       GenericVector<TBOX> boxes;
       page_res_ = tesseract_->SetupApplyBoxes(boxes, block_list_);
       tesseract_->ReSegmentByClassification(page_res_);
@@ -1687,7 +1690,6 @@ int TessBaseAPI::FindLines() {
   }
 
   tesseract_->PrepareForPageseg();
-
   if (tesseract_->textord_equation_detect) {
     if (equ_detect_ == NULL && datapath_ != NULL) {
       // use default
@@ -2236,6 +2238,10 @@ CubeRecoContext *TessBaseAPI::GetCubeRecoContext() const {
 
 void TessBaseAPI::setEquationDetector(EquationDetectBase* equ_detect) {
   equ_detect_ = equ_detect;
+}
+
+const PAGE_RES* TessBaseAPI::extGetPageResults() {
+  return page_res_;
 }
 
 }  // namespace tesseract.

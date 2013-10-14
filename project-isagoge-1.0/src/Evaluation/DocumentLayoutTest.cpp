@@ -49,6 +49,9 @@ DocumentLayoutTester::DocumentLayoutTester(EquationDetectBase* equ_detect) \
   api.GetIntVariable(page_seg_mode.c_str(), &psm);
   assert(psm == PSM_AUTO);
 
+  // Go ahead and activate equation detection
+  activateBoolParam("textord_equation_detect");
+
   // Set the equation detector
   if(new_equ_detector)
     api.setEquationDetector(new_equ_detector);
@@ -605,8 +608,8 @@ void DocumentLayoutTester::writeBoxesToFile(FILE* file, BOXA* boxes, \
 // find all the colored bounding boxes in the current image
 // and add them to the current image's appropriate box array corresponding
 // to the color (red is displayed, blue is inline, and green is label)
-inline BOXA* DocumentLayoutTester::getAllColoredBoundingBoxes(const Pix* \
-    const &img, LayoutEval::Color color) {
+inline BOXA* DocumentLayoutTester::getAllColoredBoundingBoxes(const Pix* const &img,
+    LayoutEval::Color color) {
   // first initialize a redblack tree for quick access into which pixels
   // have been marked and unmarked for the current groundtruth image
   l_uint32 pixheight, pixwidth;
@@ -1171,67 +1174,65 @@ void DocumentLayoutTester::setTesseractParams() {
   // WARNING: THESE ARE HARDCODED.. DON'T MODIFY!!!!!!!!!!!!
   ////////////Settings paramaters////////////
   // This just lists all of the possible settings. They are set or unset later.
-  boolparams.reserve(20);
-  boolparams.push_back("textord_equation_detect"); // turns on the equation detection
+  //boolparams.reserve(20);
 
   ////////////textordering debug boolparams ////////////
   // Should display a window showing the intial tabs detected in FindInitialTabVectors
-  boolparams.push_back("textord_tabfind_show_initialtabs");
+  boolparams.push_back((string)"textord_tabfind_show_initialtabs");
   // Enables their table detection!! Class for this is TableFinder in textord/tablefind.h.
-  boolparams.push_back("textord_tabfind_find_tables");
+  boolparams.push_back((string)"textord_tabfind_find_tables");
   // In order to see a window display of the tables detected!
   // This is run after the equation detection if enabled.
-  boolparams.push_back("textord_show_tables");
+  boolparams.push_back((string)"textord_show_tables");
   // Displays blobs rejected as noise prior to equation or tabledetection
-  boolparams.push_back("textord_tabfind_show_reject_blobs");
+  boolparams.push_back((string)"textord_tabfind_show_reject_blobs");
   // This will show the partitions prior to the equation and tabledetection
-  boolparams.push_back("textord_tabfind_show_initial_partitions");
+  boolparams.push_back((string)"textord_tabfind_show_initial_partitions");
   // This will show the partitions after equation and table detection
-  boolparams.push_back("textord_tabfind_show_partitions");
+  boolparams.push_back((string)"textord_tabfind_show_partitions");
   // Use greyed background for debug images
-  boolparams.push_back("textord_debug_images");
+  boolparams.push_back((string)"textord_debug_images");
   // Print tabfind related debug messages
-  boolparams.push_back("textord_debug_tabfind");
+  boolparams.push_back((string)"textord_debug_tabfind");
   // Displays blob and block bounding boxes in a window called “Blocks”.
   // This is after equation and table detection. Also occurs during  setupandfilternoise,
   // which occurs before findblocks is called in order to filter out noise.
-  boolparams.push_back("textord_tabfind_show_blocks");
+  boolparams.push_back((string)"textord_tabfind_show_blocks");
   // Display unsorted blobs during call to filterblobs made within textordpage which is
   // called after autosegmentation is carried out.
   // Displays all the blobs color-coded at ones.
-  boolparams.push_back("textord_show_blobs");
+  boolparams.push_back((string)"textord_show_blobs");
   // Displays “boxes” this displays each type of blob
   // (small, noise, big, medium size) one at a time.
-  boolparams.push_back("textord_show_boxes");
+  boolparams.push_back((string)"textord_show_boxes");
   // Displays the results of ColumnFinder
-  boolparams.push_back("textord_tabfind_show_columns");
+  boolparams.push_back((string)"textord_tabfind_show_columns");
 
   ////////////tessedit debug boolparams////////////////////
   // dump intermediate images during page segmentation
-  boolparams.push_back("tessedit_dump_pageseg_images");
+  boolparams.push_back((string)"tessedit_dump_pageseg_images");
 
   ///////////equationdetect debug boolparams////////////////////
   // display the BSTT's
-  boolparams.push_back("equationdetect_save_spt_image");
+  boolparams.push_back((string)"equationdetect_save_spt_image");
   // save the results of pass 2 (identifyseedparts)
-  boolparams.push_back("equationdetect_save_seed_image");
+  boolparams.push_back((string)"equationdetect_save_seed_image");
   //  save the final math detection results
-  boolparams.push_back("equationdetect_save_merged_image");
+  boolparams.push_back((string)"equationdetect_save_merged_image");
 
   // print table detection output (requires input file to be named "test1.tif")
-  boolparams.push_back("textord_dump_table_images");
+  boolparams.push_back((string)"textord_dump_table_images");
 
   // Change from default page segmentation mode (single block)
   // to the more advanced auto-segmentation, which includes
   // the experimental equation detection module: 3 = PSM_AUTO
-  page_seg_mode = "tessedit_pageseg_mode";
+  page_seg_mode = (string)"tessedit_pageseg_mode";
 
   // int params
-  intparams.reserve(3);
-  intparams.push_back("textord_tabfind_show_strokewidths");
-  intparams.push_back("textord_debug_tabfind");
+  intparams.push_back((string)"textord_tabfind_show_strokewidths");
+  intparams.push_back((string)"textord_debug_tabfind");
   // Should display images detected as distinct from text by FindImagePartitions
-  intparams.push_back("textord_tabfind_show_images");
+  intparams.push_back((string)"textord_tabfind_show_images");
   /*********************End of Massive Parameter List!*********************************/
 }
 

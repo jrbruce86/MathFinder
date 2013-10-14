@@ -81,7 +81,7 @@ host_triplet = @host@
 bin_PROGRAMS = isagoge$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/depcomp
+	$(top_srcdir)/depcomp README
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -94,9 +94,10 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_isagoge_OBJECTS = isagoge-IsagogeMain.$(OBJEXT)
 isagoge_OBJECTS = $(am_isagoge_OBJECTS)
-isagoge_DEPENDENCIES = /usr/local/lib/liblept.so \
+isagoge_DEPENDENCIES = /usr/local/lib/liblept.so MEDS/libMEDS.la \
+	/usr/lib64/libX11.so /usr/lib64/libX11-xcb.so \
 	Tesseract/api/libtesseract.la Utils/libUtils.la \
-	Evaluation/libevaluation.la MEDS/libMEDS.la
+	Evaluation/libevaluation.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -327,7 +328,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = Tesseract Groundtruth_Generation/select_random \
 Groundtruth_Generation/select_training \
-Groundtruth_Generation Evaluation Utils MEDS
+Groundtruth_Generation Evaluation Utils dlib-18.4 MEDS
 
 isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/ccmain -ITesseract/ccstruct \
@@ -340,13 +341,15 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/po -ITesseract/tessdata \
 -ITesseract/testing -ITesseract/textord \
 -ITesseract/training -ITesseract/viewer \
--ITesseract/wordrec -IEvaluation -IMEDS -IUtils
+-ITesseract/wordrec -ITesseract/ -IEvaluation/ \
+-IMEDS/ -IUtils/ -Idlib-18.4
 
 isagoge_LDADD = /usr/local/lib/liblept.so \
+MEDS/libMEDS.la /usr/lib64/libX11.so \
+/usr/lib64/libX11-xcb.so \
 Tesseract/api/libtesseract.la \
 Utils/libUtils.la \
-Evaluation/libevaluation.la \
-MEDS/libMEDS.la
+Evaluation/libevaluation.la
 
 isagoge_SOURCES = IsagogeMain.cpp
 all: all-recursive

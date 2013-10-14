@@ -47,16 +47,16 @@ void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
-  string dataset = "advcalc1_without_labels_img1";
+  string dataset = "dot_cross_test";
 
   // Test Tesseract's default equation detector
-  evaluateDataSet(NULL, topdir, dataset, "tessdefault");
+ // evaluateDataSet(NULL, topdir, dataset, "tessdefault");
 
-  /*
+
   // Test my equation detector
-  EquationDetectBase* mydetector = new EquationDetectorSVM();
+  EquationDetectBase* mydetector = new MEDS();
   evaluateDataSet(mydetector, topdir, dataset, "my_detector");
-  */
+
 
   // TODO: Compare the results!
 
@@ -76,8 +76,8 @@ void evaluateDataSet(EquationDetectBase* detector, \
   //test.activateBoolParam("textord_tabfind_show_blocks");
   //test.activateBoolParam("textord_debug_images");
   //test.activateAllParams();
-  test.activateBoolParam("textord_tabfind_show_initial_partitions");
-  test.activateBoolParam("textord_tabfind_show_columns");
+  //test.activateBoolParam("textord_tabfind_show_initial_partitions");
+  //test.activateBoolParam("textord_tabfind_show_columns");
   //test.activateIntParam("textord_tabfind_show_images");
   // deactivate dumping table images (requires input file to have
   // specific name "test1.tif")

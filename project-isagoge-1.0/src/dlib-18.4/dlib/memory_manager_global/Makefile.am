@@ -1,0 +1,3 @@
+lib_LTLIBRARIES = libmemory_manager_global.la
+libmemory_manager_global_la_SOURCES = memory_manager_global_kernel_1.h \
+memory_manager_global_kernel_abstract.h

@@ -15,6 +15,7 @@ AC_CONFIG_FILES([Makefile
                 src/Groundtruth_Generation/Makefile
                 src/Utils/Makefile
                 src/Evaluation/Makefile
+                src/dlib-18.4/Makefile
                 src/MEDS/Makefile],
                 [src/Groundtruth_Generation/removealpha],
                 [chmod +x src/Groundtruth_Generation/removealpha],
@@ -66,5 +67,5 @@ AC_CHECK_FUNCS([floor])
 AC_MSG_CHECKING(for leptonica)
 AC_ARG_VAR(LIBLEPT_HEADERSDIR,[Leptonica headers directory])
 
-AC_CONFIG_SUBDIRS([src/Tesseract])
+AC_CONFIG_SUBDIRS([src/Tesseract src/dlib-18.4])
 AC_OUTPUT

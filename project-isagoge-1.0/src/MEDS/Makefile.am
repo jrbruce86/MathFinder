@@ -1,9 +1,10 @@
 lib_LTLIBRARIES = libMEDS.la
 libMEDS_la_SOURCES = MEDS.h \
-MEDS.cpp
+MEDS.cpp BlobInfoGrid.h BlobInfoGrid.cpp \
+M_Utils.h M_Utils.cpp
 libMEDS_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la \
-../Utils/libUtils.la
+../Utils/libUtils.la ../dlib-18.4/dlib/libdlib.la
 libMEDS_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/ccmain -I../Tesseract/ccstruct \
 -I../Tesseract/ccutil -I../Tesseract/classify \
@@ -15,4 +16,5 @@ libMEDS_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/po -I../Tesseract/tessdata \
 -I../Tesseract/testing -I../Tesseract/textord \
 -I../Tesseract/training -I../Tesseract/viewer \
--I../Tesseract/wordrec -I../LibUtils
+-I../Tesseract/wordrec -I../Tesseract -I../LibUtils \
+-I../dlib-18.4

@@ -391,7 +391,8 @@ libevaluation_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/po -I../Tesseract/tessdata \
 -I../Tesseract/testing -I../Tesseract/textord \
 -I../Tesseract/training -I../Tesseract/viewer \
--I../Tesseract/wordrec -I../Utils -I../MEDS
+-I../Tesseract/wordrec -I../Utils -I../MEDS \
+-I../Tesseract/
 
 all: all-recursive
 

@@ -1,6 +1,6 @@
 /**************************************************************************
  * Project Isagoge: Enhancing the OCR Quality of Printed Scientific Documents
- * File name:		EquationDetectorSVM.cpp
+ * File name:		MEDS.cpp
  * Written by:	Jake Bruce, Copyright (C) 2013
  * History: 		Created Feb 28, 2013 9:11:16 PM
  * Description: TODO
@@ -22,22 +22,131 @@
  ***************************************************************************/
 
 #include "MEDS.h"
+#include "tesseractclass.h"
+#include "bbgrid.h"
 
-MEDS::MEDS() {
+namespace tesseract {
 
-}
+MEDS::MEDS() : tess(NULL), blobinfogrid(NULL), img(NULL) {}
 
 int MEDS::FindEquationParts(ColPartitionGrid* part_grid,
     ColPartitionSet** best_columns) {
 
+  // I'll extract features from my own custom grid which holds both
+  // information that can be gleaned from language recognition as
+  // well as everything which couldn't (will hold all of the blobs
+  // and if they were recognized then holds the word and sentence
+  // it belongs to as well)
+  blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
+      part_grid->tright());
+  blobinfogrid->setColPart(part_grid, best_columns);
+  blobinfogrid->setTessAndPix(tess);
 
-  cout << "TEST: in my implementation of FindEquationParts!!!!\n";
-  // measure distance from center of character to center of other character
+  // First I'll move (shallow copy) all the blobs in the partition grid
+  // over to a grid where each element is just the blob rather than
+  // the partition. Once I have the recognition results for each
+  // partition I'll be carrying out analysis on the individual blobs
+  // throughout the entire image independently of how the partitions
+  // have been segmented by Tesseract's layout analysis framework in
+  // previous steps.
+  blobinfogrid->partGridToBBGrid();
+
+
+  // I need more information than could be gleaned from just looking at
+  // the individual blobs alone and their recognition results. Using
+  // Tesseract's API it is possible to achieve high accuracy on normal
+  // text regions. I can use sentences extracted from Tesseract's output
+  // in order to assign each sentence an N-Gram feature. Thus each blob
+  // which is considered part of such a sentence will be assigned a
+  // probability of being part of a sentence which contains embedded
+  // mathematical expressions.. Further, by simply running the OCR engine
+  // on each individual blob various characters are missed altogether.
+  // For instance the "=" sign is seen as two horizontal bars, the
+  // horizontal bars are often misrecognized as "j". Likewise periods
+  // and commas are often misrecognized. Characters like "l", "I", and "i"
+  // are mistaken for "1"'s. The dot on top of the i is not, at this stage,
+  // known to be part of the "i". By taking advantage of information gleaned
+  // from Tesseract's word recognition these issues can be avoided
+  // altogether for regions which have relatively normal layout structure.
+
+  // Now I use a Tesseract API assigned to the language being used in
+  // order to recognize all the text in each ColPartition (colpartitions
+  // gives the page's current segmentatmion from all processing carried out
+  // by Tesseract's layout analysis framework up to this point). As I
+  // recognize whatever is in these partitions I move all the information
+  // that can be gleaned from the recognition into my grid so features may
+  // be extracted from these results later.
+  blobinfogrid->recognizeColParts();
+
+  // Next step is to iterate through the BlobGrid, inserting all the BLOBNBOXEs
+  // into their appropriate BLOBINFO object and/or creating a new BLOBINFO object
+  // for blobs which may not have been recognized at all.
+  blobinfogrid->insertRemainingBlobs();
+
+
+
+
+  exit(EXIT_FAILURE);
+
+  // Once the blobinfo grid has been established, it becomes possible to then run
+  // each individual blobinfo element through feature detection and classification.
+  // After the feature detection/classification step, merging will be carried out
+  // in order to ensure proper segmentation.
+
+  // ^^^ For creating the math segmentations I will be using my own custom data structure
+  //     called the MathSegment, so I'll have a list of these, then I'll convert those into
+  //     ColPartitions later. The MathSegment structure is designed to facilitate merging of
+  //     detected mathematical blobs into proper segments for subsequent mathematical
+  //     recognition. Each MathSegment initially consists of one BLOBINFO object, the
+  //     segments are then iteratively merged with their nearest neighbors on the blobinfogrid
+  //     based on some heuristics. This procedure is carried out for each MathSegment.
 
 
 
 
 
+
+
+
+  // Once the final results have been obtained, the issue becomes that of converting
+  // all of my custom data structures back into structures that will be useful for
+  // Tesseract. This will involve simply taking the initial ColPartsGrid and x
+
+  // going to want to call setowner on the blobnbox to change the owner to the new
+   //  colpartition... set_owner.... the inline expressions need to be placed in their
+   // own separate ColPartition which will have the polyblocktype of INLINE_EXPRESSION
+   // and removed from the ColPartition to which it was previously assumed to belong.
+
+  // The InsertPartAfterAbsorb() method from Joe Liu's work is what I
+  // will use as a starting point for this purpose.. The first step will be to convert
+  // the MathSegmentation list entries into new ColPartitions. This will involve
+  // moving all of the BLOBNBOXES inside the mathsegment to the associated ColPartition
+  // the ClaimBoxes() method should be useful here, you need to remember to make the
+  // original partition disown the boxes first by using DisownBoxes() otherwise an
+  // exception will be raised. There may also be a lot of settings for the
+  // ColPartition to which the box originally belonged that should be kept the same
+  // in the new ColPartition.. This I'll play by ear
+  // then I should be able to insert these
+  // partitions back into the grid using Joe Liu's technique or something similar.
+
+
+
+
+
+/*
+  BLOBNBOX* bb = bbgridsearch.NextFullSearch();
+  BOX* bbbox = getBlobBoxImCoords(bb);
+  cout << "original blob coords in image space:\n";
+  dispBoxCoords(bbbox);
+  dispRegion(bbbox);
+  TBOX cbox = bb->cblob()->bounding_box();
+  cout << "original blob coords in cblob grid space:\n";
+  cout << "(l,t,r,b): (" << cbox.left() << ", " << cbox.top() \
+       << ", " << cbox.right() << ", " << cbox.bottom() << ")\n";
+*/
+
+
+  //waitForInput();
 
   // need to come up with better ideas. look at text. study it for patterns. what are recognizable features??
 
@@ -67,26 +176,7 @@ int MEDS::FindEquationParts(ColPartitionGrid* part_grid,
       // for each blob not disregarded increment a count
 
 
-    // 2.
-
-
-
-
-
-
-
-
-
-
-  // precompute some thresholds
- // PreComputeThresholds();
-
-
-  // run through each blob to determine its features
-
-  // run classifier
-
-  // display result for debugging and evaluation
+    // 2
 
   return 0;
 }
@@ -113,13 +203,12 @@ int MEDS::LabelSpecialText(TO_BLOCK* to_block) {
 
 // this gets called when the equation detector is being set
 void MEDS::SetLangTesseract(Tesseract* lang_tesseract) {
-  lang_tesseract_ = lang_tesseract;
+  tess = lang_tesseract;
 }
 
 
 
-
-
+} // end namespace tesseract
 
 
 

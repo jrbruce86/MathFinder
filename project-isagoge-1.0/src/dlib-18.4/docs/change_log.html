@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="shortcut icon" href="dlib-icon.ico"><meta name="verify-v1" content="02MiiaFNVzS5/u0eQhsy3/knioFHsia1X3DXRpHkE6I="><meta name="google-site-verification" content="DGSSJMKDomaDaDTIRJ8jDkv0YMx9Cz7OESbXHjjr6Jw"><title>dlib C++ Library
+   - Change Log</title><script language="JavaScript">
+
+// ---------------------------------------------
+// --- Name:    Easy DHTML Treeview           --
+// --- Author:  D.D. de Kerf                  --
+// --- Version: 0.2          Date: 13-6-2001  --
+// ---------------------------------------------
+function Toggle(node)
+{
+   // Unfold the branch if it isn't visible
+   var next_node = node.nextSibling;
+   if (next_node.style.display == 'none')
+   {
+      // Change the image (if there is an image)
+      if (node.childNodes.length > 0)
+      {
+         if (node.childNodes.length > 0)
+         { 
+            if (node.childNodes.item(0).nodeName == "IMG")
+            {
+               node.childNodes.item(0).src = "minus.gif";
+            }
+         }
+      }
+
+      next_node.style.display = 'block';
+   }
+   // Collapse the branch if it IS visible
+   else
+   {
+      // Change the image (if there is an image)
+      if (node.childNodes.length > 0)
+      {
+         if (node.childNodes.length > 0)
+         { 
+            if (node.childNodes.item(0).nodeName == "IMG")
+            {
+               node.childNodes.item(0).src = "plus.gif";
+            }
+         }
+      }
+
+      next_node.style.display = 'none';
+   }
+
+}
+function BigToggle(node)
+{
+   // Unfold the branch if it isn't visible
+   var next_node = node.nextSibling;
+   if (next_node.style.display == 'none')
+   {
+      // Change the image (if there is an image)
+      if (node.childNodes.length > 0)
+      {
+         if (node.childNodes.length > 0)
+         { 
+            if (node.childNodes.item(0).nodeName == "IMG")
+            {
+               node.childNodes.item(0).src = "bigminus.gif";
+            }
+         }
+      }
+
+      next_node.style.display = 'block';
+   }
+   // Collapse the branch if it IS visible
+   else
+   {
+      // Change the image (if there is an image)
+      if (node.childNodes.length > 0)
+      {
+         if (node.childNodes.length > 0)
+         { 
+            if (node.childNodes.item(0).nodeName == "IMG")
+            {
+               node.childNodes.item(0).src = "bigplus.gif";
+            }
+         }
+      }
+
+      next_node.style.display = 'none';
+   }
+
+}
+</script><style type="text/css">
+   body {margin:0px;}
+   pre {margin:0px;}
+
+   ul.tree  li { list-style: none;  margin-left:10px;} 
+   ul.tree  { margin:0px; padding:0px; margin-left:5px; font-size:0.95em; }
+   ul.tree  li ul { margin-left:10px; padding:0px; }
+
+   li#term { list-style: none; }
+
+   div#component {
+      background-color:white; 
+      border: 2px solid rgb(102,102,102); 
+      text-align:left;
+      margin-top: 1.5em;
+      padding: 0.7em;
+   }
+
+   div#question {
+      background-color:white; 
+      border: 2px solid rgb(102,102,102); 
+      text-align:left;
+      margin-top: 1.5em;
+      margin-bottom: 90%;
+      padding: 0.7em;
+   }
+
+   div#function {
+      background-color:white; 
+      border: 2px solid rgb(102,102,255); 
+      text-align:left;
+      margin-top: 0.3em;
+      padding: 0.3em;
+   }
+
+   div#class {
+      background-color:white; 
+      border: 2px solid rgb(255,102,102); 
+      text-align:left;
+      margin-top: 0.3em;
+      padding: 0.3em;
+   }
+
+   div#extension {
+      background-color:#FDFDFD; 
+      border: 1px solid rgb(102,102,102); 
+      text-align:left;
+      margin-top: 1.0em;
+      padding: 0.7em;
+   }
+
+   div#logb {
+      text-align:left;
+      padding: 0.0em;
+      float: left;
+      background-color:#c0c0c0; 
+      border: double ; 
+      margin: 0.5em;
+   }
+
+   div#name {
+      float: left;
+   }
+   div#line1 {
+      float:left;
+      width:100%;
+      background-color:#dfdfdf; 
+   }
+   div#line2 {
+      float:left;
+      width:100%;
+   }
+   div#inc {
+      float: right;
+   }
+
+
+   .code_box
+   {
+      color: black;
+      margin: 1em 0.25in;
+      padding: 0.5em;
+      background: rgb(240,240,240);
+      border-top: black dotted 1px;
+      border-left: black dotted 1px;
+      border-right: black solid 2px;
+      border-bottom: black solid 2px;
+   }
+
+
+
+   .bdotted {border-bottom: 1px dotted}
+   .bdashed {border-bottom: 1px dashed}
+   .bsolid {border-bottom: 1px solid}
+   .bdouble {border-bottom: 1px double}
+   .bgroove {border-bottom: 1px groove}
+   .bridge {border-bottom: 1px ridge}
+   .binset {border-bottom: 1px inset}
+   .boutset {border-bottom: 1px outset}
+
+   div#row1 {
+      background-color:#dfdfdf; 
+   }
+   div#row2 {
+      background-color:#f2f2f2; 
+   }
+
+   div#typedefs {
+      margin-left: 1.5em;
+      margin-top: 0.2em;
+      border: 1px dotted;
+      width: 52em;
+   }
+
+   div#tdn {
+      width: 10em;
+   }
+
+   .fullhr {
+      clear: both;
+   }
+
+   body {
+      text-align: center;
+   }
+
+   div#entire_page {
+      width:62.5em;  
+      text-align: left;
+      margin-top: 0.4em;
+      margin-left: auto;
+      margin-right: auto;
+   }
+</style></head><body bgcolor="#EDF3EE"><a name="top"></a><div id="entire_page"><a href="http://dlib.net"><img src="dlib-logo.png"></a><table bgcolor="white" height="100%" bordercolor="#EDF3EE" CELLSPACING="0" CELLPADDING="10" style="border:0px;margin-top:2px"><tr height="100%"><td BGCOLOR="#F5F5F5" style="padding:7px; border: 1px solid rgb(102,102,102);" VALIGN="TOP" height="100%"><br><table WIDTH="145" height="100%"><tr><td VALIGN="TOP"><b>The Library</b><ul class="tree"><li><a href="algorithms.html">Algorithms</a></li><li><a href="api.html">API Wrappers</a></li><li><a href="bayes.html">Bayesian Nets</a></li><li><a href="compression.html">Compression</a></li><li><a href="containers.html">Containers</a></li><li><a href="graph_tools.html">Graph Tools</a></li><li><a href="imaging.html">Image Processing</a></li><li><a href="linear_algebra.html">Linear Algebra</a></li><li><a href="ml.html">Machine Learning</a></li><li><a href="metaprogramming.html">Metaprogramming</a></li><li><a href="other.html">Miscellaneous</a></li><li><a href="network.html">Networking</a></li><li><a href="optimization.html">Optimization</a></li><li><a href="parsing.html">Parsing</a></li></ul><br><b>Help/Info</b><ul class="tree"><li><a onclick="Toggle(this)" style="cursor: pointer;margin-left:-9px"><img src="plus.gif"><font color="green"><u>Examples: C++</u></font></a><ul style="display:none;"><li><a href="assignment_learning_ex.cpp.html">Assignment_Learning</a></li><li><a href="file_to_code_ex.cpp.html">Base64_Encoder</a></li><li><a href="bayes_net_ex.cpp.html">Bayesian_Network</a></li><li><a href="bayes_net_from_disk_ex.cpp.html">Bayesian_Network_From_Disk</a></li><li><a href="bayes_net_gui_ex.cpp.html">Bayesian_Network_GUI</a></li><li><a href="bridge_ex.cpp.html">Bridge</a></li><li><a href="bsp_ex.cpp.html">BSP</a></li><li><a href="compress_stream_ex.cpp.html#_top">Cmd_Line_Parser</a></li><li><a href="compress_stream_ex.cpp.html">Compress_Stream</a></li><li><a href="config_reader_ex.cpp.html">Config_File_Reader</a></li><li><a href="custom_trainer_ex.cpp.html">Custom_Trainers</a></li><li><a href="dir_nav_ex.cpp.html">Directory_Navigation</a></li><li><a href="empirical_kernel_map_ex.cpp.html">Empirical_Kernel_Map</a></li><li><a href="graph_labeling_ex.cpp.html">Graph_Labeling</a></li><li><a href="gui_api_ex.cpp.html">GUI</a></li><li><a href="server_http_ex.cpp.html">HTTP_Server</a></li><li><a href="image_ex.cpp.html">Image</a></li><li><a href="iosockstream_ex.cpp.html">IO Socket Streams</a></li><li><a href="server_iostream_ex.cpp.html">IO Streams Server</a></li><li><a href="kcentroid_ex.cpp.html">Kernel_Centroid</a></li><li><a href="kkmeans_ex.cpp.html">Kernel_K-Means_Clustering</a></li><li><a href="krr_regression_ex.cpp.html">Kernel_Ridge_Regression</a></li><li><a href="krls_filter_ex.cpp.html">Kernel_RLS_Filtering</a></li><li><a href="krls_ex.cpp.html">Kernel_RLS_Regression</a></li><li><a href="krr_classification_ex.cpp.html">KRR_Classification</a></li><li><a href="linear_manifold_regularizer_ex.cpp.html">Linear_Manifold_Regularizer</a></li><li><a href="logger_ex.cpp.html">Logger</a></li><li><a href="logger_ex_2.cpp.html">Logger_Advanced</a></li><li><a href="matrix_ex.cpp.html">Matrix</a></li><li><a href="matrix_expressions_ex.cpp.html">Matrix_Expressions</a></li><li><a href="member_function_pointer_ex.cpp.html">Member_Function_Pointer</a></li><li><a href="model_selection_ex.cpp.html">Model_Selection</a></li><li><a href="multiclass_classification_ex.cpp.html">Multiclass_Classification</a></li><li><a href="multithreaded_object_ex.cpp.html">Multithreaded_Object</a></li><li><a href="mlp_ex.cpp.html">Neural_Network</a></li><li><a href="least_squares_ex.cpp.html">Non-Linear Least Squares</a></li><li><a href="integrate_function_adapt_simp_ex.cpp.html">Numerical_Integration</a></li><li><a href="object_detector_ex.cpp.html">Object_Detector</a></li><li><a href="object_detector_advanced_ex.cpp.html">Object_Detector_Advanced</a></li><li><a href="one_class_classifiers_ex.cpp.html">One_Class_Classifiers</a></li><li><a href="svm_pegasos_ex.cpp.html">Online_SVM</a></li><li><a href="optimization_ex.cpp.html">Optimization</a></li><li><a href="parallel_for_ex.cpp.html">Parallel_For_Loops</a></li><li><a href="pipe_ex.cpp.html">Pipe</a></li><li><a href="pipe_ex_2.cpp.html">Pipe_2</a></li><li><a href="quantum_computing_ex.cpp.html">Quantum_Computing</a></li><li><a href="queue_ex.cpp.html">Queue</a></li><li><a href="rank_features_ex.cpp.html">Rank_Features</a></li><li><a href="rvm_ex.cpp.html">Relevance_Vector_Classification</a></li><li><a href="rvm_regression_ex.cpp.html">Relevance_Vector_Regression</a></li><li><a href="running_stats_ex.cpp.html">Running_Stats</a></li><li><a href="sequence_labeler_ex.cpp.html">Sequence_Labeling</a></li><li><a href="sequence_segmenter_ex.cpp.html">Sequence_Segmentation</a></li><li><a href="sockets_ex.cpp.html">Sockets</a></li><li><a href="sockstreambuf_ex.cpp.html">Sockstreambuf</a></li><li><a href="svm_sparse_ex.cpp.html">Sparse_Vectors</a></li><li><a href="std_allocator_ex.cpp.html">Std_C++_Allocator</a></li><li><a href="svm_struct_ex.cpp.html">Structural_Support_Vector_Machines</a></li><li><a href="svm_ex.cpp.html">Support_Vector_Machine</a></li><li><a href="svr_ex.cpp.html">Support_Vector_Regression</a></li><li><a href="surf_ex.cpp.html">SURF</a></li><li><a href="svm_rank_ex.cpp.html">SVM-Rank</a></li><li><a href="threaded_object_ex.cpp.html">Threaded_Object</a></li><li><a href="threads_ex.cpp.html">Threads</a></li><li><a href="thread_function_ex.cpp.html">Thread_Function</a></li><li><a href="thread_pool_ex.cpp.html">Thread_Pool</a></li><li><a href="timer_ex.cpp.html">Timer</a></li><li><a href="train_object_detector.cpp.html">Train_Object_Detector</a></li><li><a href="using_custom_kernels_ex.cpp.html">Using_Custom_Kernels</a></li><li><a href="xml_parser_ex.cpp.html">XML_Parser</a></li></ul></li><li><a onclick="Toggle(this)" style="cursor: pointer;margin-left:-9px"><img src="plus.gif"><font color="green"><u>Examples: Python</u></font></a><ul style="display:none;"><li><a href="max_cost_assignment.py.html">Linear_Assignment_Problems</a></li><li><a href="sequence_segmenter.py.html">Sequence_Segmenter</a></li><li><a href="svm_struct.py.html">Structural_Support_Vector_Machines</a></li><li><a href="svm_rank.py.html">SVM-Rank</a></li></ul></li><li><a href="faq.html">FAQ</a></li><li><a href="index.html">Home</a></li><li><a href="compile.html">How to compile</a></li><li><a href="howto_contribute.html">How to contribute</a></li><li><a href="term_index.html">Index</a></li><li><a href="intro.html">Introduction</a></li><li><a href="license.html">License</a></li><li><a href="python/index.html">Python API</a></li><li><a href="books.html">Suggested Books</a></li></ul><br><b>Current Release</b><ul class="tree"><li><a href="change_log.html">Change Log</a></li><li><a href="release_notes.html">Release Notes</a></li><li>Version: 18.4</li></ul><br></td><td width="1"></td></tr><tr><td valign="bottom"><br><br><br><br><br><br><br><br><br>
+      Last Modified:<br>Aug 28, 2013<br><br></td></tr></table></td><td VALIGN="TOP" width="100%" style="border: 1px solid rgb(102,102,102);"><center><h1>Change Log</h1></center><u>Revision</u>: 6260ffc125515e8b<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 11, 2013
+         (09:21:12 UTC)
+      <br><p style="margin:0.4em">Minor change to avoid doing unnecessary computations in certain cases.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_processing/remove_unobtainable_rectangles.h</div></div><hr class="fullhr"><u>Revision</u>: b29ee01de0b17a2b<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 10, 2013
+         (05:21:42 UTC)
+      <br><p style="margin:0.4em">Minor changes to avoid warnings in visual studio 2005</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/geometry/point_transforms.h</div><div id="row1">dlib/image_loader/image_loader.h</div></div><hr class="fullhr"><u>Revision</u>: 10f743f8493c24b5<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 09, 2013
+         (07:22:03 UTC)
+      <br><p style="margin:0.4em">clarified spec</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/optimization/max_cost_assignment_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 3155a884a0b7c447<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 08, 2013
+         (15:42:37 UTC)
+      <br><p style="margin:0.4em">Made the unit tests also compile all the example programs</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/test/CMakeLists.txt</div></div><hr class="fullhr"><u>Revision</u>: 48d22e42381f969b<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 08, 2013
+         (06:31:32 UTC)
+      <br><p style="margin:0.4em">Add checks into the vector_normalizer and vector_normalizer_pca objects
+to detect users giving infinite and NaN values as inputs.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/statistics/statistics.h</div><div id="row1">dlib/statistics/statistics_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 92248b69bc22b41d<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 08, 2013
+         (06:20:38 UTC)
+      <br><p style="margin:0.4em">Added some asserts into the optimization code to detect when the user
+accidentally creates objective functions which output infinite or NaN values.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/optimization/optimization.h</div><div id="row1">dlib/optimization/optimization_trust_region.h</div></div><hr class="fullhr"><u>Revision</u>: 5257397696f533ea<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 08, 2013
+         (06:04:05 UTC)
+      <br><p style="margin:0.4em">Added is_finite() for matrix objects.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/algs.h</div><div id="row1">dlib/matrix/matrix_utilities.h</div><div id="row2">dlib/matrix/matrix_utilities_abstract.h</div><div id="row1">dlib/test/matrix.cpp</div></div><hr class="fullhr"><u>Revision</u>: 86dc35f152012b00<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 08, 2013
+         (05:44:53 UTC)
+      <br><p style="margin:0.4em">Added is_finite()</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/algs.h</div></div><hr class="fullhr"><u>Revision</u>: 4d2c4237be04cf7e<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 07, 2013
+         (10:39:56 UTC)
+      <br><p style="margin:0.4em">Minor change to avoid a compiler warning</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/server/server_http.h</div></div><hr class="fullhr"><u>Revision</u>: 444c2fb1984e67be<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 07, 2013
+         (10:15:12 UTC)
+      <br><p style="margin:0.4em">Added the option to disable overlay editing to the image_display.  Also made
+the image_window not allow overlay editing.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/gui_widgets/widgets.cpp</div><div id="row1">dlib/gui_widgets/widgets.h</div><div id="row2">dlib/gui_widgets/widgets_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 7a0620a2865f467d<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 07, 2013
+         (09:42:06 UTC)
+      <br><p style="margin:0.4em">Fixed a bug in the image_window which made it's behavior slightly weird
+when a user drew rectangles on it.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/gui_widgets/widgets.cpp</div></div><hr class="fullhr"><u>Revision</u>: 2c7a979a8d1990b9<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 07, 2013
+         (09:08:20 UTC)
+      <br><p style="margin:0.4em">Added Steven Van Ingelgem's patch to the HTTP server which makes
+operations on HTTP headers case-insensitive.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/server/server_http.cpp</div><div id="row1">dlib/server/server_http.h</div><div id="row2">dlib/server/server_http_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 56acc82bcd889682<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 06, 2013
+         (17:25:34 UTC)
+      <br><p style="margin:0.4em">Changed all the structural SVM tools to use a default PSI cache size of 5.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/structural_assignment_trainer.h</div><div id="row1">dlib/svm/structural_assignment_trainer_abstract.h</div><div id="row2">dlib/svm/structural_graph_labeling_trainer.h</div><div id="row1">dlib/svm/structural_graph_labeling_trainer_abstract.h</div><div id="row2">dlib/svm/structural_object_detection_trainer.h</div><div id="row1">dlib/svm/structural_object_detection_trainer_abstract.h</div><div id="row2">dlib/svm/structural_sequence_labeling_trainer.h</div><div id="row1">dlib/svm/structural_sequence_labeling_trainer_abstract.h</div><div id="row2">dlib/svm/structural_svm_problem.h</div><div id="row1">dlib/svm/structural_svm_problem_abstract.h</div><div id="row2">dlib/test/assignment_learning.cpp</div></div><hr class="fullhr"><u>Revision</u>: a1d706316d4978b5<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 06, 2013
+         (17:25:07 UTC)
+      <br><p style="margin:0.4em">Updated tests to work with current code</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/test/object_detector.cpp</div></div><hr class="fullhr"><u>Revision</u>: 10fa2f2baf0f3031<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 06, 2013
+         (-04:31:58 UTC)
+      <br><p style="margin:0.4em">Added use_relative_feature_weights() and use_uniform_feature_weights()
+functions to make it easy to configure image scanners that use the hashed_feature_image.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_processing/setup_hashed_features.h</div><div id="row1">dlib/image_processing/setup_hashed_features_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 999cf94fe04ba7ba<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 06, 2013
+         (-04:03:24 UTC)
+      <br><p style="margin:0.4em">Added an option to weight the features from a hashed_feature_image
+relative to the number of times they occur in an image.  I also set
+the new default behavior to use this relative weighting and changed
+the serialization format to accommodate this.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_keypoint/hashed_feature_image.h</div><div id="row1">dlib/image_keypoint/hashed_feature_image_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: c17fd536bd30410e<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 05, 2013
+         (19:50:51 UTC)
+      <br><p style="margin:0.4em">Added get_feature_extractor() functions to the image scanners so the underlying
+feature extractors can have their parameters queried.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_processing/scan_image_boxes.h</div><div id="row1">dlib/image_processing/scan_image_boxes_abstract.h</div><div id="row2">dlib/image_processing/scan_image_pyramid.h</div><div id="row1">dlib/image_processing/scan_image_pyramid_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 4da0517f76df04a7<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 05, 2013
+         (19:02:40 UTC)
+      <br><p style="margin:0.4em">Removed cruft</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_keypoint/binned_vector_feature_image.h</div></div><hr class="fullhr"><u>Revision</u>: cf317e3d7dab7b7c<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Aug 05, 2013
+         (10:48:33 UTC)
+      <br><p style="margin:0.4em">Made spec slightly clearer</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_processing/box_overlap_testing_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 5b354eb89741ad47<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 31, 2013
+         (15:26:00 UTC)
+      <br><p style="margin:0.4em">Clarified the error message you get when an impossible set of object
+boxes is detected.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/structural_svm_object_detection_problem.h</div></div><hr class="fullhr"><u>Revision</u>: 5aeef54ad0470eaa<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 31, 2013
+         (15:24:42 UTC)
+      <br><p style="margin:0.4em">Fixed a bug in the object_detector testing code that caused the average
+precision values to be slightly wrong.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/cross_validate_object_detection_trainer.h</div></div><hr class="fullhr"><u>Revision</u>: 1d640940bcf6e310<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 26, 2013
+         (17:54:12 UTC)
+      <br><p style="margin:0.4em">Fully qualified the char_traits references to avoid name conflicts in
+certain rare cases.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/string/string.h</div></div><hr class="fullhr"><u>Revision</u>: dd03be6425807520<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 25, 2013
+         (30:37:36 UTC)
+      <br><p style="margin:0.4em">Changed object detector testing functions to output average precision
+instead of mean average precision.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/cross_validate_object_detection_trainer.h</div><div id="row1">dlib/svm/cross_validate_object_detection_trainer_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: d63ed589bf5f770b<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 17, 2013
+         (14:51:30 UTC)
+      <br><p style="margin:0.4em">Fixed a bug in running_scalar_covariance that caused the covariance() and
+correlation() methods to output the wrong answer if the covariance was
+negative.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/statistics/statistics.h</div><div id="row1">dlib/test/statistics.cpp</div></div><hr class="fullhr"><u>Revision</u>: 95d1c0c7ed501ae5<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 16, 2013
+         (13:45:44 UTC)
+      <br><p style="margin:0.4em">Changed unit test so it has the same behavior everywhere.  Previously, since
+the order of function argument evaluation is not defined, the test had slightly
+different results on different systems which could cause the tests to falsely
+indicate failure.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/test/filtering.cpp</div></div><hr class="fullhr"><u>Revision</u>: ae97b1912530252e<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 15, 2013
+         (18:58:43 UTC)
+      <br><p style="margin:0.4em">Changed cmake file so python libraries have the correct extension on mac systems.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/add_python_module</div></div><hr class="fullhr"><u>Revision</u>: d647cb0635ec53d3<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 15, 2013
+         (04:01:07 UTC)
+      <br><p style="margin:0.4em">fixed compile error in older gcc</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/matrix/matrix.h</div></div><hr class="fullhr"><u>Revision</u>: 03d788a184b8eae4<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 14, 2013
+         (06:10:14 UTC)
+      <br><p style="margin:0.4em">Improved the way the feature vector cache is used within the structural svm
+solver.  This makes some things, such as the structural_object_detection_trainer,
+significantly faster.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/structural_svm_problem.h</div></div><hr class="fullhr"><u>Revision</u>: cb780af8400baf20<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 12, 2013
+         (16:26:28 UTC)
+      <br><p style="margin:0.4em">slightly simplified code</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_processing/scan_image_boxes.h</div></div><hr class="fullhr"><u>Revision</u>: 29d783e892f4dfc3<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 12, 2013
+         (16:26:18 UTC)
+      <br><p style="margin:0.4em">Made the integral image swappable</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/image_transforms/integral_image.h</div><div id="row1">dlib/image_transforms/integral_image_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 35a79c85aa221bba<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 08, 2013
+         (18:19:17 UTC)
+      <br><p style="margin:0.4em">Added the csv io manipulator that lets you print a matrix in cvs format.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/matrix/matrix.h</div></div><hr class="fullhr"><u>Revision</u>: b4489a28f311d500<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 07, 2013
+         (10:59:42 UTC)
+      <br><p style="margin:0.4em">clarified spec</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/structural_svm_problem_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: db1dcb994cc4bd4a<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jul 01, 2013
+         (13:31:21 UTC)
+      <br><p style="margin:0.4em">Added order_by_descending_distance()</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/graph_utils/sample_pair.h</div><div id="row1">dlib/graph_utils/sample_pair_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 34f302dd159919ca<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 23, 2013
+         (10:58:51 UTC)
+      <br><p style="margin:0.4em">Fixed typo in learn_platt_scaling().  The method wasn't using the exact prior
+suggested by Platt's paper.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/svm.h</div></div><hr class="fullhr"><u>Revision</u>: 855606db829d6425<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 22, 2013
+         (17:43:13 UTC)
+      <br><p style="margin:0.4em">Changed code to avoid an unnecessary computation.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/function.h</div></div><hr class="fullhr"><u>Revision</u>: e220cbd8dd4c435f<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 18, 2013
+         (19:11:21 UTC)
+      <br><p style="margin:0.4em">Upgraded the structural_svm_problem so that it collapses down excessively large
+sparse vectors to avoid unnecessary RAM usage in this case.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/svm/structural_svm_problem.h</div></div><hr class="fullhr"><u>Revision</u>: 0432824f57c586c6<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 16, 2013
+         (08:07:23 UTC)
+      <br><p style="margin:0.4em">Slightly simplified the dir_nav interface</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/dir_nav/dir_nav_kernel_1.h</div><div id="row1">dlib/dir_nav/dir_nav_kernel_2.h</div><div id="row2">dlib/dir_nav/dir_nav_kernel_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 4833264df837902d<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 15, 2013
+         (11:23:36 UTC)
+      <br><p style="margin:0.4em">clarified spec</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/statistics/statistics_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: a3481be0101c7fdc<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 15, 2013
+         (11:20:32 UTC)
+      <br><p style="margin:0.4em">removed print statement</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/test/statistics.cpp</div></div><hr class="fullhr"><u>Revision</u>: c2d3d983a690e797<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 15, 2013
+         (11:20:03 UTC)
+      <br><p style="margin:0.4em">Made the running covariance objects work with sparse vectors.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/statistics/statistics.h</div><div id="row1">dlib/statistics/statistics_abstract.h</div><div id="row2">dlib/test/statistics.cpp</div></div><hr class="fullhr"><u>Revision</u>: 3a2331e7426ff1cc<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 15, 2013
+         (09:44:40 UTC)
+      <br><p style="margin:0.4em">clarified spec</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/statistics/statistics_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 3a6623b24b69a18c<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 15, 2013
+         (09:37:26 UTC)
+      <br><p style="margin:0.4em">Added tests and slight refinements</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/statistics/statistics.h</div><div id="row1">dlib/statistics/statistics_abstract.h</div><div id="row2">dlib/test/statistics.cpp</div></div><hr class="fullhr"><u>Revision</u>: 955021d3709ac6a4<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 15, 2013
+         (09:18:09 UTC)
+      <br><p style="margin:0.4em">Added running_cross_covariance.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/statistics/statistics.h</div><div id="row1">dlib/statistics/statistics_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: fa3870446bcdd379<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 11, 2013
+         (18:10:00 UTC)
+      <br><p style="margin:0.4em">Gave the image_window the ability to tie the mouse and keyboard events together
+such that it is possible for a user to listen for both simultaneously.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/gui_widgets/widgets.cpp</div><div id="row1">dlib/gui_widgets/widgets.h</div><div id="row2">dlib/gui_widgets/widgets_abstract.h</div></div><hr class="fullhr"><u>Revision</u>: 80fc08e20fae67c8<br><u>Author</u>: <a href="mailto:davis@dlib.net">Davis King</a><br><u>Date</u>: Jun 11, 2013
+         (16:05:54 UTC)
+      <br><p style="margin:0.4em">Changed code to avoid compiler errors in some environments.</p><div id="logb"><div class="bsolid"><b><font color="black">Modified</font></b></div><div id="row2">dlib/threads/threads_kernel_shared.cpp</div></div><hr class="fullhr"><br><center><a href="old_change_log.html">Old Change Logs</a></center><br></td></tr></table></div></body></html>

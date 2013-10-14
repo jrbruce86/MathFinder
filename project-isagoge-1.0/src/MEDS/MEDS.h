@@ -27,11 +27,16 @@
 #ifndef MEDS_H_
 #define MEDS_H_
 
-#include <cstddef> // defines NULL keyword
-#include <iostream>
-#include <equationdetectbase.h>
-using namespace tesseract;
-using namespace std;
+#include "M_Utils.h"
+#include "BlobInfoGrid.h"
+#include "equationdetectbase.h"
+
+namespace tesseract {
+
+class Tesseract;
+class ColPartition;
+class ColPartitionGrid;
+class ColPartitionSet;
 
 class MEDS : public EquationDetectBase {
 public:
@@ -53,9 +58,15 @@ public:
   void SetLangTesseract(Tesseract* lang_tesseract);
 
 private:
-  Tesseract* lang_tesseract_; // ocr engine
-  ColPartitionGrid* partition_grid;
-  ColPartitionSet** best_col_divisions;
+  BlobInfoGrid* blobinfogrid; // blob grid on which I extract features, carry out
+                              // binary classification, and segment regions of
+                              // interest
+  M_Utils mutils; // static class with assorted useful functions
+  Tesseract* tess; // language-specific ocr engine
+  PIX* img; // the binary image that is being operated on
 };
 
-#endif // EQUATION_DETECT_SVMH__
+
+}
+
+#endif

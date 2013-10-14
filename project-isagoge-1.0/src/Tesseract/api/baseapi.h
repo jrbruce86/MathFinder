@@ -683,6 +683,8 @@ class TESS_API TessBaseAPI {
 
   void setEquationDetector(EquationDetectBase* equ_detect);
 
+  const PAGE_RES* extGetPageResults();
+
  protected:
 
   /** Common code for setting the image. Returns true if Init has been called. */

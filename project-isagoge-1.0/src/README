@@ -1,0 +1,54 @@
+The source code for this project is separated into the following modules 
+(each module except IsagogeMain.cpp having its own directory):
+
+IsagogeMain.cpp:
+This is the top level source file from which all tests or evaluations are
+carried out. 
+
+MEDS:
+The Mathematical Expression Detection and Segmentation (MEDS) module and its
+evaluation is the primary focus of this work. The MEDS module overrides 
+Tesseract's purely virtual BaseEquationDetect class and is thus integrated
+with Tesseract's layout analysis framework (i.e. decisions made by the MEDS
+module, when overriding Tesseract's default implementation, will be reflected
+in Tesseract's layout analysis results). Tesseract was modified for purposes
+of this project so that run-time polymorphism is employed for the expression 
+detection. This makes it possible to compare Tesseract's results when using 
+the default MEDS module (provided with Tesseract) with the results of the 
+MEDS module implemented by this work. It then, further, makes it possible
+to compare the results of even newer implementations in future works.
+
+Tesseract:
+This is a slightly modified version of tesseract's 3.02 release. The
+MEDS module implemented herein and described above functions as a component 
+of the Tesseract document layout analysis framework and is tested against 
+the default MEDS module provided in the software.
+
+Groundtruth_Generation:
+This includes all tools utilized in creating the Groundtruth data. The
+groundtruth data defines and specifies what exactly the MEDS results should
+look like. The groundtruth is created in such a way that, ideally, the data
+corresponds to the individual mathematical expression zones most fit for 
+being subsequently recognized by a mathematical recognition module. All
+regions are manually segmented and thus some human error is inevitable. In
+addition, there are some instances where 
+
+Evaluation:
+The evaluation module compares the results of whatever MEDS module is being
+used by Tesseract to the ground truth. Pixel accurate measurements are made
+on True positive rate, false positive rate, accuracy, false discovery rate,
+precision, and negative predictive value. Counts are also made on the number
+of oversegmentations and undersegmentations.
+
+Utils:
+The Utils module includes various image processing modules, primarily used
+for evaluation purposes. Also included are functions to allow for running
+bash commands (i.e. for file moving or running scripts) from within this
+software's executable (it is assumed, for now, that all work is done in a
+Unix environment).
+
+dlib-18.4:
+This is the machine learning library used for this project. Visit 
+http://dlib.net for further information on this project. For purposes of
+my work, GNU automake files were written and some minor changes made so
+that the library is made more compatible with my project.

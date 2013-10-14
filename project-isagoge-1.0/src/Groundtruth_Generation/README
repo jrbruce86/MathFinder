@@ -36,7 +36,7 @@ select_training
 equation_labeler
 - GUI developed in Qt, which allows user to manually label the bounding boxes of 
   expression regions in images, and have the labels automatically appended to 
-  a file.Originally from OSR project at http://sourceforge.net/projects/osr/. 
+  a file. Originally from OSR project at http://sourceforge.net/projects/osr/. 
 
 equation_label_verify
 - Takes the output of equation_labeler and corresponding images as input
