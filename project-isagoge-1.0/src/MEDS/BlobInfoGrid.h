@@ -77,6 +77,7 @@ class BLOBINFO:public ELIST_LINK {
                                   sentence(NULL), word(NULL),
                                   validword(false), dbgjustadded(false),
                                   wordstr(NULL) {}
+  // copy constructor
   BLOBINFO(const BLOBINFO& copy) : original_part(copy.original_part),
       recognized_blob(copy.recognized_blob), sentence(copy.sentence),
       word(copy.word), validword(copy.validword), box(copy.box),
@@ -94,7 +95,9 @@ class BLOBINFO:public ELIST_LINK {
   }
 
   ~BLOBINFO() {
-    delete unrecognized_blobs; // this is the only thing I allocated (just a list of pointers)
+    delete word;
+    delete wordstr;
+    delete unrecognized_blobs; // this does a deep delete I believe TODO: Confirm...
     unrecognized_blobs = NULL;
   }
 
@@ -152,6 +155,7 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   BlobInfoGrid(int gridsize, const ICOORD& bleft, const ICOORD& tright);
 
   // TODO Make sure this deletes everything I allocated!!!
+  // Try iterating through the grid to delete each element....
   ~BlobInfoGrid();
 
   void setColPart(ColPartitionGrid* partgrid_, ColPartitionSet** bcd) {

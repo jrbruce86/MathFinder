@@ -16,7 +16,11 @@ AC_CONFIG_FILES([Makefile
                 src/Utils/Makefile
                 src/Evaluation/Makefile
                 src/dlib-18.4/Makefile
-                src/MEDS/Makefile],
+                src/MEDS/Makefile
+                src/MEDS/Detection/Makefile
+                src/MEDS/Detection/BinaryClassifier/Makefile
+                src/MEDS/Detection/FeatureExtractor/Makefile
+                src/MEDS/Detection/Trainer/Makefile],
                 [src/Groundtruth_Generation/removealpha],
                 [chmod +x src/Groundtruth_Generation/removealpha],
                 [src/Groundtruth_Generation/rename_pngs],

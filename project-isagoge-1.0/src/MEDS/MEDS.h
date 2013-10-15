@@ -1,8 +1,8 @@
 /**************************************************************************
  * Project Isagoge: Enhancing the OCR Quality of Printed Scientific Documents
- * File name:		EquationDetectorSVM.h
+ * File name:		MEDS.h
  * Written by:	Jake Bruce, Copyright (C) 2013
- * History: 		Created Feb 28, 2013 9:08:15 PM
+ * History: 		Created Oct 4, 2013 9:08:15 PM
  * ------------------------------------------------------------------------
  * Description: This equation detector overrides Tesseract's default one which
  *              was implemented in the 2011 release. TODO: update this

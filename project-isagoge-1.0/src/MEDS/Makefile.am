@@ -1,4 +1,5 @@
 lib_LTLIBRARIES = libMEDS.la
+SUBDIRS = Detection
 libMEDS_la_SOURCES = MEDS.h \
 MEDS.cpp BlobInfoGrid.h BlobInfoGrid.cpp \
 M_Utils.h M_Utils.cpp

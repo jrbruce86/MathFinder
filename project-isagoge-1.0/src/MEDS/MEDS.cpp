@@ -2,7 +2,7 @@
  * Project Isagoge: Enhancing the OCR Quality of Printed Scientific Documents
  * File name:		MEDS.cpp
  * Written by:	Jake Bruce, Copyright (C) 2013
- * History: 		Created Feb 28, 2013 9:11:16 PM
+ * History: 		Created Oct 4, 2013 9:11:16 PM
  * Description: TODO
  * 
  * This file is part of Project Isagoge.

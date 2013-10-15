@@ -11527,7 +11527,7 @@ CC="$lt_save_CC"
  #libtool
 
 # Make files and scripts
-ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile src/MEDS/Detection/Makefile src/MEDS/Detection/BinaryClassifier/Makefile src/MEDS/Detection/FeatureExtractor/Makefile src/MEDS/Detection/Trainer/Makefile"
 
 
 
@@ -17113,6 +17113,10 @@ do
     "src/Evaluation/Makefile") CONFIG_FILES="$CONFIG_FILES src/Evaluation/Makefile" ;;
     "src/dlib-18.4/Makefile") CONFIG_FILES="$CONFIG_FILES src/dlib-18.4/Makefile" ;;
     "src/MEDS/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Makefile" ;;
+    "src/MEDS/Detection/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/Makefile" ;;
+    "src/MEDS/Detection/BinaryClassifier/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/BinaryClassifier/Makefile" ;;
+    "src/MEDS/Detection/FeatureExtractor/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/FeatureExtractor/Makefile" ;;
+    "src/MEDS/Detection/Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/Trainer/Makefile" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -18609,6 +18613,10 @@ _LT_EOF
     "src/Evaluation/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/dlib-18.4/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/MEDS/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/MEDS/Detection/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/MEDS/Detection/BinaryClassifier/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/MEDS/Detection/FeatureExtractor/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/MEDS/Detection/Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;
 
   esac
 done # for ac_tag

@@ -78,9 +78,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = src/MEDS
-DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/depcomp
+subdir = src/MEDS/Detection
+DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -118,12 +117,10 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libMEDS_la_DEPENDENCIES = /usr/local/lib/liblept.so \
-	../Tesseract/api/libtesseract.la ../Utils/libUtils.la \
-	../dlib-18.4/dlib/libdlib.la
-am_libMEDS_la_OBJECTS = libMEDS_la-MEDS.lo libMEDS_la-BlobInfoGrid.lo \
-	libMEDS_la-M_Utils.lo
-libMEDS_la_OBJECTS = $(am_libMEDS_la_OBJECTS)
+libDetect_la_DEPENDENCIES = BinaryClassifier/libBinaryClassifier.la \
+	FeatureExtractor/libFeatureExtractor.la Trainer/libTrainer.la
+am_libDetect_la_OBJECTS =
+libDetect_la_OBJECTS = $(am_libDetect_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -141,27 +138,6 @@ am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
-depcomp = $(SHELL) $(top_srcdir)/depcomp
-am__depfiles_maybe = depfiles
-am__mv = mv -f
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
-AM_V_CXX = $(am__v_CXX_@AM_V@)
-am__v_CXX_ = $(am__v_CXX_@AM_DEFAULT_V@)
-am__v_CXX_0 = @echo "  CXX     " $@;
-am__v_CXX_1 = 
-CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
-am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
-am__v_CXXLD_0 = @echo "  CXXLD   " $@;
-am__v_CXXLD_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -180,8 +156,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libMEDS_la_SOURCES)
-DIST_SOURCES = $(libMEDS_la_SOURCES)
+SOURCES = $(libDetect_la_SOURCES)
+DIST_SOURCES = $(libDetect_la_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -370,34 +346,16 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LTLIBRARIES = libMEDS.la
-SUBDIRS = Detection
-libMEDS_la_SOURCES = MEDS.h \
-MEDS.cpp BlobInfoGrid.h BlobInfoGrid.cpp \
-M_Utils.h M_Utils.cpp
-
-libMEDS_la_LIBADD = /usr/local/lib/liblept.so \
-../Tesseract/api/libtesseract.la \
-../Utils/libUtils.la ../dlib-18.4/dlib/libdlib.la
-
-libMEDS_la_CPPFLAGS = -I../Tesseract/api \
--I../Tesseract/ccmain -I../Tesseract/ccstruct \
--I../Tesseract/ccutil -I../Tesseract/classify \
--I../Tesseract/config -I../Tesseract/contrib \
--I../Tesseract/cube -I../Tesseract/cutil \
--I../Tesseract/dict -I../Tesseract/doc \
--I../Tesseract/image -I../Tesseract/java \
--I../Tesseract/m4 -I../Tesseract/neural_networks \
--I../Tesseract/po -I../Tesseract/tessdata \
--I../Tesseract/testing -I../Tesseract/textord \
--I../Tesseract/training -I../Tesseract/viewer \
--I../Tesseract/wordrec -I../Tesseract -I../LibUtils \
--I../dlib-18.4
+lib_LTLIBRARIES = libDetect.la
+SUBDIRS = BinaryClassifier FeatureExtractor Trainer
+libDetect_la_SOURCES = Detection.h
+libDetect_la_CPPFLAGS = -IBinaryClassifier -IFeatureExtractor -ITrainer
+libDetect_la_LIBADD = BinaryClassifier/libBinaryClassifier.la \
+FeatureExtractor/libFeatureExtractor.la Trainer/libTrainer.la
 
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .cpp .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -407,9 +365,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/MEDS/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/MEDS/Detection/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/MEDS/Makefile
+	  $(AUTOMAKE) --gnu src/MEDS/Detection/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -464,60 +422,14 @@ clean-libLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-libMEDS.la: $(libMEDS_la_OBJECTS) $(libMEDS_la_DEPENDENCIES) $(EXTRA_libMEDS_la_DEPENDENCIES) 
-	$(AM_V_CXXLD)$(CXXLINK) -rpath $(libdir) $(libMEDS_la_OBJECTS) $(libMEDS_la_LIBADD) $(LIBS)
+libDetect.la: $(libDetect_la_OBJECTS) $(libDetect_la_DEPENDENCIES) $(EXTRA_libDetect_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libDetect_la_OBJECTS) $(libDetect_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libMEDS_la-BlobInfoGrid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libMEDS_la-MEDS.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libMEDS_la-M_Utils.Plo@am__quote@
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.cpp.lo:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
-
-libMEDS_la-MEDS.lo: MEDS.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libMEDS_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libMEDS_la-MEDS.lo -MD -MP -MF $(DEPDIR)/libMEDS_la-MEDS.Tpo -c -o libMEDS_la-MEDS.lo `test -f 'MEDS.cpp' || echo '$(srcdir)/'`MEDS.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libMEDS_la-MEDS.Tpo $(DEPDIR)/libMEDS_la-MEDS.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='MEDS.cpp' object='libMEDS_la-MEDS.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libMEDS_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libMEDS_la-MEDS.lo `test -f 'MEDS.cpp' || echo '$(srcdir)/'`MEDS.cpp
-
-libMEDS_la-BlobInfoGrid.lo: BlobInfoGrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libMEDS_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libMEDS_la-BlobInfoGrid.lo -MD -MP -MF $(DEPDIR)/libMEDS_la-BlobInfoGrid.Tpo -c -o libMEDS_la-BlobInfoGrid.lo `test -f 'BlobInfoGrid.cpp' || echo '$(srcdir)/'`BlobInfoGrid.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libMEDS_la-BlobInfoGrid.Tpo $(DEPDIR)/libMEDS_la-BlobInfoGrid.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='BlobInfoGrid.cpp' object='libMEDS_la-BlobInfoGrid.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libMEDS_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libMEDS_la-BlobInfoGrid.lo `test -f 'BlobInfoGrid.cpp' || echo '$(srcdir)/'`BlobInfoGrid.cpp
-
-libMEDS_la-M_Utils.lo: M_Utils.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libMEDS_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libMEDS_la-M_Utils.lo -MD -MP -MF $(DEPDIR)/libMEDS_la-M_Utils.Tpo -c -o libMEDS_la-M_Utils.lo `test -f 'M_Utils.cpp' || echo '$(srcdir)/'`M_Utils.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libMEDS_la-M_Utils.Tpo $(DEPDIR)/libMEDS_la-M_Utils.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='M_Utils.cpp' object='libMEDS_la-M_Utils.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libMEDS_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libMEDS_la-M_Utils.lo `test -f 'M_Utils.cpp' || echo '$(srcdir)/'`M_Utils.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -723,7 +635,6 @@ clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
 	mostlyclean-am
 
 distclean: distclean-recursive
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -769,7 +680,6 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
