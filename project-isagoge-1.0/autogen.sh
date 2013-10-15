@@ -2,6 +2,7 @@ cd src/Tesseract
 ./autogen.sh
 ./configure
 cd ../dlib-18.4
+./autogen.sh
 ./configure
 echo "---------------------------------
 ---------------------------------
