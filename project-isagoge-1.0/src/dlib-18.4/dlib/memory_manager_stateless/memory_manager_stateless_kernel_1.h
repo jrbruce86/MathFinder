@@ -3,7 +3,7 @@
 #ifndef DLIB_MEMORY_MANAGER_STATELESs_1_
 #define DLIB_MEMORY_MANAGER_STATELESs_1_
 
-#include "memory_manager_stateless_kernel_abstract.h"
+#include "mm_stateless_kernel_abstract.h"
 
 namespace dlib
 {

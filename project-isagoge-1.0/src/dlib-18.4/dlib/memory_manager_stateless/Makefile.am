@@ -1,3 +1,5 @@
 lib_LTLIBRARIES = libmemory_manager_stateless.la
-libmemory_manager_stateless_la_SOURCES = memory_manager_stateless_kernel_1.h \
-memory_manager_stateless_kernel_2.h memory_manager_stateless_kernel_abstract.h
+libmemory_manager_stateless_la_SOURCES = \
+mm_stateless_kernel_abstract.h \
+memory_manager_stateless_kernel_1.h \
+memory_manager_stateless_kernel_2.h

@@ -5,7 +5,7 @@
 
 #include "../algs.h"
 #include "../member_function_pointer.h"
-#include "bound_function_pointer_kernel_abstract.h"
+#include "bfp_kernel_abstract.h"
 
 namespace dlib
 {

@@ -4,7 +4,7 @@
 #define DLIB_MEMBER_FUNCTION_POINTER_KERNEl_1_
 
 #include "../algs.h"
-#include "member_function_pointer_kernel_abstract.h"
+#include "mfp_kernel_abstract.h"
 #include "../enable_if.h"
 #include <new>
 

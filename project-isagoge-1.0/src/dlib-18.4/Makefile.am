@@ -1,2 +1,2 @@
-SUBDIRS = dlib examples
-EXTRA_DIST = docs configure.ac aclocal.m4 autogen.sh
+SUBDIRS = dlib
+EXTRA_DIST = license.html examples configure.ac aclocal.m4 autogen.sh

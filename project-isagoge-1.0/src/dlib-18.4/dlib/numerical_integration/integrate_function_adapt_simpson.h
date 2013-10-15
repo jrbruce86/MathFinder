@@ -3,7 +3,7 @@
 #ifndef DLIB_INTEGRATE_FUNCTION_ADAPT_SIMPSON__
 #define DLIB_INTEGRATE_FUNCTION_ADAPT_SIMPSON__
 
-#include "integrate_function_adapt_simpson_abstract.h"
+#include "ifa_simpson_abstract.h"
 #include "../assert.h"
 
 // ----------------------------------------------------------------------------------------

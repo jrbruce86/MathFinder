@@ -4,7 +4,7 @@
 #define DLIB_MEMORY_MANAGER_STATELESs_2_
 
 #include "../algs.h"
-#include "memory_manager_stateless_kernel_abstract.h"
+#include "mm_stateless_kernel_abstract.h"
 #include "../threads.h"
 
 namespace dlib

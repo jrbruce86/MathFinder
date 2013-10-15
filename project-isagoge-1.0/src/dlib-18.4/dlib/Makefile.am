@@ -1,20 +1,22 @@
 lib_LTLIBRARIES = libdlib.la
 SUBDIRS = any array array2d base64 bayes_utils bigint \
-binary_search_tree bsp bit_stream bound_function_pointer bridge \
+binary_search_tree sockets sockstreambuf \
+bsp bit_stream bound_function_pointer bridge \
 byte_orderer clustering cmd_line_parser compress_stream \
 conditioning_class config_reader cpp_pretty_printer cpp_tokenizer \
 crc32 data_io directed_graph dir_nav disjoint_subsets entropy_decoder \
 entropy_decoder_model entropy_encoder entropy_encoder_model filtering \
-general_hash geometry graph graph_cuts graph_utils gui_core gui_widgets \
+general_hash geometry graph graph_cuts graph_utils threads \
+gui_core gui_widgets \
 hash_map hash_set hash_table http_client image_keypoint image_loader \
 image_processing image_saver image_transforms interfaces iosockstream \
 linker logger lsh lz77_buffer lzp_buffer manifold_regularization map \
 matrix md5 member_function_pointer memory_manager memory_manager_global \
 memory_manager_stateless misc_api mlp numerical_integration opencv \
 optimization pipe quantum_computing queue rand reference_counter sequence \
-server set set_utils sliding_buffer smart_pointers sockets sockstreambuf \
+server set set_utils sliding_buffer smart_pointers \
 sqlite stack static_map static_set statistics stl_checked string svm \
-sync_extension threads timeout timer tokenizer tuple type_safe_union \
+sync_extension timeout timer tokenizer tuple type_safe_union \
 unicode vectorstream xml_parser stack_trace
 libdlib_la_SOURCES = algs.h  any.h array.h \
 array2d.h assert.h base64.h bayes_utils.h bigint.h binary_search_tree.h \
@@ -42,7 +44,7 @@ string.h svm.h svm_threaded.h sync_extension.h threads.h timeout.h \
 timer.h time_this.h timing.h tokenizer.h tuple.h type_safe_union.h \
 uintn.h unicode.h unordered_pair.h vectorstream.h windows_magic.h \
 xml_parser.h stack_trace.h
-libdlib_la_LIBADD = \
+libdlib_la_LIBADD = sockets/libsockets.la \
 any/libany.la array/libarray.la array2d/libarray2d.la \
 base64/libbase64.la bayes_utils/libbayes_utils.la bigint/libbigint.la \
 binary_search_tree/libbinary_search_tree.la \

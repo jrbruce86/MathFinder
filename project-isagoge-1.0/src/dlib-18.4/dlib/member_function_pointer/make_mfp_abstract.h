@@ -3,7 +3,7 @@
 #undef DLIB_MAKE_MFp_ABSTRACT_
 #ifdef DLIB_MAKE_MFp_ABSTRACT_
 
-#include "member_function_pointer_kernel_abstract.h"
+#include "mfp_kernel_abstract.h"
 
 namespace dlib
 {

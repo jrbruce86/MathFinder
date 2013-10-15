@@ -3,7 +3,7 @@
 #ifndef DLIB_LINEAR_MANIFOLD_ReGULARIZER_H__
 #define DLIB_LINEAR_MANIFOLD_ReGULARIZER_H__
 
-#include "linear_manifold_regularizer_abstract.h"
+#include "lmr_abstract.h"
 #include <limits>
 #include <vector>
 #include "../serialize.h"

@@ -1,0 +1,5 @@
+This is the dlib machine learning library used for this project
+Visit http://dlib.net for more info. The examples are included here
+but don't compile with the project by default since they take 
+FOREVER. If you want to compile the examples just change the Makefile.am
+in this directory so that examples is in SUBDIR rather than EXTRA_DIST.

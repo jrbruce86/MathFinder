@@ -80,10 +80,3 @@ automake --add-missing -c  -Wno-portability > /dev/null || bail_out
 
 echo "Running autoconf"
 autoconf || bail_out
-
-echo ""
-echo "All done."
-echo "To build the software now, do something like:"
-echo ""
-echo "$ ./configure [--enable-debug] [...other options]"
-echo "$ make"
