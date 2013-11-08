@@ -36,9 +36,6 @@
 using namespace std;
 using namespace tesseract;
 
-// My equation detection implementations:
-#include <MEDS.h>
-
 // Data structure/algorithms used for evaluation
 #include "BipartiteGraph.h"
 

@@ -841,7 +841,9 @@ int Dict::valid_word(const WERD_CHOICE &word, bool numbers_ok) const {
     }
   }
   delete[] active_dawgs;
+  active_dawgs = NULL;
   delete[] constraints;
+  constraints = NULL;
   return valid_word_permuter(dawg_args.permuter, numbers_ok) ?
     dawg_args.permuter : NO_PERM;
 }

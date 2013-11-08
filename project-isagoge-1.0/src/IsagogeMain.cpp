@@ -27,6 +27,7 @@
 
 #include <allheaders.h>
 #include <DocumentLayoutTest.h>
+#include <MEDS_Trainer.h>
 
 #include <iostream>
 #include <string>
@@ -38,8 +39,8 @@ using namespace std;
 // the test to be run on the dataset and the name of directory
 // wherein the test results will be held (this name should be indicative
 // of which equation detector is being used)
-void evaluateDataSet(EquationDetectBase* detector, \
-    string topdir, string dataset, string testname, \
+void evaluateDataSet(EquationDetectBase* detector,
+    string topdir, string dataset, string testname,
     string extension=(string)".png");
 
 // For debugging the evaluator
@@ -47,15 +48,34 @@ void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
-  string dataset = "dot_cross_test";
-
+  string dataset = "calctest";
+  string train_dir = "training/";
+  string train_set = "SVM_AdvCalc1_15/";
+  const string trainpath = topdir+train_dir+train_set;
   // Test Tesseract's default equation detector
  // evaluateDataSet(NULL, topdir, dataset, "tessdefault");
 
 
-  // Test my equation detector
-  EquationDetectBase* mydetector = new MEDS();
-  evaluateDataSet(mydetector, topdir, dataset, "my_detector");
+  // set this to false if you only want to train the module
+  // if it hasn't been trained yet.
+  bool train_always = true;
+
+  // initialize the equation detection/segmenation module
+  EquationDetectBase* myMEDS = new MEDS();
+  // Pick a detector/segmentor combo and train if necessary
+  MEDS_Trainer<SVMTrainerPredictor1> trainer(train_always,
+      trainpath);
+  trainer.setDetectorSegmentor((MEDS*)myMEDS);
+  trainer.trainDetector();
+
+  /*
+  train_dir.erase();
+  trainpath.erase();
+  groundtruth.erase();
+  topdir.erase();
+  dataset.erase();
+  train_set.erase();*/
+ // evaluateDataSet(myMEDS, topdir, dataset, "my_detector");
 
 
   // TODO: Compare the results!

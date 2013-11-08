@@ -61,8 +61,9 @@ void Lept_Utils::fillBoxForeground(Pix* inputimg, BOX* bbox, \
     for(l_uint32 l = x; l < x+w; l++) {
       curpixel = startpixel + k*imwidth + l;
       getPixelRGB(curpixel, rgb);
-      if(isDark(rgb))
+      if(isDark(rgb)) {
         setPixelRGB(inputimg, curpixel, l, k, color);
+      }
     }
   }
 }

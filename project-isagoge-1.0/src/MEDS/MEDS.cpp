@@ -27,11 +27,26 @@
 
 namespace tesseract {
 
-MEDS::MEDS() : tess(NULL), blobinfogrid(NULL), img(NULL) {}
+
+MEDS::MEDS() : tess(NULL), blobinfogrid(NULL), img(NULL),
+    newapi(NULL), train_mode(false) {}
+
+MEDS::~MEDS() {
+  reset();
+  // TODO: Any remaining cleanup as necessary
+}
+
+void MEDS::reset() {
+  if(blobinfogrid != NULL) {
+    delete blobinfogrid;
+    blobinfogrid = NULL;
+  }
+  // TODO: Delete any other heap allocated datastructures
+  //       specific to a single image
+}
 
 int MEDS::FindEquationParts(ColPartitionGrid* part_grid,
     ColPartitionSet** best_columns) {
-
   // I'll extract features from my own custom grid which holds both
   // information that can be gleaned from language recognition as
   // well as everything which couldn't (will hold all of the blobs
@@ -39,65 +54,25 @@ int MEDS::FindEquationParts(ColPartitionGrid* part_grid,
   // it belongs to as well)
   blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
       part_grid->tright());
-  blobinfogrid->setColPart(part_grid, best_columns);
-  blobinfogrid->setTessAndPix(tess);
-
-  // First I'll move (shallow copy) all the blobs in the partition grid
-  // over to a grid where each element is just the blob rather than
-  // the partition. Once I have the recognition results for each
-  // partition I'll be carrying out analysis on the individual blobs
-  // throughout the entire image independently of how the partitions
-  // have been segmented by Tesseract's layout analysis framework in
-  // previous steps.
-  blobinfogrid->partGridToBBGrid();
-
-
-  // I need more information than could be gleaned from just looking at
-  // the individual blobs alone and their recognition results. Using
-  // Tesseract's API it is possible to achieve high accuracy on normal
-  // text regions. I can use sentences extracted from Tesseract's output
-  // in order to assign each sentence an N-Gram feature. Thus each blob
-  // which is considered part of such a sentence will be assigned a
-  // probability of being part of a sentence which contains embedded
-  // mathematical expressions.. Further, by simply running the OCR engine
-  // on each individual blob various characters are missed altogether.
-  // For instance the "=" sign is seen as two horizontal bars, the
-  // horizontal bars are often misrecognized as "j". Likewise periods
-  // and commas are often misrecognized. Characters like "l", "I", and "i"
-  // are mistaken for "1"'s. The dot on top of the i is not, at this stage,
-  // known to be part of the "i". By taking advantage of information gleaned
-  // from Tesseract's word recognition these issues can be avoided
-  // altogether for regions which have relatively normal layout structure.
-
-  // Now I use a Tesseract API assigned to the language being used in
-  // order to recognize all the text in each ColPartition (colpartitions
-  // gives the page's current segmentatmion from all processing carried out
-  // by Tesseract's layout analysis framework up to this point). As I
-  // recognize whatever is in these partitions I move all the information
-  // that can be gleaned from the recognition into my grid so features may
-  // be extracted from these results later.
-  blobinfogrid->recognizeColParts();
-
-  // Next step is to iterate through the BlobGrid, inserting all the BLOBNBOXEs
-  // into their appropriate BLOBINFO object and/or creating a new BLOBINFO object
-  // for blobs which may not have been recognized at all.
-  blobinfogrid->insertRemainingBlobs();
-
-
-
-
-  exit(EXIT_FAILURE);
-
+  blobinfogrid->setTessAPI(newapi);
+  blobinfogrid->prepare(part_grid, best_columns, tess);
   // Once the blobinfo grid has been established, it becomes possible to then run
   // each individual blobinfo element through feature detection and classification.
   // After the feature detection/classification step, merging will be carried out
   // in order to ensure proper segmentation.
 
+  // Go on and do predictions now if not in training mode
+
+
+ // exit(EXIT_FAILURE);
+
+
   // ^^^ For creating the math segmentations I will be using my own custom data structure
   //     called the MathSegment, so I'll have a list of these, then I'll convert those into
   //     ColPartitions later. The MathSegment structure is designed to facilitate merging of
   //     detected mathematical blobs into proper segments for subsequent mathematical
-  //     recognition. Each MathSegment initially consists of one BLOBINFO object, the
+  //     recognition. Each MathSegment initially consists of one BLOBINFO object which was
+  //     deemed as mathati, the
   //     segments are then iteratively merged with their nearest neighbors on the blobinfogrid
   //     based on some heuristics. This procedure is carried out for each MathSegment.
 

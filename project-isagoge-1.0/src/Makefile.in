@@ -96,8 +96,10 @@ am_isagoge_OBJECTS = isagoge-IsagogeMain.$(OBJEXT)
 isagoge_OBJECTS = $(am_isagoge_OBJECTS)
 isagoge_DEPENDENCIES = /usr/local/lib/liblept.so MEDS/libMEDS.la \
 	/usr/lib64/libX11.so /usr/lib64/libX11-xcb.so \
-	Tesseract/api/libtesseract.la Utils/libUtils.la \
-	Evaluation/libevaluation.la
+	Tesseract/api/libtesseract.la dlib-18.4/dlib/libdlib.la \
+	Grid/libGrid.la MEDS_Trainer/libMEDS_Trainer.la \
+	MEDS/libMEDS.la Utils/libUtils.la Evaluation/libevaluation.la \
+	Segmentation/libSegmentation.la Detection/libDetection.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -328,7 +330,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = Tesseract Groundtruth_Generation/select_random \
 Groundtruth_Generation/select_training \
-Groundtruth_Generation Evaluation Utils dlib-18.4 MEDS
+Groundtruth_Generation Utils Evaluation dlib-18.4 Grid \
+Detection Segmentation MEDS MEDS_Trainer 
 
 isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/ccmain -ITesseract/ccstruct \
@@ -341,15 +344,24 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/po -ITesseract/tessdata \
 -ITesseract/testing -ITesseract/textord \
 -ITesseract/training -ITesseract/viewer \
--ITesseract/wordrec -ITesseract/ -IEvaluation/ \
--IMEDS/ -IUtils/ -Idlib-18.4
+-ITesseract/wordrec -ITesseract -IEvaluation \
+-IMEDS/ -IUtils/ -Idlib-18.4 -IMEDS_Trainer \
+-IDetection -IDetection/BinaryClassifier \
+-IDetection/FeatureExtractor \
+-IDetection/Trainer -IDetection/Sample -IGrid -ISegmentation
 
 isagoge_LDADD = /usr/local/lib/liblept.so \
 MEDS/libMEDS.la /usr/lib64/libX11.so \
 /usr/lib64/libX11-xcb.so \
 Tesseract/api/libtesseract.la \
+dlib-18.4/dlib/libdlib.la \
+Grid/libGrid.la \
+MEDS_Trainer/libMEDS_Trainer.la \
+MEDS/libMEDS.la \
 Utils/libUtils.la \
-Evaluation/libevaluation.la
+Evaluation/libevaluation.la \
+Segmentation/libSegmentation.la \
+Detection/libDetection.la
 
 isagoge_SOURCES = IsagogeMain.cpp
 all: all-recursive

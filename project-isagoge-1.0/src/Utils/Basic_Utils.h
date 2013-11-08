@@ -52,10 +52,41 @@ namespace Basic_Utils {
   // slash on it at the end
   string checkTrailingSlash(string str);
 
+  // same as above but doesn't use stl
+  // doesn't modify original string (dellocation of it
+  // belongs to the caller)
+  char* checkStrTrailingSlash(const char* const str);
+
   // splits a string into a list of strings separated by the
   // given delimiter (does spaces by default)
   vector<string> stringSplit(string str, char delimiter=' ');
 
+  // splits txt into separate lines
+  // (TAKEN OUT BECAUSE IT'S BUGGY... SEE M_UTILS.H FOR REPLACEMENT!!!)
+  //vector<char*> lineSplit(const char* txt);
+
+  // sometimes there are extra trailing new lines that need
+  // to be removed. this does just that.
+  char* removeExtraNLs(char* str);
+
+  // makes sure there's a trailing newline on the given string
+  // if not adds one. if any change is made to the string the
+  // old one is deleted and NULLed and a new one allocated
+  char* ensureTrailingNL(char* str);
+
+  // custom string compare (the stl version was thought to have been
+  // causing seg faults prior to discovering valgrind.... I find this
+  // function to be more convenient than the strcmp anyway..)
+  bool stringCompare(const char* str1, const char* str2);
+
+  // returns new string with str2 appended to str1
+  // doesn't modify the original strings
+  char* strAppend(char* str1, char* str2);
+
+  inline void destroyStr(char* str) {
+    delete [] str;
+    str = NULL;
+  }
 
   /****************************************
    * Linux system command utilities      **
@@ -74,6 +105,12 @@ namespace Basic_Utils {
 
   // return true if file exists
   bool existsFile(const string& filename);
+
+
+
+
+  // Debugging:::::
+  void waitForInput();
 }
 
 #endif /* BASIC_UTILS_H_ */

@@ -6353,7 +6353,7 @@ ia64-*-hpux*)
   rm -rf conftest*
   ;;
 
-x86_64-*kfreebsd*-gnu|x86_64-*linux*|ppc*-*linux*|powerpc*-*linux*| \
+x86_64-*kfreebsd*-gnu|x86_64-*linux*|powerpc*-*linux*| \
 s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
   # Find out which ABI we are using.
   echo 'int i;' > conftest.$ac_ext
@@ -6371,7 +6371,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 	  x86_64-*linux*)
 	    LD="${LD-ld} -m elf_i386"
 	    ;;
-	  ppc64-*linux*|powerpc64-*linux*)
+	  powerpcle-*linux*)
+	    LD="${LD-ld} -m elf32lppclinux"
+	    ;;
+	  powerpc-*linux*)
 	    LD="${LD-ld} -m elf32ppclinux"
 	    ;;
 	  s390x-*linux*)
@@ -6390,7 +6393,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 	  x86_64-*linux*)
 	    LD="${LD-ld} -m elf_x86_64"
 	    ;;
-	  ppc*-*linux*|powerpc*-*linux*)
+	  powerpcle-*linux*)
+	    LD="${LD-ld} -m elf64lppc"
+	    ;;
+	  powerpc-*linux*)
 	    LD="${LD-ld} -m elf64ppc"
 	    ;;
 	  s390*-*linux*|s390*-*tpf*)
@@ -11527,7 +11533,7 @@ CC="$lt_save_CC"
  #libtool
 
 # Make files and scripts
-ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile src/MEDS/Detection/Makefile src/MEDS/Detection/BinaryClassifier/Makefile src/MEDS/Detection/FeatureExtractor/Makefile src/MEDS/Detection/Trainer/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile src/Grid/Makefile src/Detection/Makefile src/Detection/Sample/Makefile src/Detection/BinaryClassifier/Makefile src/Detection/FeatureExtractor/Makefile src/Detection/Trainer/Makefile src/Segmentation/Makefile src/MEDS_Trainer/Makefile"
 
 
 
@@ -17113,10 +17119,14 @@ do
     "src/Evaluation/Makefile") CONFIG_FILES="$CONFIG_FILES src/Evaluation/Makefile" ;;
     "src/dlib-18.4/Makefile") CONFIG_FILES="$CONFIG_FILES src/dlib-18.4/Makefile" ;;
     "src/MEDS/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Makefile" ;;
-    "src/MEDS/Detection/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/Makefile" ;;
-    "src/MEDS/Detection/BinaryClassifier/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/BinaryClassifier/Makefile" ;;
-    "src/MEDS/Detection/FeatureExtractor/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/FeatureExtractor/Makefile" ;;
-    "src/MEDS/Detection/Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS/Detection/Trainer/Makefile" ;;
+    "src/Grid/Makefile") CONFIG_FILES="$CONFIG_FILES src/Grid/Makefile" ;;
+    "src/Detection/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/Makefile" ;;
+    "src/Detection/Sample/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/Sample/Makefile" ;;
+    "src/Detection/BinaryClassifier/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/BinaryClassifier/Makefile" ;;
+    "src/Detection/FeatureExtractor/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/FeatureExtractor/Makefile" ;;
+    "src/Detection/Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/Trainer/Makefile" ;;
+    "src/Segmentation/Makefile") CONFIG_FILES="$CONFIG_FILES src/Segmentation/Makefile" ;;
+    "src/MEDS_Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS_Trainer/Makefile" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -18613,10 +18623,14 @@ _LT_EOF
     "src/Evaluation/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/dlib-18.4/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/MEDS/Makefile":F) src/Groundtruth_Generation/removealpha ;;
-    "src/MEDS/Detection/Makefile":F) src/Groundtruth_Generation/removealpha ;;
-    "src/MEDS/Detection/BinaryClassifier/Makefile":F) src/Groundtruth_Generation/removealpha ;;
-    "src/MEDS/Detection/FeatureExtractor/Makefile":F) src/Groundtruth_Generation/removealpha ;;
-    "src/MEDS/Detection/Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Grid/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/Sample/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/BinaryClassifier/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/FeatureExtractor/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Segmentation/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/MEDS_Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;
 
   esac
 done # for ac_tag

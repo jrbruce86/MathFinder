@@ -683,6 +683,10 @@ class TESS_API TessBaseAPI {
 
   void setEquationDetector(EquationDetectBase* equ_detect);
 
+  inline EquationDetectBase* getEquationDetector() {
+    return equ_detect_;
+  }
+
   const PAGE_RES* extGetPageResults();
 
  protected:

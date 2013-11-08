@@ -27,9 +27,9 @@
 #ifndef MEDS_H_
 #define MEDS_H_
 
-#include "M_Utils.h"
-#include "BlobInfoGrid.h"
-#include "equationdetectbase.h"
+#include <M_Utils.h>
+#include <BlobInfoGrid.h>
+#include <equationdetectbase.h>
 
 namespace tesseract {
 
@@ -39,9 +39,11 @@ class ColPartitionGrid;
 class ColPartitionSet;
 
 class MEDS : public EquationDetectBase {
-public:
+ public:
 
   MEDS();
+
+  ~MEDS();
 
   // Iterate over the blobs inside to_block, and set the blobs that we want to
   // process to BSTT_NONE. (By default, they should be BSTT_SKIP). The function
@@ -57,13 +59,38 @@ public:
   // do any detector work.
   void SetLangTesseract(Tesseract* lang_tesseract);
 
-private:
+  inline BlobInfoGrid* getGrid() {
+    return blobinfogrid;
+  }
+
+  inline void setTessAPI(TessBaseAPI& api) {
+    newapi = &api;
+  }
+
+  // Clear all heap memory that is specific to just one image
+  // so that memory is available to another one. This
+  // includes the BlobInfoGrid. The TessBaseApi is owned
+  // outside of this class (and is actually allocated on
+  // the stack). The image is owned and destroyed outside of the class
+  // as well. M_Utils is placed on the stack so is fine
+  void reset();
+
+  // Setting this to true will put the MEDS module into
+  // training mode. By default training mode is turned off
+  // so predictions are carried out rather than training.
+  inline void setTrainingMode(bool mode) {
+    train_mode = mode;
+  }
+
+ private:
   BlobInfoGrid* blobinfogrid; // blob grid on which I extract features, carry out
                               // binary classification, and segment regions of
                               // interest
   M_Utils mutils; // static class with assorted useful functions
   Tesseract* tess; // language-specific ocr engine
   PIX* img; // the binary image that is being operated on
+  TessBaseAPI* newapi;
+  bool train_mode;
 };
 
 

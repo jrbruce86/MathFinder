@@ -1,5 +1,4 @@
 lib_LTLIBRARIES = libevaluation.la
-SUBDIRS = ../Utils
 libevaluation_la_SOURCES = DocumentLayoutTest.h \
 DocumentLayoutTest.cpp \
 BipartiteGraph.h \
@@ -18,5 +17,4 @@ libevaluation_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/po -I../Tesseract/tessdata \
 -I../Tesseract/testing -I../Tesseract/textord \
 -I../Tesseract/training -I../Tesseract/viewer \
--I../Tesseract/wordrec -I../Utils -I../MEDS \
--I../Tesseract/
+-I../Tesseract/wordrec -I../Utils -I../Tesseract/

@@ -19,10 +19,10 @@ MEDS module implemented by this work. It then, further, makes it possible
 to compare the results of even newer implementations in future works.
 
 Tesseract:
-This is a slightly modified version of tesseract's 3.02 release. The
-MEDS module implemented herein and described above functions as a component 
-of the Tesseract document layout analysis framework and is tested against 
-the default MEDS module provided in the software.
+This is a slightly modified version of tesseract's 3.02 release. 
+Modifications were made so that run-time polymorphism is utilized for
+the equation detector class so that the MEDS module implemented here 
+can override it.
 
 Groundtruth_Generation:
 This includes all tools utilized in creating the Groundtruth data. The

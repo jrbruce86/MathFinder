@@ -715,15 +715,15 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
     page_res_ = new PAGE_RES(block_list_, &tesseract_->prev_word_best_choice_);
     return 0; // Empty page.
   }
-
   tesseract_->SetBlackAndWhitelist();
   recognition_done_ = true;
   if (tesseract_->tessedit_resegment_from_line_boxes)
     page_res_ = tesseract_->ApplyBoxes(*input_file_, true, block_list_);
   else if (tesseract_->tessedit_resegment_from_boxes)
     page_res_ = tesseract_->ApplyBoxes(*input_file_, false, block_list_);
-  else
+  else {
     page_res_ = new PAGE_RES(block_list_, &tesseract_->prev_word_best_choice_);
+  }
   if (tesseract_->tessedit_make_boxes_from_boxes) {
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
@@ -1508,11 +1508,17 @@ void TessBaseAPI::End() {
     thresholder_ = NULL;
   }
   if (page_res_ != NULL) {
+//    printf("the page res's charcount: %d\n", page_res_->char_count);
+//    printf("the block_res_list is of size: %d\n", page_res_->block_res_list.length());
+//    printf("before deleting page_res_\n");
     delete page_res_;
+//    printf("after deleting page_res_\n");
     page_res_ = NULL;
   }
   if (block_list_ != NULL) {
+//    printf("before deleting block_list_\n");
     delete block_list_;
+//    printf("after deleting block_list \n");
     block_list_ = NULL;
   }
   if (paragraph_models_ != NULL) {
@@ -1521,7 +1527,9 @@ void TessBaseAPI::End() {
     paragraph_models_ = NULL;
   }
   if (tesseract_ != NULL) {
+//    printf("before deleting tesseract\n");
     delete tesseract_;
+//    printf("after deleting tesseract\n");
     if (osd_tesseract_ == tesseract_)
       osd_tesseract_ = NULL;
     tesseract_ = NULL;
@@ -1688,7 +1696,6 @@ int TessBaseAPI::FindLines() {
             tesseract_->ImageWidth(), tesseract_->ImageHeight());
     return -1;
   }
-
   tesseract_->PrepareForPageseg();
   if (tesseract_->textord_equation_detect) {
     if (equ_detect_ == NULL && datapath_ != NULL) {
@@ -2002,6 +2009,7 @@ void TessBaseAPI::AdaptToCharacter(const char *unichar_repr,
 
 
 PAGE_RES* TessBaseAPI::RecognitionPass1(BLOCK_LIST* block_list) {
+  printf("allocating PAGE_RES in recognitionPass1 of baseapi.cpp\n");
   PAGE_RES *page_res = new PAGE_RES(block_list,
                                     &(tesseract_->prev_word_best_choice_));
   tesseract_->recog_all_words(page_res, NULL, NULL, NULL, 1);
@@ -2010,9 +2018,11 @@ PAGE_RES* TessBaseAPI::RecognitionPass1(BLOCK_LIST* block_list) {
 
 PAGE_RES* TessBaseAPI::RecognitionPass2(BLOCK_LIST* block_list,
                                         PAGE_RES* pass1_result) {
-  if (!pass1_result)
+  if (!pass1_result) {
+    printf("allocating PAGE_RES in recognitionPass2 of baseapi.cpp\n");
     pass1_result = new PAGE_RES(block_list,
                                 &(tesseract_->prev_word_best_choice_));
+  }
   tesseract_->recog_all_words(pass1_result, NULL, NULL, NULL, 2);
   return pass1_result;
 }

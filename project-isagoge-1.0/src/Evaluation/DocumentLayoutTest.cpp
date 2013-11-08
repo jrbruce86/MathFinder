@@ -163,7 +163,6 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
     exec((string)"rm -r " + out_res_dir); // remove everything if it exists
     exec((string)"mkdir " + out_res_dir); // make anew
   }
-
   // all_results_dir is located at
   // [topdir]/output/[subdir]/[out_res_subdir]
   // allresults dir holds all images output by the layout analysis
@@ -573,6 +572,8 @@ void DocumentLayoutTester::colorGroundTruthBlobs() {
     boxDestroy(&box);
     linenum++;
   }
+  delete [] curline;
+  curline = NULL;
   // save and destroy the final image
   string savename = gt_blobsdir + intToString(curfilenum) + ext;
   pixWrite(savename.c_str(), curimg, IFF_PNG);
