@@ -4,7 +4,7 @@ README - Project Isagoge
 
 This software requires Leptonica http://www.leptonica.com/.
 The dlib machine learning library is included here. To compile
-some of the examples you may need to modify the automake file in
+some of the dlib examples you may need to modify the automake file in
 src/dlib-18.4/examples.
 
 Before running ./configure, first run ./autogen.sh. 

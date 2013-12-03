@@ -60,11 +60,11 @@ DocumentLayoutTester::DocumentLayoutTester(EquationDetectBase* equ_detect) \
 // set up the file structure holding all the groundtruth,
 // input, and output data
 void DocumentLayoutTester::setFileStructure(string topdir_, \
-    string subdir_, string ext_) {
+    string dataset_, string ext_) {
   // organize the directory structure (and add directories in
   // case they may not exist yet)
   topdir = checkTrailingSlash(topdir_);
-  subdir = checkTrailingSlash(subdir_);
+  subdir = checkTrailingSlash(dataset_);
   ext = ext_;
   exec((string)"mkdir " + topdir + (string)"groundtruth/");
   groundtruthdir = topdir + (string)"groundtruth/" + subdir;
@@ -123,6 +123,12 @@ void DocumentLayoutTester::activateAllIntParams() {
     activateIntParam(intparams[i]);
 }
 
+void DocumentLayoutTester::activateEquOutput() {
+  activateBoolParam((string)"equationdetect_save_spt_image");
+  activateBoolParam((string)"equationdetect_save_seed_image");
+  activateBoolParam((string)"equationdetect_save_merged_image");
+}
+
 // Deactivate all the parameters that use scrollview (won't work in eclipse)
 void DocumentLayoutTester::deActivateScrollView() {
   deActivateBoolParam("textord_tabfind_show_initialtabs");
@@ -146,15 +152,15 @@ void DocumentLayoutTester::activateNonScrollView() {
 
 // Get tesseract layout results and place results in out_res_subdir
 // whose fullpath ends up as [topdir]/output/[subdir]/[out_res_subdir]
-void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
+void DocumentLayoutTester::runTessLayout(string out_res_subdir,
     bool layout_alreadydone) {
   out_res_subdir = checkTrailingSlash(out_res_subdir);
   string out_res_dir = outputdir + out_res_subdir;
   if(!layout_alreadydone) {
     for(int i = 0; i < output_result_subdirs.size(); i++) {
       if(output_result_subdirs[i] == out_res_subdir) {
-        cout << "ERROR: Duplicate test directory output names detected.\n" \
-            << "       Cannot use the same output directory name without\n" \
+        cout << "ERROR: Duplicate test directory output names detected.\n"
+            << "       Cannot use the same output directory name without\n"
             << "       overriding previous results!\n";
         exit(EXIT_FAILURE);
       }
@@ -200,7 +206,7 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
   // [topdir]/output/[subdir]/[out_res_subdir]/math_results/
   string mathresdir = out_res_dir + (string)"math_results/";
   if(!layout_alreadydone) {
-    exec((string)"mkdir " + mathresdir); // make anew
+    exec((string)"mkdir " + mathresdir); // make if not already made
     exec((string)"mv " + out_res_dir + "*merge*" + \
         " " + mathresdir); // move all relevant outputs to mathdir
 
@@ -218,7 +224,7 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
     exec((string)"mv " + tmpdir + (string)"*.tif*" \
         + (string)" " + mathresdir);
     exec((string)"rm -r " + tmpdir);
-    exec((string)"rm rename_pngs"); // no longer needed for now
+    exec((string)"rm rename_pngs");
   }
 
   // Now convert the results into ones that will be useful for
@@ -230,6 +236,8 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir, \
   // Red = displayed, Green = inline, Blue = non-math.
   // Thus for Tesseract results, all that is significant is Red and
   // Green bounding boxes. Blue ones can be ignored.
+  // --This also writes all the bounding boxes of the colored regions
+  // to a file.
   vector<LayoutEval::Color> significantcolors;
   significantcolors.push_back(LayoutEval::RED);
   significantcolors.push_back(LayoutEval::GREEN);

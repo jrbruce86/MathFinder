@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <string>
+#include <fstream>
 #include <iostream>
 #include <math.h>
 
@@ -61,6 +62,12 @@ namespace Basic_Utils {
   // given delimiter (does spaces by default)
   vector<string> stringSplit(string str, char delimiter=' ');
 
+  // returns true if the string is a positive number (can take decimal point)
+  bool isStrNumeric(const string& str);
+
+  // takes a string and converts it to a double
+  double strToDouble(const string& str);
+
   // splits txt into separate lines
   // (TAKEN OUT BECAUSE IT'S BUGGY... SEE M_UTILS.H FOR REPLACEMENT!!!)
   //vector<char*> lineSplit(const char* txt);
@@ -83,8 +90,17 @@ namespace Basic_Utils {
   // doesn't modify the original strings
   char* strAppend(char* str1, char* str2);
 
-  inline void destroyStr(char* str) {
-    delete [] str;
+  // returns pointer to new string with the character at the given (zero-based) index
+  // removed. deletes the old string then makes sure it points to the new one
+  char* strRemoveChar(char*& str, int index);
+
+  // doesn't modify original string, but returns newly allocated copy
+  char* strCopy(const char* const str);
+
+  inline void destroyStr(char*& str) {
+    if(str != NULL) {
+      delete [] str;
+    }
     str = NULL;
   }
 

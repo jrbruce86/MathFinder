@@ -23,6 +23,8 @@
 
 #include "Basic_Utils.h"
 #include <string.h>
+#include <sstream>
+#include <stdlib.h>
 #include <assert.h>
 
 
@@ -106,7 +108,7 @@ vector<string> stringSplit(string str, char delimiter) {
         curindex++;
         cursplit = splitlocations[curindex];
       } else {
-        // on the last split get last string is up till the end
+        // on the last split get last string up till the end
         curindex++;
         cursplit = str.length();
       }
@@ -115,44 +117,35 @@ vector<string> stringSplit(string str, char delimiter) {
   return stringlist;
 }
 
-/*
-vector<char*> lineSplit(const char* txt) {
-  int txtlen = (int)strlen(txt);
-  // pass 1: find split points
-  vector<int> splitpoints;
-  for(int i = 0; i < txtlen; i++) {
-    if(txt[i] == '\n' && (i < (txtlen-1)))
-      splitpoints.push_back(i);
+bool isStrNumeric(const string& str) {
+  bool isnumber = true;
+  if(str.empty())
+    return false;
+  int decimalpoint = 0;
+  for(int i = 0; i < str.length(); i++) {
+    if(!isdigit(str.at(i))) {
+      if(str.at(i) == '.') {
+        if(++decimalpoint > 1) {
+          isnumber = false;
+          break;
+        }
+      }
+      else {
+        isnumber = false;
+        break;
+      }
+    }
   }
-  // pass 2: iterate split points to do all the splitting
-  int prevsplit = 0;
-  vector<char*> res;
-  if(splitpoints.empty()) {
-    res.push_back((char*)txt);
-    return res;
-  }
-  for(vector<int>::iterator it = splitpoints.begin();
-      it != splitpoints.end(); it++) {
-    int split = (int)(*it);
-    int newstrsize = split-prevsplit;
-    char* ln = new char[newstrsize+1]; // +1 for null terminator
-    for(int i = 0; i < newstrsize+1; i++)
-      ln[i] = txt[prevsplit+i];
-    ln[newstrsize] = '\0'; // null terminator
-    res.push_back(ln);
-    splitpoints.clear();
-    prevsplit = split;
-  }
-  // now just need to add the last line
-  int lastsplit = prevsplit;
-  int newstrsize = txtlen - prevsplit;
-  char* ln = new char[newstrsize+1];
-  for(int i = 0; i < newstrsize; i++)
-    ln[i] = txt[prevsplit+i];
-  ln[newstrsize] = '\0';
-  res.push_back(ln);
-  return res;
-}*/
+  return isnumber;
+}
+
+double strToDouble(const string& str) {
+  std::istringstream i(str);
+  double x;
+  if (!(i >> x))
+    return 0;
+  return x;
+}
 
 char* removeExtraNLs(char* str) {
   int end = (int)strlen(str);
@@ -216,6 +209,41 @@ char* strAppend(char* str1, char* str2) {
     newstr[str1_len+i] = str2[i];
   newstr[total_len] = '\0';
   return newstr;
+}
+
+char* strRemoveChar(char*& str, int index) {
+  if(str == NULL)
+    return NULL;
+  int strlen_ = strlen(str);
+  if(index > strlen_ || index < 0) {
+    cout << "ERROR: Attempted removal of character outside string bounds\n";
+    exit(EXIT_FAILURE);
+  }
+  int newlen_ = strlen_ - 1;
+  char* newstr = NULL;
+  if(newlen_ > 0) {
+    newstr = new char[newlen_ + 1]; // + 1 for NULL terminator
+    int j = 0;
+    for(int i = 0; i < strlen_; i++) {
+      if(i != index) {
+        newstr[j] = str[i];
+        j++;
+      }
+    }
+    newstr[newlen_] = '\0';
+  }
+  delete [] str;
+  str = newstr;
+  return newstr;
+}
+
+char* strCopy(const char* const str) {
+  int len_ = strlen(str);
+  char* cpy = new char[len_ + 1]; // + 1 for NULL terminator
+  for(int i = 0; i < len_; i++)
+    cpy[i] = str[i];
+  cpy[len_] = '\0';
+  return cpy;
 }
 
 string exec(string cmd, bool disp) {

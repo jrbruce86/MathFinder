@@ -26,8 +26,9 @@
  ***************************************************************************/
 
 #include <allheaders.h>
-#include <DocumentLayoutTest.h>
 #include <MEDS_Trainer.h>
+#include <DocumentLayoutTest.h>
+#include <MEDS.h>
 
 #include <iostream>
 #include <string>
@@ -48,7 +49,7 @@ void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
-  string dataset = "calctest";
+  string dataset = "advcalc1_without_labels";
   string train_dir = "training/";
   string train_set = "SVM_AdvCalc1_15/";
   const string trainpath = topdir+train_dir+train_set;
@@ -56,26 +57,25 @@ int main() {
  // evaluateDataSet(NULL, topdir, dataset, "tessdefault");
 
 
-  // set this to false if you only want to train the module
+  // set this to false if only want to train the module
   // if it hasn't been trained yet.
   bool train_always = true;
 
-  // initialize the equation detection/segmenation module
-  EquationDetectBase* myMEDS = new MEDS();
   // Pick a detector/segmentor combo and train if necessary
-  MEDS_Trainer<SVMTrainerPredictor1> trainer(train_always,
-      trainpath);
-  trainer.setDetectorSegmentor((MEDS*)myMEDS);
+  EquationDetectBase* tess_interface = new TessInterface();
+  MEDS_Trainer<Detector1> trainer(train_always, trainpath, false);
   trainer.trainDetector();
 
-  /*
-  train_dir.erase();
-  trainpath.erase();
-  groundtruth.erase();
-  topdir.erase();
-  dataset.erase();
-  train_set.erase();*/
- // evaluateDataSet(myMEDS, topdir, dataset, "my_detector");
+
+
+  // test mine
+  // initialize the equation detection/segmenation module
+  //EquationDetectBase* mymeds = new MEDS<Detector1>;
+  //EquationDetectBase* myMEDS = new MEDS;
+  //evaluateDataSet(mymeds, topdir, dataset, "myMEDS");
+
+  // test default
+  //evaluateDataSet(NULL, topdir, dataset, "tessdefault");
 
 
   // TODO: Compare the results!
@@ -90,19 +90,7 @@ void evaluateDataSet(EquationDetectBase* detector, \
   DocumentLayoutTester test(detector);
   // create the file structure
   test.setFileStructure(topdir, dataset, extension);
-  //test.colorGroundTruthBlobs();
-  //test.activateNonScrollView();
-  //test.activateBoolParam("textord_tabfind_show_partitions");
-  //test.activateBoolParam("textord_tabfind_show_blocks");
-  //test.activateBoolParam("textord_debug_images");
-  //test.activateAllParams();
-  //test.activateBoolParam("textord_tabfind_show_initial_partitions");
-  //test.activateBoolParam("textord_tabfind_show_columns");
-  //test.activateIntParam("textord_tabfind_show_images");
-  // deactivate dumping table images (requires input file to have
-  // specific name "test1.tif")
-  //test.deActivateBoolParam("textord_dump_table_images");
-  //test.deActivateBoolParam("textord_debug_images");
+  test.activateEquOutput();
 
   // run layout analysis on the images first (this includes
   // running the equation detection as well)
@@ -111,8 +99,7 @@ void evaluateDataSet(EquationDetectBase* detector, \
   // set's output directory!!
   test.runTessLayout(testname);
 
-
-//  test.evalTessLayout(testname, true);
+  test.evalTessLayout(testname, true);
 
   // TODO: Modify DocumentLayoutTester's destructor to avoid
   //       memory leaks!!!

@@ -203,11 +203,18 @@ void M_Utils::dispHlBlobInfoRegion(BLOBINFO* bb, PIX* im) {
   boxDestroy(&box);
 }
 
+void M_Utils::drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, SimpleColor color) {
+  TBOX t = bb->bounding_box();
+  BOX* box = tessTBoxToImBox(&t, im);
+  Lept_Utils lu;
+  lu.fillBoxForeground(im, box, (LayoutEval::Color)color);
+  boxDestroy(&box);
+}
+
 void M_Utils::dispTBoxCoords(TBOX* box) {
-  cout << "(left, top, right, bottom): ("
-       << box->left() << ", " << box->top()
-       << ", " << box->right() << ", "
-       << box->bottom() << ")\n";
+  cout << "int left=" << box->left() << ", top=" << box->top()
+       << ", right=" << box->right() << ", bottom="
+       << box->bottom() << ";\n";
 }
 
 // TODO: Move this to basic utils.. that's really we're this belongs o_o

@@ -28,7 +28,6 @@
 
 #include <Sample.h>
 #include <IBinaryClassifier.h>
-#include <IFeatureExtractor.h>
 
 // types of trainers
 #include "CrossValidationSVM.h" // this one is just a place holder
@@ -36,20 +35,16 @@
                                 // the SVM implementations
 
 template <typename TrainerType,
-typename BinClassType,
-typename FeatExtType>
+typename BinClassType>
 class ITrainer {
   // some shorthand to make things less messy
   typedef IBinaryClassifier<BinClassType> IClassifier;
-  typedef IFeatureExtractor<FeatExtType> IFeatExt;
 
  public:
-  ITrainer<TrainerType, BinClassType, FeatExtType>() {}
+  ITrainer<TrainerType, BinClassType>() {}
 
-  inline void initTraining(IClassifier& classifier_,
-      IFeatExt& featext_) {
+  inline void initTraining(IClassifier& classifier_) {
     classifier = classifier_;
-    featext = featext_;
     trainer.initTraining(classifier);
   }
 
@@ -59,9 +54,12 @@ class ITrainer {
     return classifier;
   }
 
+  inline void reset() {
+    trainer.reset();
+  }
+
   TrainerType trainer;
   IClassifier classifier;
-  IFeatExt featext;
 };
 
 #endif

@@ -137,6 +137,12 @@ class ROW:public ELIST_LINK
     #endif  // GRAPHICS_DISABLED
     ROW& operator= (const ROW & source);
 
+    // added by jake to just move the baseline and nothing else
+    inline void move_baseline(ICOORD vec) {
+      baseline.move(vec);
+    }
+
+
   private:
     inT32 kerning;               //inter char gap
     inT32 spacing;               //inter word gap

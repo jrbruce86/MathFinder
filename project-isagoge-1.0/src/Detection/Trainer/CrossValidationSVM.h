@@ -51,6 +51,9 @@ class CrossValidatorSVM {
     return classifier;
   }
 
+  inline void reset() {
+  }
+
   IClassifier classifier;
 };
 

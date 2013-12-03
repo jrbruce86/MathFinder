@@ -73,6 +73,10 @@ class IBinaryClassifier {
     return classifier.isTrained();
   }
 
+  inline void reset() {
+    classifier.reset();
+  }
+
   BinClassType classifier;
 };
 

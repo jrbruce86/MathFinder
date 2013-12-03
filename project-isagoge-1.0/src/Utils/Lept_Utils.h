@@ -26,6 +26,7 @@
 
 #include <allheaders.h>   // leptonica api
 #include <vector>
+#include <iostream>
 using namespace std;
 #define fgthresh 100   // this may need to change depending on the image..
 
@@ -35,6 +36,8 @@ namespace LayoutEval {
     RED, BLUE, GREEN, NONE
   } Color;
 }
+
+enum SimpleColor { RED, BLUE, GREEN, NONE };
 
 typedef l_int32 rgbtype;
 
@@ -65,6 +68,27 @@ public:
     }
     composeRGBPixel(red, green, blue, pixel);
     pixSetPixel(pix, x, y, *pixel);
+  }
+
+  // thickness is both how many pixels wide and high to be drawn with the given x,y in the center
+  static inline void drawAtXY(PIX* im, int x, int y, SimpleColor color, int thickness=5) {
+    if(thickness < 1) {
+      cout << "ERROR: Cannot draw a point less than 1 pixel thick >:-(\n";
+      exit(EXIT_FAILURE);
+    }
+    if(!(thickness % 2))
+      ++thickness; // needs to be odd
+    l_uint32* startpix = pixGetData(im);
+    int startx = x - ((thickness - 1)/2);
+    int starty = y - ((thickness - 1)/2);
+    int endx = startx + thickness;
+    int endy = starty + thickness;
+    for(int i = starty; i < endy; i++) {
+      for(int j = startx; j < endx; j++) {
+        l_uint32* curpix = startpix + l_uint32(j + (i*im->w));
+        setPixelRGB(im, curpix, j, i, (LayoutEval::Color)color);
+      }
+    }
   }
 
   static int colorPixCount(PIX* im, LayoutEval::Color color);

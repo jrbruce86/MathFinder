@@ -20,8 +20,14 @@ AC_CONFIG_FILES([Makefile
                 src/Grid/Makefile
                 src/Detection/Makefile
                 src/Detection/Sample/Makefile
+                src/Detection/TessInterface/Makefile
                 src/Detection/BinaryClassifier/Makefile
                 src/Detection/FeatureExtractor/Makefile
+                src/Detection/FeatureExtractor/NGrams/Makefile
+                src/Detection/FeatureExtractor/NGrams/NGProfileGen/Makefile
+                src/Detection/FeatureExtractor/Sentence/Makefile
+                src/Detection/FeatureExtractor/Implementations/Makefile
+                src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile
                 src/Detection/Trainer/Makefile
                 src/Segmentation/Makefile
                 src/MEDS_Trainer/Makefile],

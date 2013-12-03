@@ -95,6 +95,10 @@ class DocumentLayoutTester : public Lept_Utils {
   **********************************************************/
   void activateAllBoolParams();
 
+  // Turn on equation debugging in Tesseract so it outputs
+  // the results of layout analysis
+  void activateEquOutput();
+
   /**********************************************************
   * Go ahead and enable all of the integer params           *
   **********************************************************/
@@ -368,52 +372,7 @@ class DocumentLayoutTester : public Lept_Utils {
                         // (rather than just resetting all of them on each iteration)
   TessBaseAPI api; // the Tesseract API
   EquationDetectBase* new_equ_detector;
-  //EquationDetectorSVM* equ;
 };
 
-// TODO: Move all defunct code to some other file (incase it may
-// come in handy later.. and also to tidy up this one a bit...)
-/*
-  // Returns bounding box corresponding to labeled groundtruth image
-  // by following the edges of the rectangle and marking processed
-  // pixels. arg1: starting row, arg2: starting column, arg3:
-  // the image of iterest, arg4: bounding box color to follow in
-  // the image. WARNING: the limitation of this is that no topleft
-  // corner of a bounding box may overlap another. Check for these
-  // and try to prevent them while creating the initial groundtruth
-  BOX* getColoredBoundingBox(const l_uint32& srow, const l_uint32& scol, \
-      const PIX* const &image, const LayoutEval::Color& color);
-*/
-
-/*  map<l_uint32, bool> pixel_markers; // quick indexing to which pixels
-                                     // have been processed within a PIX structure
-                                     // NOTE: This was retarded because it took
-                                     // up way too much memory
-  vector<l_uint32> markedpix; // list of the pixels that will have to be reset*/
-
-/*
-// Helper function for getColoredBoundingBox which searches right
-// or downward to find the rightmost or bottom-most point respectively
-inline void followBBox(l_uint32& row_or_col, \
-    const l_uint32& inc, l_uint32** pixel, \
-    const l_uint32& width_or_height, \
-    const LayoutEval::Color& color, bool isrow, \
-    const l_uint32& col_or_row, const l_uint32& height_or_width, \
-    bool forward, bool recurse=false, bool recursemode=true, \
-    bool firstpix_processed=true);
-*/
-
-/*
-// mark a pixel as already having been processed
-// uses pixel_markers map to keep track of what
-// has and hasn't been marked markedpix list to
-// keep a list of what has been marked so resetting the
-// map is faster on each iteration
-inline void markPixel(l_uint32 index);
-*/
-
-/*
-inline void resetPixelMarkers(const Pix* const &img);
-*/
 
 #endif /* DOCUMENTLAYOUTTEST_H_ */

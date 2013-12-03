@@ -20,7 +20,13 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -IMEDS/ -IUtils/ -Idlib-18.4 -IMEDS_Trainer \
 -IDetection -IDetection/BinaryClassifier \
 -IDetection/FeatureExtractor \
--IDetection/Trainer -IDetection/Sample -IGrid -ISegmentation
+-IDetection/FeatureExtractor/Implementations \
+-IDetection/FeatureExtractor/Implementations/F_Ext1 \
+-IDetection/FeatureExtractor/NGrams \
+-IDetection/Trainer -IDetection/Sample -IGrid -ISegmentation \
+-IDetection/TessInterface -IDetection/FeatureExtractor/Sentence \
+-IDetection/FeatureExtractor/NGrams \
+-IDetection/FeatureExtractor/NGrams/NGProfileGen
 
 isagoge_LDADD = /usr/local/lib/liblept.so \
 MEDS/libMEDS.la /usr/lib64/libX11.so \

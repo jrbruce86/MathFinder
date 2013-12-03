@@ -1,9 +1,9 @@
 lib_LTLIBRARIES = libFeatureExtractor.la
-SUBDIRS = ../../Grid ../../MEDS ../Sample
-libFeatureExtractor_la_SOURCES = IFeatureExtractor.h F_Ext1.h F_Ext1.cpp
+SUBDIRS = ../../Grid Implementations
+libFeatureExtractor_la_SOURCES = IFeatureExtractor.h
 libFeatureExtractor_la_LIBADD = ../../Grid/libGrid.la \
-../../MEDS/libMEDS.la ../Sample/libGTParser.la
-libFeatureExtractor_la_CPPFLAGS = -I../../Grid -I../../MEDS \
+Implementations/libFE_Implementations.la
+libFeatureExtractor_la_CPPFLAGS = -I../../Grid -IImplementations \
 -I../../Tesseract/api \
 -I../../Tesseract/ccmain -I../../Tesseract/ccstruct \
 -I../../Tesseract/ccutil -I../../Tesseract/classify \
@@ -15,5 +15,4 @@ libFeatureExtractor_la_CPPFLAGS = -I../../Grid -I../../MEDS \
 -I../../Tesseract/po -I../../Tesseract/tessdata \
 -I../../Tesseract/testing -I../../Tesseract/textord \
 -I../../Tesseract/training -I../../Tesseract/viewer \
--I../../Tesseract/wordrec -I../../Tesseract -I../../Utils \
--I../Sample
+-I../../Tesseract/wordrec -I../../Tesseract

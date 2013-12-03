@@ -9,7 +9,7 @@
  *              training, and binary classification used in order to detect
  *              mathematical symbols on a page. The emphasis of this component
  *              is to get as many true positives as possible while avoiding
- *              false positives to the greatest extent possible. It is considered
+ *              false positives to the greatest extent possible. It is here considered
  *              better to have a false negative than a false positive in
  *              general at this stage, since it is much easier to correct the
  *              latter during segmentation.
@@ -41,11 +41,11 @@
 #ifndef DETECTION_H
 #define DETECTION_H
 
-#include "TrainerPredictor.h"
+#include "Detector.h"
 
-// SVMTrainerPredictor1 is the first TrainerPredictor (Math Detector) implementation.
+// Detector1 is the first Detector implementation.
 // TODO Add more details!
-typedef TrainerPredictor<CrossValidatorSVM<libSVM>, libSVM, F_Ext1> SVMTrainerPredictor1;
+typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext1> Detector1;
 
 #endif
 

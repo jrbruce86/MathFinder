@@ -1,0 +1,215 @@
+0: The ﬁrst ﬁve show distinctly that the independent variable is x, whereas
+the last three do not explicitly indicate the variable and should not be
+used unless there is no chance of a misunderstanding.
+-------
+1: First may be mentioned
+dz ‘_ dz dy
+g = g 3%: where z = ¢(g/) and y-_=f(:c).
+-------
+2: Du :1; Dv,
+D (em) = um + vDu- (6)
+D — D
+
+De): v__u_;}2;J,=v« D(:,,,.
+-------
+3: Ax _ A31 A9:
+lim ::1iIIl 1- lim Z_—_1im’r"'—"-lim ‘-1’-,
+Az ‘I2.
+-------
+4: Similarly, if y = f (as) and if as, as the inverse function
+of y, be written a:=f-1(y) from analogy with y zsina: and a:=sin-13/, the
+relation (5) follows from the fact that A2:/Ay and Ay/A3: are reciprocals.
+-------
+5: The rule for differentiating a power is derived
+in case n is integral by the application of the binomial theorem.
+-------
+6: The result may be extended to rational
+P
+P
+values of the index n by Writing n = -15, y = 9:3, 3/1 = 9:19 and by differentiating
+Q
+both sides of the equation and reducing.
+-------
+7: The formula is therefore assumed in accordance with the principle of
+permanence of form (§ 178), just as formulas like ama" = a"'+" of the theory of
+exponents, which may readily be proved for rational bases and exponents, are
+assumed without proof to hold also for irrational bases and exponents.
+-------
+8: It is frequently better to regard the quotient as the product u - v-1 and apply (6).
+-------
+9: For when Ax é 0, then Ay é 0 or Ag//A9: could not approach a limit.
+-------
+10: To integrate a function f (arr) is to ﬁnd
+a function  the derivative of which is f The integral F(x) is
+not uniquely determined by the integrand f (1'); for any two functions
+which diifer merely by an additive constant have the same derivative.
+-------
+11: It must not be thought that the constant of integration always appears added to the -
+function F (93).
+-------
+12: It may be combined with F (2) so as to be somewhat disguised.
+-------
+13: To illustrate the
+determination of the constant by initial conditions, consider the problem of ﬁnding
+the area under the curve 3/ = cdsz.
+-------
+14: By (43)
+D,,A-: y = cosz and hence A = sina: + C.
+-------
+15: Hence A = sin :43.
+-------
+16: But if the area be
+measured from :c=—}1r, then A=O when :c=—§1r and C’ :1.
+-------
+17: Hence A=1+ sin ac.
+-------
+18: The fundamental formu1as‘of int';egration are as follows:
+T
+1 1 .
+-------
+19: Integration by parts is an application of (61) when written as
+fun’ = uv — fu’v.
+-------
+20: That is, it may happen that the integrand can be written as the product uv’ of two
+factors, where v’ is integrable and where u’v is also integrable.
+-------
+21: Then uv’ is integrable.
+-------
+22: For instance, logo: is not integrated by the fundamental formulas ; but
+flogxzflogmlzzloga:-—-fa:/aszazlogaz-9:.
+-------
+23: Here log 3; is taken as u and 1 as v’,i so that v is 2:, u’ is 1/9:, and u’v = 1 is immedi-
+ately integrable.
+-------
+24: Here if to = u and sin :1: = 1:’, both 1:’ and u’v = — cosa: are integrable.
+-------
+25: If the choice
+Sin z=u and x: 1:’ had been made, 22’ would have been integrable but u’v=§ 3:2 cos 3;
+would have been less simple to integrate than the original integrand.
+-------
+26: Hence in
+applying integration by parts it is necessary to look ahead far enough to see that
+both 22’ and u"v are integrable, or at any rate that v’ is integrable and the integral
+of u’v is simpler than the original integral!‘
+Frequently integration by parts has to be applied several times in succession.
+-------
+27: For example,
+fe'=cos:c=e="cosa:+fe=sina: if u=cosa:, v’=e~',
+=e¢cosa:+[e~'=sina:—feIcos:c] if uzsinx, v’=e°=,
+= e-'=(cosa: + since) -—fe¢ cosas.
+-------
+28: Hence fer cosa: = ; e~T(c0sa: + sin 2:).
+-------
+29: Show that fR [23,  )m.
+-------
+30: Show that I (a + by)Py<1 may be rationalized if p or q or p + q is an integer.
+-------
+31: By setting :13" = 3/ show that Ix“ (a + bx")?
+-------
+32: If the roots of a + bat + 63:2 = O are imaginary» IR (‘Ca ‘/9 + b3 + 0332) may
+be rationalized by y :\/a + be: + oz” -17 a: \/5.
+-------
+33: Va -_— my.
+-------
+34: Show that if R (:c, \/a‘~’ — ac?
+-------
+35: Use  1 (g') and 6 (e) to
+compare the labor of this algebraic substitution with that of the trigonometric or
+hyperbolic.
+-------
+36: If an interval from as = a to :1: = I» be divided
+into n successive intervals A931, Axz, ---, Am” and the value f(£,-) of a
+function f be computed from some point 6,.
+-------
+37: Ax; and
+be multiplied by A1,, then the limit of the sum
+1iT}1_[f(f1)A1'1 +f($2) A332 + ' ' ' +f(£n) Axn] =  ‘I33 (62)
+A1‘; £0
+’l=®
+l
+
+
+-------
+38: Ax be considered and the
+rectangle corresponding to the ordinate f(£) be drawn, it is clear that
+the area of the rectangle is f($) Ax, that the area of all the rectangles is
+the sum 2f(E) Ax taken from a, to b, that when the intervals Ax approach
+zero the limit of their sum is the area under the curve ; and hence that
+area may be written as the deﬁnite integral of f(a:) from a to b.
+-------
+39: In like manner consider the mass of a rod of variable density and suppose the
+rod to lie along the :c-axis so that the density may be taken as a function of 1:.
+-------
+40: In any small length A2: of the rod the density is nearly constant and the mass of
+that part is approximately equal to the product pm: of the density p(:c) at the
+initial point of that part times the length A2: ef the part.
+-------
+41: In fact it is clear that
+the mass will be intermediate between the products mm: and MM, Where m and
+M are the minimum and maximum densities in the interval Ax.
+-------
+42: In other Words
+the mass of the section A2: will be exactly equal to p (5) A2: Where 5 is some value of
+:1: in the interval A23.
+-------
+43: The mass of the whole rod is therefore the sum 2p(£)Aa;
+taken from one end of the rod to the other, and if the intervals be allowed to
+approach zero, the mass may be written as the integral of p(a:) from one end of
+the rod to the other.
+-------
+44: Let w be the
+0' weight of a column of water of cross section 1 sq.
+-------
+45: At a
+’ \F‘- “\/Calls‘! L VUAJIVI ‘-55 VJ‘?
+-------
+46: The pressure on the
+approximately whA if A be the area.
+-------
+47: The pressure on the
+H
+area.
+-------
+48: Now let the ﬁnite area be ruled into strips of height Ah.
+-------
+49: Consider the
+product whb (72,) Ah Where b(h) = f (h) is the breadth of the area at the depth 12.
+-------
+50: The £’s may evidently be so chosen that the ﬁnite sum 2‘,f(£) Arc is exactly equal to
+the area under the curve ; but still it is necessary to let the intervals approach zero and
+thus replace the sum by an integral because the values of 5 which make the sum equal
+to the area are unknown.
+-------
+51: Show directly that (a) j; "sinzzdx = ;}r, (5) f0 "cosnzdx = o, if n is odd.
+-------
+52: With the aid of the trigonometric formulas
+cosa:+ cos2a:+  + cos(n—1)2:=§[sinn:ccot;a:—1-- cosnz],
+sina:+ sin2a: + ---+ sin (n— 1):: =,}[(1— cosnJ:)cot;a:—sinn:c],
+b b
+
+show (a) f cosazdas = sin b — sin a, (ﬂ) f sinzda: = cos a — cos b.
+-------
+53: Use the relation between deﬁnite and indeﬁnite integrals to compare
+
+ = (b -- a)f(£) and F(b) — F(a) = (b -- a) F’(£),
+the Theorem of the Mean for derivatives and for deﬁnite integrals.
+-------
+54: Nb of two functions, in
+any interval in which the derivative <I>’(2:) does not vanish, is equal to the quotient
+of the derivatives of the functions for some interior point of the interval.
+-------
+55: Discuss the volume of revolution of y = f (as) as the limit of the sum of thin
+cylinders and compare the results with those found in Ex.
+-------
+56: Show (ct) that the mass in a rod running from a to b is the same as the area
+under the curve 3/ = p (as) between the ordinates 2: = a and 2: = b, and explain why
+this should be seen intuitively to be so.
+-------
+57: Show (3) that if the density in a plane slab
+bounded by the :2:-axis, the curve y -_- f(:c), and the ordinates a: = a and 9: = b is a
+T b
+
+function p (a:) of :c alone, the mass of the slab is f yp (a:)d.
+-------
+58: An isosceles triangle has the altitude a and the base 2 b.
+-------

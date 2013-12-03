@@ -108,6 +108,10 @@ class M_Utils {
   // the foreground pixels of the blob of interest highlighted in red
   static void dispHlBlobInfoRegion(BLOBINFO* bb, PIX* im);
 
+  // similar to dispHlBlobInfoRegion but only draws, doesn't display
+  // draws directly on the pix, rather than making a temp copy
+  static void drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, SimpleColor color);
+
   static void dispTBoxCoords(TBOX* box);
 
   // copy contents of string into newly allocated memory

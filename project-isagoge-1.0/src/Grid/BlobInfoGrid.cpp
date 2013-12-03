@@ -31,6 +31,8 @@
 //#define DBG_INFO_GRID
 //#define DBG_INFO_GRID_S
 //#define DBG_INFO_GRID_SHOW_SENTENCE_REGIONS
+#define SHOW_BLOB_WINDOW
+#define DBG_BASELINE
 
 #include "BlobInfoGrid.h"
 #include <ctype.h>
@@ -47,8 +49,9 @@ BlobInfoGrid::BlobInfoGrid(int gridsize, const ICOORD& bleft,
             part_grid(NULL), best_col_divisions(NULL), bbgrid(NULL),
             tess(NULL), img(NULL), newapi(NULL), part_win(NULL),
             blobnboxgridview(NULL), rec_col_parts_sv(NULL),
-            insertrblobs_sv(NULL), line_sv(NULL), sentence_sv(NULL) {
-    Init(gridsize, bleft, tright);
+            insertrblobs_sv(NULL), line_sv(NULL), sentence_sv(NULL),
+            dbgfeatures(false) {
+  Init(gridsize, bleft, tright);
 }
 
 // It's very important to delete everything that has been allocated
@@ -70,18 +73,26 @@ BlobInfoGrid::~BlobInfoGrid() {
   for(int i = 0; i < recognized_sentences.length(); i++) {
     Sentence* cursentence = recognized_sentences[i];
     if(cursentence != NULL) {
-      char* txt = cursentence->sentence_txt;
-      if(txt != NULL) {
-        delete [] txt;
-        txt = NULL;
+      if(cursentence->ngrams != NULL) {
+        NGramRanker ng;
+        ng.destroyNGramVecs(*(cursentence->ngrams));
+        delete cursentence->ngrams;
+        cursentence->ngrams = NULL;
       }
-      Boxa* lboxes = cursentence->lineboxes;
-      boxaDestroy(&lboxes);
       delete cursentence;
       cursentence = NULL;
     }
   }
   recognized_sentences.clear();
+
+  for(int i = 0; i < valid_rows.length(); ++i) {
+    ROW* cur_row = valid_rows[i];
+    if(cur_row != NULL) {
+      delete cur_row;
+      cur_row = NULL;
+    }
+  }
+  valid_rows.clear();
 
   // just to be safe I'm going to go through and manually
   // delete each entry in the bbgrid as well
@@ -235,10 +246,38 @@ void BlobInfoGrid::recognizeColParts() {
         ROW_RES* rowres = rowresit.data();
         WERD_RES_LIST* wordreslist = &(rowres->word_res_list);
         // Iterate through the words inside the row (within the block within the partition)
-        WERD_RES_IT wordresit(wordreslist);
-        wordresit.move_to_first();
+        // first find out if the row has any valid words, also set the row height
+        WERD_RES_IT wordresit1(wordreslist);
+        wordresit1.move_to_first();
+        bool row_has_valid = false;
         for(int k = 0; k < wordreslist->length(); k++) {
-          WERD_RES* wordres = wordresit.data();
+          WERD_RES* wordres = wordresit1.data();
+          WERD_CHOICE* wordchoice = wordres->best_choice;
+          if(wordchoice != NULL) {
+            const char* wrd = wordchoice->unichar_string().string();
+            if(newapi->IsValidWord(wrd)) {
+              row_has_valid = true;
+              // if the row has at least one valid word then save it in the grid
+              ROW* row = rowres->row;
+              ICOORD vec(0, curpart->bounding_box().bottom()); // move from partition to image coords
+              row->move_baseline(vec);
+              ROW* rowcopy = new ROW;
+              *rowcopy = *row;
+              valid_rows.push_back(rowcopy);
+              break;
+            }
+          }
+          wordresit1.forward();
+        }
+        // now iterate through the words to create all the blobinfo objects
+        WERD_RES_IT wordresit2(wordreslist);
+        wordresit2.move_to_first();
+        for(int k = 0; k < wordreslist->length(); k++) {
+          WERD_RES* wordres = wordresit2.data();
+          const FontInfo* font = wordres->fontinfo;
+          bool is_italic = false;
+          if(font != NULL)
+            is_italic = wordres->fontinfo->is_italic();
           WERD* word = wordres->word;
           WERD_CHOICE* wordchoice = wordres->best_choice;
           // Iterate through the blobs that are within the current word (within the row within the
@@ -262,17 +301,24 @@ void BlobInfoGrid::recognizeColParts() {
             // of everything that belongs to the language-specific api I'm using
             // so that I can delete the api when I'm done with it.
             BLOBINFO* blobinfo = new BLOBINFO(recbb);
+            blobinfo->blobindex_inword = l;
+            blobinfo->word_lastblob = bloblist->length() - 1;
             blobinfo->original_part = curpart; // can shallow copy, since this is owned outside our scope
             blobinfo->line_rel_colpart = j; // the blob's row index relative to this col partition
             blobinfo->linewordindex = k; // the blob's word index within a row
             //cout << recblob->area() << endl;
             blobinfo->recognized_blob = recblob->deep_copy(recblob); // deep copy
+            blobinfo->row_has_valid = row_has_valid;
+            blobinfo->is_italic = is_italic;
+            if(row_has_valid)
+              blobinfo->row = valid_rows.back();
             if(wordchoice == NULL) {
               blobinfo->word = NULL;
               blobinfo->wordstr = NULL;
               blobinfo->validword = false;
             }
             else {
+              blobinfo->certainty = wordchoice->certainty();
               blobinfo->word = new WERD_CHOICE(*wordchoice); // deep copy
               const char* wrd = blobinfo->word->unichar_string().string();
               blobinfo->wordstr = mutils.strDeepCpy(wrd);
@@ -289,7 +335,7 @@ void BlobInfoGrid::recognizeColParts() {
             blob_it.forward();
             boxDestroy(&recbox);
           }
-          wordresit.forward();
+          wordresit2.forward();
         }
         rowresit.forward();
       }
@@ -505,6 +551,10 @@ void BlobInfoGrid::insertRemainingBlobs() {
         BLOBINFO* cpyblinfo = new BLOBINFO(*blinfo); // deep copy
         int line_rel_colpart = blinfo->line_rel_colpart; // the row to assign any new blobs created here
         int linewordindex = blinfo->linewordindex;
+        float certainty = blinfo->certainty;
+        bool row_has_valid = blinfo->row_has_valid;
+        bool is_italic = blinfo->is_italic;
+        ROW* row = blinfo->row;
         RemoveBBox(blinfo); // this both removes the blinfo object and deletes it!!
         bblist = cpyblinfo->unrecognized_blobs;
         BLOBNBOX_IT bbit(bblist);
@@ -524,6 +574,10 @@ void BlobInfoGrid::insertRemainingBlobs() {
           newblinfo->original_part = bbox->owner();
           newblinfo->line_rel_colpart = line_rel_colpart;
           newblinfo->linewordindex = linewordindex;
+          newblinfo->row_has_valid = row_has_valid;
+          newblinfo->is_italic = is_italic;
+          newblinfo->row = row;
+          newblinfo->certainty = certainty;
           newblinfo->unrecognized_blobs = new BLOBNBOX_LIST();
           newblinfo->unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, newbbox);
           newblinfo->dbgjustadded = true;
@@ -1341,7 +1395,6 @@ void BlobInfoGrid::getSentenceRegions() {
 #endif
 }
 
-
 void BlobInfoGrid::HandleClick(int x, int y) {
   cout << "-----------------------------------\n";
   cout << "\nx,y: " << x << ", " << y << endl;
@@ -1351,10 +1404,26 @@ void BlobInfoGrid::HandleClick(int x, int y) {
   if(bb == NULL)
     return;
   cout << "the word corresponding to the blob you clicked:\n";
-  if(bb->wordstr != NULL)
+  if(bb->wordstr != NULL) {
     cout << bb->wordstr << endl;
+    if(bb->validword)
+      cout << "the blob is in a valid word!\n";
+  }
   else
     cout << "(NULL)\n";
+  cout << "The tesseract boundingbox: \n";
+  TBOX t = bb->bounding_box();
+  mutils.dispTBoxCoords(&t);
+  if(bb->row_has_valid) {
+    cout << "The blob is on a row with atleast one valid word!\n";
+    cout << "The baseline for the blob is at y = " << bb->row->base_line(bb->left()) << endl;
+    cout << "The blob's bottom y is at " << bb->bottom() << endl;
+    //ScrollView* baselineview = new ScrollView("baseline", 300, 100,
+    //                        img->w, img->h, img->w, img->h, false);
+    //bb->row->plot_baseline(baselineview, ScrollView::GREEN);
+  }
+  else
+    cout << "The blob is on a row with no valid words!\n";
   // find the colpartition we are on
 /*  ColPartitionGridSearch cpgs(part_grid); // comment from here to
   ColPartition* cp = NULL;
@@ -1376,17 +1445,74 @@ void BlobInfoGrid::HandleClick(int x, int y) {
   }
   else
     cout << "the blob you clicked on was not assigned a text line\n";
-  if(bb->sentenceindex == -1) {
+  if(bb->sentenceindex == -1)
     cout << "the blob you clicked on was not assigned a sentence\n......\n";
-    return;
-  }
-  if(recognized_sentences[bb->sentenceindex] != NULL) {
+  else if(recognized_sentences[bb->sentenceindex] != NULL) {
     cout << "the blob you clicked on belongs to the following sentence:\n"
          << recognized_sentences[bb->sentenceindex]->sentence_txt << endl << "......\n";
   }
   else
     cout << "the blob you clicked belongs to sentence number " << bb->sentenceindex << ", which is NULL\n......\n";
+#ifdef SHOW_BLOB_WINDOW
+    mutils.dispHlBlobInfoRegion(bb, img);
+    mutils.dispBlobInfoRegion(bb, img);
+#endif
+    if(dbgfeatures)
+      dbgDisplayBlobFeatures(bb);
 }
 
+void BlobInfoGrid::dbgDisplayBlobFeatures(BLOBINFO* blob) {
+  if(!blob->features_extracted) {
+    cout << "ERROR: Feature extraction hasn't been carried out on the blob\n";
+    exit(EXIT_FAILURE);
+  }
+  vector<double> features = blob->features;
+  assert(features.size() == featformat.length());
+  cout << "Displaying extracted blob features\n------------------\n";
+  for(int i = 0; i < featformat.length(); i++)
+    cout << featformat[i] << ": " << features[i] << endl;
+#ifdef DBG_BASELINE
+  assert(valid_rows_avg_baselinedist.length() == valid_rows.length());
+  if(!blob->row_has_valid) {
+    cout << "blob doesn't belong to a valid row\n";
+    return;
+  }
+  int rowindex = -1;
+  for(int i = 0; i < valid_rows_avg_baselinedist.length(); i++) {
+    if(blob->row == valid_rows[i])
+      rowindex = i;
+  }
+  cout << "rowindex: " << rowindex << endl;
+  assert(rowindex != -1);
+  cout << "\n\nrow's average baseline distance: " << valid_rows_avg_baselinedist[rowindex] << endl;
+  cout << "blob's distance from baseline: " << blob->dist_above_baseline << endl;
+  cout << "blob's bottom: " << blob->bottom() << endl;
+  cout << "row's baseline at blob location: " << valid_rows[rowindex]->base_line(blob->centerx()) << endl;
+  cout << "row's height: " << valid_rows[rowindex]->bounding_box().height() << endl;
+#endif
+  cout << "------------------------------------------------------\n";
+}
+
+void BlobInfoGrid::setFeatExtFormat(const string& trainpath,
+    const string& featextname, const int numfeat) {
+  string formatpath = trainpath + (string)"../../FeatureVectorFormats/"
+      + featextname + (string)"_Format";
+  ifstream s(formatpath.c_str());
+  if(!s.is_open()) {
+    cout << "ERROR: The debug feature extraction formatting file at " << formatpath
+         << " couldn't be found >:-[\n";
+    exit(EXIT_FAILURE);
+  }
+  int maxlen = 150;
+  char line[maxlen];
+  while(!s.eof()) {
+    s.getline(line, maxlen);
+    if(*line == '\0')
+      continue;
+    featformat.push_back((string)line);
+  }
+  assert(numfeat == featformat.length());
+  dbgfeatures = true;
+}
 
 } // end namespace tesseract

@@ -1,8 +1,12 @@
 lib_LTLIBRARIES = libGrid.la
+SUBDIRS = ../Detection/FeatureExtractor/Sentence \
+../Detection/FeatureExtractor/NGrams
 libGrid_la_SOURCES = BlobInfoGrid.h BlobInfoGrid.cpp \
 M_Utils.h M_Utils.cpp
 libGrid_la_LIBADD = ../Tesseract/api/libtesseract.la \
-/usr/local/lib/liblept.so ../Utils/libUtils.la
+/usr/local/lib/liblept.so ../Utils/libUtils.la \
+../Detection/FeatureExtractor/Sentence/libSentence.la \
+../Detection/FeatureExtractor/NGrams/libNGrams.la
 libGrid_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/ccmain -I../Tesseract/ccstruct \
 -I../Tesseract/ccutil -I../Tesseract/classify \
@@ -14,4 +18,6 @@ libGrid_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/po -I../Tesseract/tessdata \
 -I../Tesseract/testing -I../Tesseract/textord \
 -I../Tesseract/training -I../Tesseract/viewer \
--I../Tesseract/wordrec -I../Tesseract -I../Utils
+-I../Tesseract/wordrec -I../Tesseract -I../Utils \
+-I../Detection/FeatureExtractor/NGrams \
+-I../Detection/FeatureExtractor/Sentence

@@ -30,10 +30,12 @@
 
 #include <BlobInfoGrid.h>
 
+#define DBG_AFTER_EXTRACTION
+
 using namespace tesseract;
 
 // types of feature extractors
-#include "F_Ext1.h"
+#include <FE_Implementations.h>
 
 template<typename FeatureExtType>
 class IFeatureExtractor {
@@ -43,8 +45,8 @@ class IFeatureExtractor {
   // do feature extraction initializations
   // for an entire training set
   inline void initFeatExtFull(TessBaseAPI& api, const string& groundtruth_path,
-      const string& training_set_path, const string& ext) {
-    feat_ext.initFeatExtFull(api, groundtruth_path, training_set_path, ext);
+      const string& training_set_path, const string& ext, bool makenew) {
+    feat_ext.initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
   }
 
   // do feature extraction initializations
@@ -64,21 +66,50 @@ class IFeatureExtractor {
     tesseract::BlobInfoGridSearch bigs(grid);
     bigs.StartFullSearch();
     tesseract::BLOBINFO* blob = NULL;
-    while((blob = bigs.NextFullSearch()) != NULL) {
-      blob->features = extractFeatures(blob, grid);
-    }
+    while((blob = bigs.NextFullSearch()) != NULL)
+      blob->features = extractFeatures(blob);
+#ifdef DBG_AFTER_EXTRACTION
+    feat_ext.dbgAfterExtraction();
+#endif
     return grid;
   }
 
-  // this should be called during prediction. The output is then
+  // *This method is where all of the feature extraction actually occurs*
+  // - This should be called during prediction. The output is then
   // fed into the binary classifier. usually for each blob in the
   // page in turn, I'll be sending the blob through the feature
   // extractor then send the resulting features through the
   // binary classifier (assuming it was trained on the very same
-  // features)
-  inline vector<double> extractFeatures(tesseract::BLOBINFO* blob,
-      tesseract::BlobInfoGrid* big_) {
-    return feat_ext.extractFeatures(blob, big_);
+  // features).
+  // - Also called by extractAllFeatures during training
+  // repeatedly getting all the features on the page and storing
+  // them in the grid.
+  inline vector<double> extractFeatures(tesseract::BLOBINFO* blob) {
+    return feat_ext.extractFeatures(blob);
+  }
+
+  inline void setImage(PIX* im) {
+    feat_ext.setImage(im);
+  }
+
+  inline void setApi(const TessBaseAPI& api) {
+    feat_ext.setApi(api);
+  }
+
+  inline void setGrid(BlobInfoGrid* grid) {
+    feat_ext.setGrid(grid);
+  }
+
+  inline void setDBGDir(const string& dir) {
+    feat_ext.setDBGDir(dir);
+  }
+
+  inline void reset() {
+    feat_ext.reset();
+  }
+
+  inline int numFeatures() {
+    return feat_ext.numFeatures();
   }
 
   FeatureExtType feat_ext;

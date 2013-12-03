@@ -31,16 +31,18 @@
 #define MEDS_TRAINER_H
 
 #include <Detection.h>
-#include <MEDS.h>
+#include <TessInterface.h>
 #include <Sample.h>
 #include <iostream>
 #include <string>
+#include <fstream>
 using namespace std;
 
-#define DBG_MEDS_TRAINER // comment this out to turn off debugging
 
+//#define DBG_MEDS_TRAINER // comment this out to turn off debugging
+//#define DBG_MEDS_TRAINER_SHOW_TRAINDATA
 // This class carry out any training needed for both the detector and segmenter
-template <typename TrainerPredictorType>
+template <typename DetectorType>
 class MEDS_Trainer {
  public:
   // The first three arguments are in regards to the detector:
@@ -51,14 +53,17 @@ class MEDS_Trainer {
   //                     training dataset and to the detector
   //                     itself (i.e. the result of training). These
   //                     two are subdirectories in this path.
-  // 3. groundtruth file name - This file is expected to be located
-  //                            in the detector_path along with the
-  //                            predictor/ and training_set/ subdirectories.
-  //                            It holds all the labels used in training.
+  // 3. get_new_samples - If true will get new samples during training
+  //                      even if samples were previously written to a file,
+  //                      otherwise only gets samples if file hasn't already
+  //                      been written. If not doing training this argument
+  //                      has no effect.
   // 4. ext (optional) - The extension expected for all images
   //                     (png by default)
   MEDS_Trainer(bool always_train_, const string& detector_path,
-      const string& ext_=".png") : detector_segmentor(NULL) {
+      bool get_new_samples_, const string& ext_=".png") :
+        tess_interface(NULL) {
+    get_new_samples = get_new_samples_;
     top_path = Basic_Utils::checkTrailingSlash(detector_path);
     groundtruth_path = top_path + (string)"*.dat";
     groundtruth_path = Basic_Utils::exec((string)"ls "
@@ -73,26 +78,44 @@ class MEDS_Trainer {
     always_train = always_train_;
     ext = ext_;
     api.Init("/usr/local/share/", "eng");
-     char* page_seg_mode = (char*)"tessedit_pageseg_mode";
-     if (!api.SetVariable(page_seg_mode, "3")) {
-       cout << "ERROR: Could not set tesseract's api corectly during training!\n";
-       exit(EXIT_FAILURE);
-     }
-     // make sure that we're in the right document layout analysis mode
-     int psm = 0;
-     api.GetIntVariable(page_seg_mode, &psm);
-     assert(psm == tesseract::PSM_AUTO);
-     // turn on equation detection
-     if (!api.SetVariable("textord_equation_detect", "true")) {
-       cout << "Could not turn Tesseract's equation detection during training!\n";
-       exit(EXIT_FAILURE);
-     }
+    char* page_seg_mode = (char*)"tessedit_pageseg_mode";
+    if (!api.SetVariable(page_seg_mode, "3")) {
+      cout << "ERROR: Could not set tesseract's api corectly during training!\n";
+      exit(EXIT_FAILURE);
+    }
+    // make sure that we're in the right document layout analysis mode
+    int psm = 0;
+    api.GetIntVariable(page_seg_mode, &psm);
+    assert(psm == tesseract::PSM_AUTO);
+    // turn on equation detection
+    if (!api.SetVariable("textord_equation_detect", "true")) {
+      cout << "Could not turn on Tesseract's equation detection during training!\n";
+      exit(EXIT_FAILURE);
+    }
+    tesseract::EquationDetectBase* ti = new tesseract::TessInterface();
+    tess_interface = (tesseract::TessInterface*)ti;
   }
 
-  inline void setDetectorSegmentor(tesseract::MEDS* detseg) {
-    detector_segmentor = detseg;
+  ~MEDS_Trainer() {
+    if(tess_interface != NULL) {
+      delete tess_interface;
+      tess_interface = NULL;
+    }
+    destroySamples(samples_extracted);
+    destroySamples(samples_read);
   }
 
+  void destroySamples(vector<vector<BLSample*> > samples) {
+    for(int i = 0; i < samples.size(); i++) {
+      for(int j = 0; j < samples[i].size(); j++) {
+        BLSample* sample = samples[i][j];
+        if(sample != NULL) {
+          delete sample;
+          sample = NULL;
+        }
+      }
+    }
+  }
 
   // Here is where training of the detection component
   // is carried out. Compile-time polymorphism is used so that
@@ -104,8 +127,8 @@ class MEDS_Trainer {
   // training will only be carried out if the classifier hasn't been
   // trained on the chosen classifier/extractor/trainer/dataset combination
   void trainDetector() {
-    if(detector_segmentor == NULL) {
-      cout << "ERROR: trainDetector() called with a NULL MEDS module."
+    if(tess_interface == NULL) {
+      cout << "ERROR: trainDetector() called with a NULL TessInterface module."
            << " setDetectorSegmentor needs to be called before training.\n";
       exit(EXIT_FAILURE);
     }
@@ -130,83 +153,9 @@ class MEDS_Trainer {
     // in the predictor_path)
     if(always_train || (!always_train &&
         Basic_Utils::fileCount(predictor_path) == 0)) {
-      detector_segmentor->setTrainingMode(true); // tell MEDS module we're in training mode
-      // tell the detector where it can find the groundtruth.dat file
-      // so it can determine the label of each sample
-      detector.initTrainingPaths(groundtruth_path, training_set_path, ext);
-
-      // set the tesseract api's equation detector to the one being used
-      api.setEquationDetector((tesseract::EquationDetectBase*)detector_segmentor);
-      // count the number of training images in the training_set_path
-      int img_num = Basic_Utils::fileCount(training_set_path);
-      // api that will be used for recognition
-      // i'm putting it on the stack here, in hopes that
-      // this may help avoid memory allocation conflicts
-      tesseract::TessBaseAPI newapi;
-      detector_segmentor->setTessAPI(newapi);
-      // assumes all n files in the training dir are images
-      // named 1.png, 2.png, 3.png, .... n.png
-      // iterate the images in the dataset, getting the features
-      // from each and appending them to the samples vector
-
-      // initialize any feature extraction parameters which need to do
-      // precomputations on the entire training set prior to any feature
-      // extraction. this may or may not be applicable depending on the
-      // feature extraction implementation being used by the detector
-      detector.initFeatExtFull(api);
-
-      for(int i = 1; i <= img_num; i++) {
-        string img_name = Basic_Utils::intToString(i) + ext;
-        string img_filepath = training_set_path + img_name;
-        Pix* curimg = Basic_Utils::leptReadImg(img_filepath);
-        api.SetImage(curimg); // SetImage SHOULD deallocate everything from the last page
-        // including my MEDS module, the BlobInfoGrid, etc!!!!
-        api.AnalyseLayout(); // Run Tesseract's layout analysis
-        tesseract::BlobInfoGrid* grid = detector_segmentor->getGrid();
-#ifdef DBG_MEDS_TRAINER
-        // debug: make sure it worked!!!! and we got the grid out of it...
-        string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(i);
-        ScrollView* gridviewer = grid->MakeWindow(100, 100, winname.c_str());
-        grid->DisplayBoxes(gridviewer);
-        Basic_Utils::waitForInput();
-#endif
-        // now to get the features from the grid and append them to the
-        // samples vector.
-        vector<BLSample*> img_samples = detector.getAllSamples(grid, i);
-#ifdef DBG_MEDS_TRAINER
-        // to debug I'll color all the blobs that are labeled as math
-        // red and all the other ones as blue
-        Pix* colorimg = Basic_Utils::leptReadImg(img_filepath);
-        colorimg = pixConvertTo32(colorimg);
-        Lept_Utils lu;
-        for(int j = 0; j < img_samples.size(); j++) {
-          BLSample* sample = img_samples[j];
-          GroundTruthEntry* entry = sample->entry;
-          if(sample->label)
-            lu.fillBoxForeground(colorimg, sample->blobbox, LayoutEval::RED);
-          else
-            lu.fillBoxForeground(colorimg, sample->blobbox, LayoutEval::BLUE);
-        }
-        pixDisplay(colorimg, 100, 100);
-        string dbgname = "dbg_training_im" + Basic_Utils::intToString(i) + ".png";
-        pixWrite(dbgname.c_str(), colorimg, IFF_PNG);
-        M_Utils mutils;
-        mutils.waitForInput();
-        pixDestroy(&colorimg);
-        delete gridviewer;
-        gridviewer = NULL;
-#endif
-        // now append the samples found for the current image to the
-        // the vector which holds all of them. For now I have this organized
-        // as a vector for each image
-        samples.push_back(img_samples);
-        pixDestroy(&curimg); // destroy finished image
-        // clear the memory used by the current MEDS module
-        detector_segmentor->reset();
-      }
-      // now initialize the training with the samples
-      detector.initTraining(samples, predictor_path);
-     // detector.train_();
+      vector<vector<BLSample*> >* samples = getSamples();
+      detector.initTraining(*samples, predictor_path);
+      detector.train_();
     }
   }
 
@@ -218,18 +167,339 @@ class MEDS_Trainer {
 
   }
 
+  // verifies that the samples extracted are the same as the samples being read
+  void sampleReadVerify() {
+    cout << "Verifying that the samples read in from a previous run and the samples "
+         << "extracted on the current run are the same.\n";
+    cout << "-- Reading in the old samples.\n";
+    readOldSamples(top_path + (string)"samples");
+    cout << "-- Extracting features from training set to create new samples.\n";
+    getNewSamples(false);
+    cout << "-- Comparing the read samples to the extracted ones.\n";
+    assert(samples_extracted.size() == samples_read.size());
+    for(int i = 0; i < samples_extracted.size(); ++i) {
+      assert(samples_extracted[i].size() == samples_read[i].size());
+      for(int j = 0; j < samples_extracted[i].size(); ++j) {
+        BLSample* newsample = samples_extracted[i][j];
+        BLSample* oldsample = samples_read[i][j];
+        assert(*newsample == *oldsample);
+      }
+    }
+    cout << "Success!\n";
+  }
+
  private:
+
+  // Will call either getNewSamples() or readOldSamples() depending on
+  // the get_new_samples flag as well as whether or not samples already exist
+  // returns a pointer to the resulting vector of samples (each entry of the
+  // vector holds the samples extracted from one image).
+  vector<vector<BLSample*> >* getSamples() {
+    // get the samples
+    string sample_path = top_path + (string)"samples";
+    bool newsamples = false;
+    if(get_new_samples || !Basic_Utils::existsFile(sample_path)) {
+      getNewSamples(true);
+      newsamples = true;
+    }
+    else
+      readOldSamples(sample_path);
+    vector<vector<BLSample*> >* samples;
+    if(newsamples)
+      samples = &samples_extracted;
+    else
+      samples = &samples_read;
+    return samples;
+  }
+
+  // does feature extraction on the detector to get all of the samples,
+  // also optionally writes them to a file
+  void getNewSamples(bool write_to_file) {
+    // tell the detector where it can find the groundtruth.dat file
+    // so it can determine the label of each sample
+    detector.initTrainingPaths(groundtruth_path, training_set_path, ext);
+    // set the tesseract api's equation detector to the one being used
+    api.setEquationDetector((tesseract::EquationDetectBase*)tess_interface);
+    // count the number of training images in the training_set_path
+    int img_num = Basic_Utils::fileCount(training_set_path);
+    // api that will be used for recognition
+    // i'm putting it on the stack here, in hopes that
+    // this may help avoid memory allocation conflicts
+    tesseract::TessBaseAPI newapi;
+    tess_interface->setTessAPI(newapi);
+    // assumes all n files in the training dir are images
+    // named 1.png, 2.png, 3.png, .... n.png
+    // iterate the images in the dataset, getting the features
+    // from each and appending them to the samples vector
+
+    // initialize any feature extraction parameters which need to do
+    // precomputations on the entire training set prior to any feature
+    // extraction. this may or may not be applicable depending on the
+    // feature extraction implementation being used by the detector
+    detector.initFeatExtFull(api, false);
+    for(int i = 1; i <= img_num; i++) {
+      string img_name = Basic_Utils::intToString(i) + ext;
+      string img_filepath = training_set_path + img_name;
+      Pix* curimg = Basic_Utils::leptReadImg(img_filepath);
+      api.SetImage(curimg); // SetImage SHOULD deallocate everything from the last page
+      // including my MEDS module, the BlobInfoGrid, etc!!!!
+      api.AnalyseLayout(); // Run Tesseract's layout analysis
+      tesseract::BlobInfoGrid* grid = tess_interface->getGrid();
+      detector.setImage(curimg);
+      detector.setAPI(api);
+      // now to get the features from the grid and append them to the
+      // samples vector.
+      vector<BLSample*> img_samples = detector.getAllSamples(grid, i);
+#ifdef DBG_MEDS_TRAINER_SHOW_TRAINDATA
+      // to debug I'll color all the blobs that are labeled as math
+      // red and all the other ones as blue
+      Pix* colorimg = Basic_Utils::leptReadImg(img_filepath);
+      colorimg = pixConvertTo32(colorimg);
+      Lept_Utils lu;
+      for(int j = 0; j < img_samples.size(); j++) {
+        BLSample* sample = img_samples[j];
+        GroundTruthEntry* entry = sample->entry;
+        if(sample->label)
+          lu.fillBoxForeground(colorimg, sample->blobbox, LayoutEval::RED);
+        else
+          lu.fillBoxForeground(colorimg, sample->blobbox, LayoutEval::BLUE);
+      }
+      pixDisplay(colorimg, 100, 100);
+      string dbgname = "dbg_training_im" + Basic_Utils::intToString(i) + ".png";
+      pixWrite(dbgname.c_str(), colorimg, IFF_PNG);
+      M_Utils mutils;
+      mutils.waitForInput();
+      pixDeswrites them to a filetroy(&colorimg);
+      delete gridviewer;
+      gridviewer = NULL;
+#endif
+#ifdef DBG_MEDS_TRAINER
+      // debug: make sure it worked!!!! and we got the grid out of it...
+      string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(i);
+      ScrollView* gridviewer = grid->MakeWindow(100, 100, winname.c_str());
+      grid->DisplayBoxes(gridviewer);
+      Basic_Utils::waitForInput();
+#endif
+      // now append the samples found for the current image to the
+      // the vector which holds all of them. For now I have this organized
+      // as a vector for each image
+      samples_extracted.push_back(img_samples);
+      pixDestroy(&curimg); // destroy finished image
+      // clear the memory used by the current MEDS module and the feature extractor
+      tess_interface->reset();
+      detector.reset();
+#ifdef DBG_MEDS_TRAINER
+      delete gridviewer;
+      gridviewer = NULL;
+#endif
+      cout << "Finished acquiring " << samples_extracted[i-1].size()
+           << " samples for image " << i << endl;
+    }
+    if(write_to_file)
+      writeSamples(top_path + (string)"samples");
+  }
+
+  void readOldSamples(const string& sample_path) {
+    ifstream s(sample_path.c_str());
+    if(!s.is_open()) {
+      cout << "ERROR: Couldn't open sample file for reading at " << sample_path << endl;
+      exit(EXIT_FAILURE);
+    }
+    int maxlen = 1500;
+    char line[maxlen];
+    int nullcount = 0;
+    int curimg = 0;
+    while(!s.eof()) {
+      s.getline(line, maxlen);
+      if(s == NULL) {
+        if(nullcount++ > 1) {
+          cout << "ERROR: Invalid sample file at " << sample_path << endl;
+          exit(EXIT_FAILURE);
+        }
+        continue;
+      }
+      BLSample* sample = readSample((string)line);
+      if(sample->image_index != curimg) {
+        assert(sample->image_index == (curimg + 1)); // should start at 1 and go up by 1
+        ++curimg;
+        vector<BLSample*> imgsample_vec;
+        samples_read.push_back(imgsample_vec);
+      }
+      samples_read[curimg - 1].push_back(sample);
+    }
+  }
+
+  // reads the sample in the following space-delimited format:
+  // label featurevec imgindex blobbox groundtruth_entry
+  // label: 0 or 1
+  // featurevec: comma delimited list of doubles
+  // imgindex: gives the image number for the blob
+  // blobbox: comma delimited coordinates as follows x,y,w,h
+  // groundtruth_entry: info on the matching groundtruth entry if label is 1
+  //                    otherwise the following comma delimited list is all 0's
+  //                    type,x,y,w,h <- type is E/D/L (embedded displayed or labeled)
+  //                     and x,y,w,h is the bounding box of the entry
+  // Thus the entire space-delimited format is as follows:
+  // label f1,f2,etc., imgindex x1,y1,w1,h1 entrytype x2,y2,w2,h2
+  // f is the feature, x1-h1 are the coords for the blob, and x2-h2 are the coords
+  // for the groundtruth entry if applicable (otherwise all 0's)
+  BLSample* readSample(const string& line) {
+    vector<string> spacesplit = Basic_Utils::stringSplit(line, ' ');
+    // get the label
+    int labelint = atoi(spacesplit[0].c_str());
+    assert(labelint == 0 || labelint == 1);
+    bool label = (labelint == 1) ? true : false;
+    // get the feature vec
+    string fvecstring = spacesplit[1];
+    vector<string> featstrvec = Basic_Utils::stringSplit(fvecstring, ',');
+    vector<double> featurevec;
+    assert(featstrvec.size() == detector.numFeatures());
+    for(int i = 0; i < featstrvec.size(); i++) {
+      double feat = atof(featstrvec[i].c_str());
+      featurevec.push_back(feat);
+    }
+    // get the imgindex
+    int imgindex = atoi(spacesplit[2].c_str());
+    assert(spacesplit[2].length() < 3); // only expecting about 15 samples for now
+    // get blobbox
+    string blobboxstr = spacesplit[3];
+    vector<string> blobstrvec = Basic_Utils::stringSplit(blobboxstr, ',');
+    assert(blobstrvec.size() == 4);
+    int x = atoi(blobstrvec[0].c_str());
+    int y = atoi(blobstrvec[1].c_str());
+    int w = atoi(blobstrvec[2].c_str());
+    int h = atoi(blobstrvec[3].c_str());
+    BOX* blobbox = boxCreate(x, y, w, h);
+    //get the groundtruth type if applicable
+    GroundTruthEntry* gtentry;
+    string gtentrystr = spacesplit[4];
+    vector<string> gtentrystrvec =  Basic_Utils::stringSplit(gtentrystr, ',');
+    assert(gtentrystrvec.size() == 5);
+    const char* gttype = gtentrystrvec[0].c_str();
+    assert(strlen(gttype) == 1);
+    char typchar = gttype[0];
+    assert(typchar == 'D' || typchar == 'E' || typchar == 'L' || typchar == '0');
+    if(typchar == '0')
+      gtentry = NULL;
+    else if(typchar == 'D' || typchar == 'E' || typchar == 'L') {
+      gtentry = new GroundTruthEntry;
+      if(typchar == 'D')
+        gtentry->entry = GT_Entry::DISPLAYED;
+      else if(typchar == 'E')
+        gtentry->entry = GT_Entry::EMBEDDED;
+      else if(typchar == 'L')
+        gtentry->entry = GT_Entry::LABEL;
+      else
+        error();
+      // get the groundtruth entry's box
+      int gtx = atoi(gtentrystrvec[1].c_str());
+      int gty = atoi(gtentrystrvec[2].c_str());
+      int gtw = atoi(gtentrystrvec[3].c_str());
+      int gth = atoi(gtentrystrvec[4].c_str());
+      BOX* gtrect = boxCreate(gtx, gty, gtw, gth);
+      gtentry->rect = gtrect;
+      gtentry->image_index = imgindex;
+    }
+    else
+      error();
+    // now everything's parsed and loaded, set up the sample
+    BLSample* sample = new BLSample;
+    sample->label = label;
+    sample->features = featurevec;
+    sample->image_index = imgindex;
+    sample->blobbox = blobbox;
+    sample->entry = gtentry;
+    return sample;
+  }
+
+  inline void error() {
+    cout << "ERROR: Invalid sample file!\n";
+    exit(EXIT_FAILURE);
+  }
+
+  void writeSamples(const string& sample_path) {
+    cout << "Writing the samples to " << sample_path << endl;
+    int samplecount = 0;
+    ofstream s(sample_path.c_str());
+    if(!s.is_open()) {
+      cout << "ERROR: Couldn't open " << sample_path << " for writing\n";
+      exit(EXIT_FAILURE);
+    }
+    for(int i = 0; i < samples_extracted.size(); i++) {
+      for(int j = 0; j < samples_extracted[i].size(); j++) {
+        writeSample(samples_extracted[i][j], s);
+        samplecount++;
+      }
+    }
+    cout << "Total of " << samplecount << " samples written.\n";
+  }
+
+  // writes the sample in the following space-delimited format:
+  // label featurevec imgindex blobbox groundtruth_entry
+  // label: 0 or 1
+  // featurevec: comma delimited list of doubles
+  // imgindex: gives the image number for the blob
+  // blobbox: comma delimited coordinates as follows x,y,w,h
+  // groundtruth_entry: info on the matching groundtruth entry if label is 1
+  //                    otherwise the following comma delimited list is all 0's
+  //                    type,x,y,w,h <- type is E/D/L (embedded displayed or labeled)
+  //                     and x,y,w,h is the bounding box of the entry
+  // Thus the entire space-delimited format is as follows:
+  // label f1,f2,etc., imgindex x1,y1,w1,h1 entrytype x2,y2,w2,h2
+  // f is the feature, x1-h1 are the coords for the blob, and x2-h2 are the coords
+  // for the groundtruth entry if applicable (otherwise all 0's)
+  void writeSample(BLSample* sample, ofstream& fs) {
+    int imgindex = sample->image_index;
+    if(sample->label)
+      fs << 1 << " ";
+    else
+      fs << 0 << " ";
+    int numfeat = (sample->features).size();
+    for(int i = 0; i < numfeat; i++) {
+      fs << setprecision(20) << sample->features[i];
+      fs << (((i + 1) < numfeat) ? "," : " ");
+    }
+    fs << imgindex << " ";
+    BOX* box = sample->blobbox;
+    fs << box->x << "," << box->y << "," << box->w << "," << box->h << " ";
+    if(sample->entry) {
+      GroundTruthEntry* entry = sample->entry;
+      GT_Entry::GTEntryType type = entry->entry;
+      if(type == GT_Entry::DISPLAYED)
+        fs << "D,";
+      else if(type == GT_Entry::EMBEDDED)
+        fs << "E,";
+      else if(type == GT_Entry::LABEL)
+        fs << "L,";
+      else {
+        cout << "ERROR: Unexpected groundtruth entry type\n";
+        exit(EXIT_FAILURE);
+      }
+      BOX* gtbox = entry->rect;
+      fs << gtbox->x << "," << gtbox->y << "," << gtbox->w
+         << "," << gtbox->h << "\n";
+    }
+    else
+      fs << "0,0,0,0,0\n";
+  }
+
   // Tesseract framework
   tesseract::TessBaseAPI api;
 
-  // This is the MEDS module that is used within the Tesseract framework
-  tesseract::MEDS* detector_segmentor; // overrides Tesseract's EquationDetectBase class
+  // This is module essentially the MEDS module without prediction
+  // The MEDS module which does prediction needs to be templated so that
+  // it can utilize compile-time polymorphism to choose its detector and
+  // segmenter (??? will this still work in the Tesseract framework or will I need to
+  // make modifications???.. if it needs to be templated then I will template it.....)
+  tesseract::TessInterface* tess_interface; // overrides Tesseract's EquationDetectBase class
 
   // here different trainer_predictors in Detection/Detection.h can be chosen from
   // and experimented with through compile-time polymorphism
-  TrainerPredictorType detector; // see Detection.h for details on this class
+  DetectorType detector; // see Detection.h for details on this class
 
-  vector<vector<BLSample*> > samples;
+  vector<vector<BLSample*> > samples_extracted;
+  vector<vector<BLSample*> > samples_read; // should be the same as samples_extracted
+                                           // can be verified by sampleReadVerify
 
   // some paths and such
   string top_path; // this is the root of the detector directory
@@ -239,6 +509,8 @@ class MEDS_Trainer {
   string ext; // image extension (i.e. png, jpg, etc.)
   bool always_train; // if false only train if no trained predictor
                      // is available in top_path/predictor
+  bool get_new_samples; // if false reads in samples from a file if they've
+                        // already been written, otherwise always gets new samples
 };
 
 

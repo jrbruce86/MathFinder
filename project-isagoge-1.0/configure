@@ -11533,7 +11533,7 @@ CC="$lt_save_CC"
  #libtool
 
 # Make files and scripts
-ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile src/Grid/Makefile src/Detection/Makefile src/Detection/Sample/Makefile src/Detection/BinaryClassifier/Makefile src/Detection/FeatureExtractor/Makefile src/Detection/Trainer/Makefile src/Segmentation/Makefile src/MEDS_Trainer/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile src/Grid/Makefile src/Detection/Makefile src/Detection/Sample/Makefile src/Detection/TessInterface/Makefile src/Detection/BinaryClassifier/Makefile src/Detection/FeatureExtractor/Makefile src/Detection/FeatureExtractor/NGrams/Makefile src/Detection/FeatureExtractor/NGrams/NGProfileGen/Makefile src/Detection/FeatureExtractor/Sentence/Makefile src/Detection/FeatureExtractor/Implementations/Makefile src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile src/Detection/Trainer/Makefile src/Segmentation/Makefile src/MEDS_Trainer/Makefile"
 
 
 
@@ -17122,8 +17122,14 @@ do
     "src/Grid/Makefile") CONFIG_FILES="$CONFIG_FILES src/Grid/Makefile" ;;
     "src/Detection/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/Makefile" ;;
     "src/Detection/Sample/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/Sample/Makefile" ;;
+    "src/Detection/TessInterface/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/TessInterface/Makefile" ;;
     "src/Detection/BinaryClassifier/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/BinaryClassifier/Makefile" ;;
     "src/Detection/FeatureExtractor/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/FeatureExtractor/Makefile" ;;
+    "src/Detection/FeatureExtractor/NGrams/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/FeatureExtractor/NGrams/Makefile" ;;
+    "src/Detection/FeatureExtractor/NGrams/NGProfileGen/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/FeatureExtractor/NGrams/NGProfileGen/Makefile" ;;
+    "src/Detection/FeatureExtractor/Sentence/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/FeatureExtractor/Sentence/Makefile" ;;
+    "src/Detection/FeatureExtractor/Implementations/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/FeatureExtractor/Implementations/Makefile" ;;
+    "src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile" ;;
     "src/Detection/Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/Trainer/Makefile" ;;
     "src/Segmentation/Makefile") CONFIG_FILES="$CONFIG_FILES src/Segmentation/Makefile" ;;
     "src/MEDS_Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS_Trainer/Makefile" ;;
@@ -18626,8 +18632,14 @@ _LT_EOF
     "src/Grid/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Detection/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Detection/Sample/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/TessInterface/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Detection/BinaryClassifier/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Detection/FeatureExtractor/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/FeatureExtractor/NGrams/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/FeatureExtractor/NGrams/NGProfileGen/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/FeatureExtractor/Sentence/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/FeatureExtractor/Implementations/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Detection/Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Segmentation/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/MEDS_Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;

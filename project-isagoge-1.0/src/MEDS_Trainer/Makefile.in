@@ -119,8 +119,9 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libMEDS_Trainer_la_DEPENDENCIES = /usr/local/lib/liblept.so \
 	../Tesseract/api/libtesseract.la ../Utils/libUtils.la \
+	../Detection/TessInterface/libTessInterface.la \
 	../Detection/libDetection.la ../Grid/libGrid.la \
-	../MEDS/libMEDS.la ../Segmentation/libSegmentation.la
+	../Segmentation/libSegmentation.la
 am_libMEDS_Trainer_la_OBJECTS =
 libMEDS_Trainer_la_OBJECTS = $(am_libMEDS_Trainer_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -311,9 +312,9 @@ libMEDS_Trainer_la_SOURCES = MEDS_Trainer.h
 libMEDS_Trainer_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la \
 ../Utils/libUtils.la \
+../Detection/TessInterface/libTessInterface.la \
 ../Detection/libDetection.la \
 ../Grid/libGrid.la \
-../MEDS/libMEDS.la \
 ../Segmentation/libSegmentation.la
 
 libMEDS_Trainer_la_CPPFLAGS = -I../Tesseract/api \
@@ -330,7 +331,7 @@ libMEDS_Trainer_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/wordrec -I../Utils -I../Tesseract \
 -I../Detection -I../Detection/Trainer \
 -I../Detection/FeatureExtractor -I../Detection/BinaryClassifier \
--I../dlib-18.4 -I../Grid -I../MEDS
+-I../dlib-18.4 -I../Grid -I../Detection/TessInterface
 
 all: all-am
 

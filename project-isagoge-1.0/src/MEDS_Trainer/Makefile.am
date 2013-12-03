@@ -3,9 +3,9 @@ libMEDS_Trainer_la_SOURCES = MEDS_Trainer.h
 libMEDS_Trainer_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la \
 ../Utils/libUtils.la \
+../Detection/TessInterface/libTessInterface.la \
 ../Detection/libDetection.la \
 ../Grid/libGrid.la \
-../MEDS/libMEDS.la \
 ../Segmentation/libSegmentation.la
 libMEDS_Trainer_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/ccmain -I../Tesseract/ccstruct \
@@ -21,4 +21,4 @@ libMEDS_Trainer_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/wordrec -I../Utils -I../Tesseract \
 -I../Detection -I../Detection/Trainer \
 -I../Detection/FeatureExtractor -I../Detection/BinaryClassifier \
--I../dlib-18.4 -I../Grid -I../MEDS
+-I../dlib-18.4 -I../Grid -I../Detection/TessInterface

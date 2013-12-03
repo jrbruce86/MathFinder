@@ -1,8 +1,7 @@
 lib_LTLIBRARIES = libTrainer.la
 libTrainer_la_SOURCES = ITrainer.h CrossValidationSVM.h
-libTrainer_la_CPPFLAGS = -I../BinaryClassifier -I../FeatureExtractor \
--I../../Grid \
--I../../Tesseract/api \
+libTrainer_la_CPPFLAGS = -I../BinaryClassifier \
+-I../../Grid -I../../Tesseract/api \
 -I../../Tesseract/ccmain -I../../Tesseract/ccstruct \
 -I../../Tesseract/ccutil -I../../Tesseract/classify \
 -I../../Tesseract/config -I../../Tesseract/contrib \
@@ -17,5 +16,5 @@ libTrainer_la_CPPFLAGS = -I../BinaryClassifier -I../FeatureExtractor \
 -I../../Utils \
 -I../../dlib-18.4 -I../Sample
 libTrainer_la_LIBADD = ../BinaryClassifier/libBinaryClassifier.la \
-../FeatureExtractor/libFeatureExtractor.la ../../Grid/libGrid.la \
-../../Utils/libUtils.la ../../dlib-18.4/dlib/libdlib.la
+../../Grid/libGrid.la ../../Utils/libUtils.la \
+../../dlib-18.4/dlib/libdlib.la

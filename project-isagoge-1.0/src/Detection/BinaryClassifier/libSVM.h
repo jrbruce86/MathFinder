@@ -34,55 +34,46 @@
 typedef dlib::matrix<double, 0, 1> sample_type;
 typedef dlib::radial_basis_kernel<sample_type> kernel_type;
 
+// Copied from dlib's model_selection_ex.cpp with the following modifications:
+// - Divides the data into a variable number of subsets for cross validation.
+// - Uses C-SVM rather than Nu-SVM
+// - TODO: Modify cross validation return value to be maximized.
 class cross_validation_objective
 {
-    /*!
-        WHAT THIS OBJECT REPRESENTS
-            This object is a simple function object that takes a set of model
-            parameters and returns a number indicating how "good" they are.  It
-            does this by performing 10 fold cross validation on our dataset
-            and reporting the accuracy.
+ public:
+  cross_validation_objective (
+      const std::vector<sample_type>& samples_,
+      const std::vector<double>& labels_
+  ) : samples(samples_), labels(labels_) {}
 
-            See below in main() for how this object gets used.
-    !*/
-public:
+  double operator() (const dlib::matrix<double>& params) const {
+    // Pull out the two SVM model parameters.  Note that, in this case,
+    // I have setup the parameter search to operate in log scale so we have
+    // to remember to call exp() to put the parameters back into a normal scale.
+    const double gamma = std::exp(params(0));
+    const double nu    = std::exp(params(1));
 
-    cross_validation_objective (
-        const std::vector<sample_type>& samples_,
-        const std::vector<double>& labels_
-    ) : samples(samples_), labels(labels_) {}
+    // Make an SVM trainer and tell it what the parameters are supposed to be.
+    dlib::svm_c_trainer<kernel_type> trainer;
+   // trainer.set_kernel(kernel_type(gamma));
+    //trainer.set_c(?);
 
-    double operator() (
-        const dlib::matrix<double>& params
-    ) const
-    {
-        // Pull out the two SVM model parameters.  Note that, in this case,
-        // I have setup the parameter search to operate in log scale so we have
-        // to remember to call exp() to put the parameters back into a normal scale.
-        const double gamma = std::exp(params(0));
-        const double nu    = std::exp(params(1));
+    // Finally, perform 10-fold cross validation and then print and return the results.
+    dlib::matrix<double> result = cross_validate_trainer(trainer, samples, labels, 10);
+    std::cout << "gamma: " << std::setw(11) << gamma << "  nu: " << std::setw(11) << nu <<  "  cross validation accuracy: " << result;
 
-        // Make an SVM trainer and tell it what the parameters are supposed to be.
-        dlib::svm_c_trainer<kernel_type> trainer;
-        trainer.set_kernel(kernel_type(gamma));
-        //trainer.set_c(?);
 
-        // Finally, perform 10-fold cross validation and then print and return the results.
-        dlib::matrix<double> result = cross_validate_trainer(trainer, samples, labels, 10);
-        std::cout << "gamma: " << std::setw(11) << gamma << "  nu: " << std::setw(11) << nu <<  "  cross validation accuracy: " << result;
+    // Here I'm just summing the accuracy on each class.  However, you could do something else.
+    // For example, your application might require a 90% accuracy on class +1 and so you could
+    // heavily penalize results that didn't obtain the desired accuracy.  Or similarly, you
+    // might use the roc_c1_trainer() function to adjust the trainer output so that it always
+    // obtained roughly a 90% accuracy on class +1.  In that case returning the sum of the two
+    // class accuracies might be appropriate.
+    return sum(result);
+  }
 
-        // Here I'm just summing the accuracy on each class.  However, you could do something else.
-        // For example, your application might require a 90% accuracy on class +1 and so you could
-        // heavily penalize results that didn't obtain the desired accuracy.  Or similarly, you
-        // might use the roc_c1_trainer() function to adjust the trainer output so that it always
-        // obtained roughly a 90% accuracy on class +1.  In that case returning the sum of the two
-        // class accuracies might be appropriate.
-        return sum(result);
-    }
-
-    const std::vector<sample_type>& samples;
-    const std::vector<double>& labels;
-
+  const std::vector<sample_type>& samples;
+  const std::vector<double>& labels;
 };
 
 
@@ -93,10 +84,11 @@ class libSVM {
   void doTraining(const vector<vector<BLSample*> >& samples);
   bool predict(const std::vector<double>& sample);
   inline bool isTrained() { return trained; }
+  void reset();
  private:
   bool trained; // flag that's true once training complete
 
-  void doCrossValidationTraining();
+  void doCrossValidationTraining(int folds);
 
   // the training samples and their corresponding labels
   // obviously these two vectors should be the same size
@@ -104,7 +96,9 @@ class libSVM {
   std::vector<double> labels;
 
   // the radial basis function (gaussian) kernel being used
-  kernel_type rbf_kernel;
+  kernel_type rbf_kernel_optimal; // rbf kernel using optimal gamma parameter
+  double gamma_optimal;
+  double C_optimal;
 };
 
 #endif
