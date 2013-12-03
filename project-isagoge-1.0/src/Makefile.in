@@ -98,7 +98,10 @@ isagoge_DEPENDENCIES = /usr/local/lib/liblept.so MEDS/libMEDS.la \
 	Tesseract/api/libtesseract.la dlib-18.4/dlib/libdlib.la \
 	Grid/libGrid.la MEDS_Trainer/libMEDS_Trainer.la \
 	MEDS/libMEDS.la Utils/libUtils.la Evaluation/libevaluation.la \
-	Segmentation/libSegmentation.la Detection/libDetection.la
+	Segmentation/libSegmentation.la Detection/libDetection.la \
+	Detection/FeatureExtractor/Implementations/F_Ext1/libF_Ext1.la \
+	Detection/BinaryClassifier/libBinaryClassifier.la \
+	Detection/TessInterface/libTessInterface.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -365,7 +368,10 @@ MEDS/libMEDS.la \
 Utils/libUtils.la \
 Evaluation/libevaluation.la \
 Segmentation/libSegmentation.la \
-Detection/libDetection.la
+Detection/libDetection.la \
+Detection/FeatureExtractor/Implementations/F_Ext1/libF_Ext1.la \
+Detection/BinaryClassifier/libBinaryClassifier.la \
+Detection/TessInterface/libTessInterface.la
 
 isagoge_SOURCES = IsagogeMain.cpp
 all: all-recursive

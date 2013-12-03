@@ -38,6 +38,9 @@ MEDS/libMEDS.la \
 Utils/libUtils.la \
 Evaluation/libevaluation.la \
 Segmentation/libSegmentation.la \
-Detection/libDetection.la
+Detection/libDetection.la \
+Detection/FeatureExtractor/Implementations/F_Ext1/libF_Ext1.la \
+Detection/BinaryClassifier/libBinaryClassifier.la \
+Detection/TessInterface/libTessInterface.la
 
 isagoge_SOURCES = IsagogeMain.cpp
