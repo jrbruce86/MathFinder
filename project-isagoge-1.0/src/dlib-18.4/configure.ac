@@ -43,8 +43,6 @@ AC_CONFIG_FILES([Makefile
                 dlib/graph/Makefile
                 dlib/graph_cuts/Makefile
                 dlib/graph_utils/Makefile
-                dlib/gui_core/Makefile
-                dlib/gui_widgets/Makefile
                 dlib/hash_map/Makefile
                 dlib/hash_set/Makefile
                 dlib/hash_table/Makefile
