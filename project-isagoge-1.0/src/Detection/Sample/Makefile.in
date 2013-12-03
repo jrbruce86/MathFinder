@@ -304,7 +304,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libGTParser.la
-libGTParser_la_SOURCES = GTParser.h
+libGTParser_la_SOURCES = GTParser.h Sample.h
 all: all-am
 
 .SUFFIXES:

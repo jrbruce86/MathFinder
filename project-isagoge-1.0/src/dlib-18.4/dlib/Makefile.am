@@ -7,7 +7,6 @@ conditioning_class config_reader cpp_pretty_printer cpp_tokenizer \
 crc32 data_io directed_graph dir_nav disjoint_subsets entropy_decoder \
 entropy_decoder_model entropy_encoder entropy_encoder_model filtering \
 general_hash geometry graph graph_cuts graph_utils threads \
-gui_core gui_widgets \
 hash_map hash_set hash_table http_client image_keypoint image_loader \
 image_processing image_saver image_transforms interfaces iosockstream \
 linker logger lsh lz77_buffer lzp_buffer manifold_regularization map \
@@ -64,8 +63,8 @@ entropy_encoder/libentropy_encoder.la \
 entropy_encoder_model/libentropy_encoder_model.la \
 filtering/libfiltering.la general_hash/libgeneral_hash.la \
 geometry/libgeometry.la graph/libgraph.la graph_cuts/libgraph_cuts.la \
-graph_utils/libgraph_utils.la gui_core/libgui_core.la \
-gui_widgets/libgui_widgets.la hash_map/libhash_map.la \
+graph_utils/libgraph_utils.la \
+hash_map/libhash_map.la \
 hash_set/libhash_set.la hash_table/libhash_table.la \
 http_client/libhttp_client.la image_keypoint/libimage_keypoint.la \
 image_loader/libimage_loader.la image_processing/libimage_processing.la \

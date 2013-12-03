@@ -84,7 +84,7 @@ void libSVM::doCrossValidationTraining(int folds) {
   // for the C vector and Gamma vector (i.e. 2^-5,...,2^15 and 2^-15,....,2^3
   // respectively.
   matrix<double> C_vec = logspace(log10(pow(2,-5)), log10(pow(2,15)), 10);
-  matrix<double> Gamma_vec = logspace(log10(pow(2,-15)), log10(pow(2,3)), 10);
+  matrix<double> Gamma_vec = logspace(log10(pow(2,-5)), log10(pow(2,3)), 10);
   // The vectors are then combined to create a 10x10 (C,Gamma) pair grid, on which
   // cross validation training is carried out for each pair to find the optimal
   // starting parameters for a finer optimization which uses the BOBYQA algorithm.
@@ -105,6 +105,8 @@ void libSVM::doCrossValidationTraining(int folds) {
     trainer.set_kernel(kernel_type(gamma));
     trainer.set_c(C);
     // do the cross validation
+    cout << "Running cross validation for " << "C: " << setw(11) << C << "  Gamma: "
+         << setw(11) << gamma << endl;
     matrix<double> result = cross_validate_trainer(trainer, training_samples, labels, folds);
     cout << "C: " << setw(11) << C << "  Gamma: " << setw(11) << gamma
          <<  "  cross validation accuracy (positive, negative): " << result;

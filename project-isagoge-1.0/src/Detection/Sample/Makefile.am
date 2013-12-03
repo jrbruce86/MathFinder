@@ -1,2 +1,2 @@
 lib_LTLIBRARIES = libGTParser.la
-libGTParser_la_SOURCES = GTParser.h
+libGTParser_la_SOURCES = GTParser.h Sample.h
