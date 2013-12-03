@@ -111,11 +111,15 @@ void libSVM::doCrossValidationTraining(int folds) {
     cout << "C: " << setw(11) << C << "  Gamma: " << setw(11) << gamma
          <<  "  cross validation accuracy (positive, negative): " << result;
     if(result(0) > .9) {
-      if(sum(result) > sum(best_result))
+      if(sum(result) > sum(best_result)) {
         best_result = result;
+        gamma_optimal = gamma;
+        C_optimal = C;
+      }
     }
-
   }
+  cout << "Best Result: " << best_result << ". Gamma = " << setw(11) << gamma_optimal
+       << ". C = " << setw(11) << C_optimal << endl;
 
 
 }

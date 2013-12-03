@@ -29,8 +29,7 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -IDetection/FeatureExtractor/NGrams/NGProfileGen
 
 isagoge_LDADD = /usr/local/lib/liblept.so \
-MEDS/libMEDS.la /usr/lib64/libX11.so \
-/usr/lib64/libX11-xcb.so \
+MEDS/libMEDS.la \
 Tesseract/api/libtesseract.la \
 dlib-18.4/dlib/libdlib.la \
 Grid/libGrid.la \
