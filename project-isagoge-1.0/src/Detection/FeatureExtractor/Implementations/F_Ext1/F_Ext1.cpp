@@ -85,7 +85,6 @@ void F_Ext1::initFeatExtFull(TessBaseAPI& api, const string& groundtruth_path_,
   }
 }
 
-
 // All features or calculations which require evaluating the entire
 // page rather than just one blob at a time are found here
 void F_Ext1::initFeatExtSinglePage() {

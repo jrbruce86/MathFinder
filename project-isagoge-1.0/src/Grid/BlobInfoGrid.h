@@ -82,7 +82,7 @@ class BLOBINFO:public ELIST_LINK {
            cosbabp(0), cosbabp_processed(false), ismathword(false),
            is_italic(false), blobindex_inword(-1), word_lastblob(-1),
            has_nested(false), certainty((double)-20), features_extracted(false),
-           dist_above_baseline((double)0) {}
+           dist_above_baseline((double)0), predicted_math(false) {}
   // TODO: Make sure this copies everything (if necessary)!!!
   // for now I'm just using it to copy the BLOBNBOXes and that's it
   BLOBINFO(const BLOBINFO& copy) : original_part(copy.original_part),
@@ -95,7 +95,8 @@ class BLOBINFO:public ELIST_LINK {
       cosbabp_processed(copy.cosbabp_processed), ismathword(copy.ismathword),
       is_italic(copy.is_italic), blobindex_inword(-1), word_lastblob(-1),
       has_nested(false), certainty((double)-20), features_extracted(false),
-      dist_above_baseline(copy.dist_above_baseline) {
+      dist_above_baseline(copy.dist_above_baseline),
+      predicted_math(copy.predicted_math) {
     // cout << "in blobinfo copy constrctor!!\n";
     unrecognized_blobs = new BLOBNBOX_LIST();
     BLOBNBOX_LIST* cpyblobs = copy.unrecognized_blobs;
@@ -186,6 +187,8 @@ class BLOBINFO:public ELIST_LINK {
   const TBOX& bounding_box() const {
     return box;
   }
+
+  bool predicted_math; // result of the detector
 
   // quick accessors for convenience
   inline inT16 left() const {

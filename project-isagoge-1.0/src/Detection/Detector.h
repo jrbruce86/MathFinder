@@ -68,15 +68,13 @@ class Detector {
     ext = ext_;
   }
 
-  // Initialize the feature extractor for the full training set
-  // depending on what features are being extracted, the extractor
-  // may require performing some computation on the entire set or
-  // a subset of the training data in order to get some metrics
-  // useful in feature extraction (this of course does not apply to
-  // the prediction stage, but information gained from this initialization
-  // will help to make predictions after training)
+  // Initialization required by both training and prediction
   inline void initFeatExtFull(TessBaseAPI& api, bool makenew) {
     featext.initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
+  }
+
+  inline void initFeatExtSinglePage() {
+    featext.initFeatExtSinglePage();
   }
 
   // When doing training it is necessary to first get all the samples
@@ -178,7 +176,7 @@ class Detector {
       const string& predictor_path_) {
     predictor_path = predictor_path_;
     samples = samples_;
-    classifier.initClassifier();
+    classifier.initClassifier(predictor_path_, false);
     trainer.initTraining(classifier);
   }
 
@@ -194,9 +192,15 @@ class Detector {
       cout << "ERROR: Attempted prediction using an untrained classifier!\n";
       exit(EXIT_FAILURE);
     }
+    initFeatExtFull(api, false); // initializes the feature extractor
+    classifier.initClassifier(predictor_path_, true);
     predictor_path = predictor_path_;
   }
-  inline bool predict(vector<double> sample) {
+
+
+
+  inline bool predict(BLOBINFO* blob) {
+    vector<double> sample = featext.extractFeatures(blob);
     return classifier.predict(sample);
   }
 

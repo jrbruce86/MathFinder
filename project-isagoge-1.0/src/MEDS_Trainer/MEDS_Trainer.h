@@ -157,6 +157,9 @@ class MEDS_Trainer {
       detector.initTraining(*samples, predictor_path);
       detector.train_();
     }
+    else {
+      cout << "Predictor found so training was not carried out.\n";
+    }
   }
 
   // Its much harder to do supervised training on this part. Much of the computations
@@ -186,6 +189,14 @@ class MEDS_Trainer {
       }
     }
     cout << "Success!\n";
+  }
+
+  inline DetectorType getDetector() {
+    return detector;
+  }
+
+  inline string getPredictorPath() {
+    return predictor_path;
   }
 
  private:

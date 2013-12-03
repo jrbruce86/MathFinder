@@ -45,10 +45,10 @@ class IBinaryClassifier {
  public:
   IBinaryClassifier() {}
 
-  inline void initClassifier() {
+  inline void initClassifier(const string& predictor_path, bool prediction) {
     // allow for any initialization which may be required
     // for the classifier here....
-    classifier.initClassifier();
+    classifier.initClassifier(predictor_path, prediction);
   }
 
   inline void doTraining(const vector<vector<BLSample*> >& samples) {

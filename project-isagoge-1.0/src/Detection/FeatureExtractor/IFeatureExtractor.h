@@ -42,12 +42,12 @@ class IFeatureExtractor {
  public:
   IFeatureExtractor<FeatureExtType>() {}
 
-  // do feature extraction initializations
-  // for an entire training set
+  // Required initialization of the feature extractor for both training and prediction
   inline void initFeatExtFull(TessBaseAPI& api, const string& groundtruth_path,
       const string& training_set_path, const string& ext, bool makenew) {
     feat_ext.initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
   }
+
 
   // do feature extraction initializations
   // specific to a single page

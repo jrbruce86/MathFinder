@@ -33,8 +33,10 @@ libSVM::libSVM() : trained(false), gamma_optimal(-1), C_optimal(-1) {
 
 }
 
-void libSVM::initClassifier() {
-
+void libSVM::initClassifier(const string& predictor_path_, bool prediction) {
+  predictor_path = predictor_path_ + (string)"predictor";
+  if(prediction)
+    loadPredictor();
 }
 
 void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
@@ -63,18 +65,23 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   // samples are grouped by the image from which they came and each image
   // can, in some regards, be seen as a separate distribution.
   randomize_samples(training_samples, labels);
-  // Now ready to find the optimal C and Gamma parameters through a course
+  // Now ready to find the optimal C and Gamma parameters through a coarse
   // grid search then through a finer one. Once the "optimal" C and Gamma
   // parameters are found, the SVM is trained on these to give the final
   // predictor which can be serialized and saved for later usage.
-  doCrossValidationTraining(10);
+  //doCoarseCVTraining(10);
+  C_optimal = 322.54;
+  gamma_optimal = 8;
+  doFineCVTraining(10);
+  trainFinalClassifier();
+  savePredictor();
   trained = true;
 }
 
 // Much of the functionality of this training is inspired by:
 // [1] C.W. Hsu. "A practical guide to support vector classiﬁcation," Department of
 // Computer Science, Tech. rep. National Taiwan University, 2003.
-void libSVM::doCrossValidationTraining(int folds) {
+void libSVM::doCoarseCVTraining(int folds) {
   // 1. First a course grid search is carried out. As recommended in [1]
   // the grid is exponentially spaced to give an estimate of the general
   // magnitude of the parameters without taking too much time.
@@ -120,13 +127,75 @@ void libSVM::doCrossValidationTraining(int folds) {
   }
   cout << "Best Result: " << best_result << ". Gamma = " << setw(11) << gamma_optimal
        << ". C = " << setw(11) << C_optimal << endl;
+}
 
+// assumes that C_optimal and gamma_optimal have already
+// been initialized either manually or through doCoarseCVTraining()
+// this carries out BOBYQA algorithm to find optimal C and Gamma parameters
+void libSVM::doFineCVTraining(int folds) {
+  // set the starting point
+  matrix<double, 2, 1> opt_C_Gamma_pair;
+  opt_C_Gamma_pair(0) = C_optimal;
+  opt_C_Gamma_pair(1) = gamma_optimal;
 
+  // set the upper and lower limits
+  matrix<double, 2, 1> lowerbound, upperbound;
+  lowerbound = 1e-7, 1e-7; // for now I'm not giving it much as far as limits are concerned...
+  upperbound = 1000, 1000;
+
+  // try searching in log space like in the dlib example
+  opt_C_Gamma_pair = log(opt_C_Gamma_pair);
+  lowerbound = log(lowerbound);
+  upperbound = log(upperbound);
+
+  double best_score = find_max_bobyqa(
+      cross_validation_objective(training_samples, labels), // Function to maximize
+      opt_C_Gamma_pair,                                      // starting point
+      opt_C_Gamma_pair.size()*2 + 1,                         // See BOBYQA docs, generally size*2+1 is a good setting for this
+      lowerbound,                                 // lower bound
+      upperbound,                                 // upper bound
+      min(upperbound-lowerbound)/10,             // search radius
+      0.01,                                        // desired accuracy
+      100                                          // max number of allowable calls to cross_validation_objective()
+  );
+  opt_C_Gamma_pair = exp(opt_C_Gamma_pair); // convert back to normal scale from log scale
+  C_optimal = opt_C_Gamma_pair(0);
+  gamma_optimal = opt_C_Gamma_pair(1);
+  cout << "Optimal C after BOBYQA: " << setw(11) << C_optimal << endl;
+  cout << "Optimal gamma after BOBYQA: " << setw(11) << gamma_optimal << endl;
+  cout << "BOBYQA Score: " << best_score << endl;
+}
+
+void libSVM::trainFinalClassifier() {
+  svm_c_trainer<kernel_type> trainer;
+  trainer.set_kernel(kernel_type(gamma_optimal));
+  trainer.set_c(C_optimal);
+  final_predictor = trainer.train(training_samples, labels);
+  cout << "The number of support vectors in the final learned function is: "
+       << final_predictor.basis_vectors.size() << endl;
+}
+
+void libSVM::savePredictor() {
+  ofstream fout(predictor_path.c_str(),ios::binary);
+  serialize(final_predictor,fout);
+  fout.close();
+}
+
+void libSVM::loadPredictor() {
+  ifstream fin(predictor_path.c_str(),ios::binary);
+  deserialize(final_predictor, fin);
 }
 
 bool libSVM::predict(const std::vector<double>& sample) {
-  cout << "in the svm predictor!!\n";
-  return false;
+  sample_type sample_;
+  sample_.set_size(sample.size(), 1);
+  for(int i = 0; i < sample.size(); ++i)
+    sample_(i) = sample[i];
+  double result = final_predictor(sample_);
+  if(result < 0)
+    return false;
+  else
+    return true;
 }
 
 void libSVM::reset() {

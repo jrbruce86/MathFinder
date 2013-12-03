@@ -128,7 +128,7 @@ libdlib_la_DEPENDENCIES = sockets/libsockets.la any/libany.la \
 	cmd_line_parser/libcmd_line_parser.la \
 	compress_stream/libcompress_stream.la \
 	conditioning_class/libconditioning_class.la \
-	config_reader/libconfig_reader.la \
+	config_reader/libconfig_reader.la threads/libthreads.la \
 	cpp_pretty_printer/libcpp_pretty_printer.la \
 	cpp_tokenizer/libcpp_tokenizer.la crc32/libcrc32.la \
 	data_io/libdata_io.la directed_graph/libdirected_graph.la \
@@ -428,7 +428,7 @@ cpp_pretty_printer.h cpp_tokenizer.h crc32.h data_io.h directed_graph.h \
 dir_nav.h disjoint_subsets.h enable_if.h entropy_decoder.h \
 entropy_decoder_model.h entropy_encoder.h entropy_encoder_model.h \
 error.h filtering.h float_details.h geometry.h graph.h graph_cuts.h \
-graph_utils.h graph_utils_threaded.h gui_core.h gui_widgets.h hash.h \
+graph_utils.h graph_utils_threaded.h hash.h \
 hash_map.h hash_set.h hash_table.h image_io.h image_keypoint.h \
 image_processing.h image_transforms.h iosockstream.h is_kind.h linker.h \
 logger.h lsh.h lz77_buffer.h lzp_buffer.h manifold_regularization.h \
@@ -456,6 +456,7 @@ byte_orderer/libbyte_orderer.la clustering/libclustering.la \
 cmd_line_parser/libcmd_line_parser.la compress_stream/libcompress_stream.la \
 conditioning_class/libconditioning_class.la \
 config_reader/libconfig_reader.la \
+threads/libthreads.la \
 cpp_pretty_printer/libcpp_pretty_printer.la \
 cpp_tokenizer/libcpp_tokenizer.la crc32/libcrc32.la data_io/libdata_io.la \
 directed_graph/libdirected_graph.la dir_nav/libdir_nav.la \

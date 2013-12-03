@@ -17,13 +17,14 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -ITesseract/testing -ITesseract/textord \
 -ITesseract/training -ITesseract/viewer \
 -ITesseract/wordrec -ITesseract -IEvaluation \
+-IGrid \
 -IMEDS/ -IUtils/ -Idlib-18.4 -IMEDS_Trainer \
 -IDetection -IDetection/BinaryClassifier \
 -IDetection/FeatureExtractor \
 -IDetection/FeatureExtractor/Implementations \
 -IDetection/FeatureExtractor/Implementations/F_Ext1 \
 -IDetection/FeatureExtractor/NGrams \
--IDetection/Trainer -IDetection/Sample -IGrid -ISegmentation \
+-IDetection/Trainer -IDetection/Sample -ISegmentation \
 -IDetection/TessInterface -IDetection/FeatureExtractor/Sentence \
 -IDetection/FeatureExtractor/NGrams \
 -IDetection/FeatureExtractor/NGrams/NGProfileGen

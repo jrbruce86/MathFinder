@@ -33,6 +33,7 @@
 
 typedef dlib::matrix<double, 0, 1> sample_type;
 typedef dlib::radial_basis_kernel<sample_type> kernel_type;
+typedef dlib::decision_function<kernel_type> dec_funct_type;
 
 // Copied from dlib's model_selection_ex.cpp with the following modifications:
 // - Divides the data into a variable number of subsets for cross validation.
@@ -50,17 +51,20 @@ class cross_validation_objective
     // Pull out the two SVM model parameters.  Note that, in this case,
     // I have setup the parameter search to operate in log scale so we have
     // to remember to call exp() to put the parameters back into a normal scale.
-    const double gamma = std::exp(params(0));
-    const double nu    = std::exp(params(1));
+    const double C = std::exp(params(0));
+    const double gamma    = std::exp(params(1));
 
     // Make an SVM trainer and tell it what the parameters are supposed to be.
     dlib::svm_c_trainer<kernel_type> trainer;
-   // trainer.set_kernel(kernel_type(gamma));
-    //trainer.set_c(?);
+    trainer.set_kernel(kernel_type(gamma));
+    trainer.set_c(C);
 
     // Finally, perform 10-fold cross validation and then print and return the results.
+    cout << "Running cross validation in BOBYQA with ";
+    cout << "C: " << setw(11) << C << ", gamma: " << setw(11) << gamma << endl;
     dlib::matrix<double> result = cross_validate_trainer(trainer, samples, labels, 10);
-    std::cout << "gamma: " << std::setw(11) << gamma << "  nu: " << std::setw(11) << nu <<  "  cross validation accuracy: " << result;
+    std::cout << "C: " << std::setw(11) << C << "  gamma: " << std::setw(11) << gamma
+              <<  "  cross validation accuracy: " << result;
 
 
     // Here I'm just summing the accuracy on each class.  However, you could do something else.
@@ -80,7 +84,7 @@ class cross_validation_objective
 class libSVM {
  public:
   libSVM();
-  void initClassifier();
+  void initClassifier(const string& predictor_path, bool prediction);
   void doTraining(const vector<vector<BLSample*> >& samples);
   bool predict(const std::vector<double>& sample);
   inline bool isTrained() { return trained; }
@@ -88,17 +92,27 @@ class libSVM {
  private:
   bool trained; // flag that's true once training complete
 
-  void doCrossValidationTraining(int folds);
+  void doCoarseCVTraining(int folds); // coarse grid search to find starting params for doFineCVTraining
+  void doFineCVTraining(int folds); // uses BOBYQA to get final optimized params
+
+  void trainFinalClassifier();
+
+  void savePredictor(); // serialize and save the predictor for later use
+  void loadPredictor(); // read in a previously serialized predictor
 
   // the training samples and their corresponding labels
   // obviously these two vectors should be the same size
   std::vector<sample_type> training_samples;
   std::vector<double> labels;
 
-  // the radial basis function (gaussian) kernel being used
-  kernel_type rbf_kernel_optimal; // rbf kernel using optimal gamma parameter
+  // the optimal gamma and C parameters for the SVM
   double gamma_optimal;
   double C_optimal;
+
+  // the final trained classifier which was trained with the
+  // optimal gamma and C parameters
+  dec_funct_type final_predictor;
+  string predictor_path; // path to save the final predictor in
 };
 
 #endif

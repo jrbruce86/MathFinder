@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libMEDS.la
 libMEDS_la_SOURCES = MEDS.h
-SUBDIRS = ../Detection
+SUBDIRS = ../Grid ../Detection
 libMEDS_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la ../Grid/libGrid.la \
 ../Utils/libUtils.la ../dlib-18.4/dlib/libdlib.la \
@@ -25,7 +25,8 @@ libMEDS_la_CPPFLAGS = -I../Tesseract/api \
 -I../Detection/FeatureExtractor/NGrams \
 -I../Detection/Trainer -I../Detection/Sample \
 -I../Detection/BinaryClassifier \
--I../Detection/TessInterface
+-I../Detection/TessInterface \
+-I../Grid
 
 
 ##TODO: Make a special library/include directory for detection predictors and include it here.. training is separate and actually requires the MEDS library so separating out the prediction and training functionality helps to avoid circular dependencies!!

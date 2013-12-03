@@ -350,7 +350,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libMEDS.la
 libMEDS_la_SOURCES = MEDS.h
-SUBDIRS = ../Detection
+SUBDIRS = ../Grid ../Detection
 libMEDS_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la ../Grid/libGrid.la \
 ../Utils/libUtils.la ../dlib-18.4/dlib/libdlib.la \
@@ -376,7 +376,8 @@ libMEDS_la_CPPFLAGS = -I../Tesseract/api \
 -I../Detection/FeatureExtractor/NGrams \
 -I../Detection/Trainer -I../Detection/Sample \
 -I../Detection/BinaryClassifier \
--I../Detection/TessInterface
+-I../Detection/TessInterface \
+-I../Grid
 
 all: all-recursive
 

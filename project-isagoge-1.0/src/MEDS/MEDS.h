@@ -102,10 +102,22 @@ class MEDS : public EquationDetectBase {
      // in order to ensure proper segmentation.
 
      // Go on and do predictions now if not in training mode
+     detector.initFeatExtSinglePage();
+     BLOBINFO* blob;
+     BlobInfoGridSearch bigs(blobinfogrid);
+     bigs.StartFullSearch();
+     while((blob = bigs.NextFullSearch()) != NULL) {
+       blob->predicted_math = detector.predict(blob);
+     }
 
-     vector<double> dummyfeatures;
-     detector.predict(dummyfeatures);
-    // exit(EXIT_FAILURE);
+     // For now what I'll do is print out the images to be evaluated here and make
+     // sure that they don't get overwritten by Tesseract (i.e. turn off any parameter
+     // that will print anything later on with the same name)
+     // TODO: Incorporate results into Tesseract!!!
+     dbgPrintDetectionResults();
+
+
+     exit(EXIT_SUCCESS);
 
 
      // ^^^ For creating the math segmentations I will be using my own custom data structure
@@ -195,6 +207,15 @@ class MEDS : public EquationDetectBase {
     }
     // TODO: Delete any other heap allocated datastructures
     //       specific to a single image
+  }
+
+  void dbgPrintDetectionResults() {
+
+  }
+
+  // The final results after segmentation is carried out
+  void dbgPrintSegmentationResults() {
+
   }
 
 
