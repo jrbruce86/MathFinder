@@ -197,8 +197,6 @@ class Detector {
     predictor_path = predictor_path_;
   }
 
-
-
   inline bool predict(BLOBINFO* blob) {
     vector<double> sample = featext.extractFeatures(blob);
     return classifier.predict(sample);

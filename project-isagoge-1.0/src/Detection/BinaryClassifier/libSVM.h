@@ -31,40 +31,68 @@
 #include <Basic_Utils.h>
 #include <dlib/svm_threaded.h>
 
+// only one of the following should be enabled!
+// the chosen kernel is used for training
+#define RBF_KERNEL
+//#define LINEAR_KERNEL
+
 typedef dlib::matrix<double, 0, 1> sample_type;
-typedef dlib::radial_basis_kernel<sample_type> kernel_type;
-typedef dlib::decision_function<kernel_type> dec_funct_type;
+
+// RBF SVM Typedefs
+typedef dlib::radial_basis_kernel<sample_type> RBFKernel;
+typedef dlib::decision_function<RBFKernel> RBFSVMPredictor;
+
+// Linear SVM Typedefs
+typedef dlib::linear_kernel<sample_type> LinearKernel;
+typedef dlib::decision_function<LinearKernel> LinearSVMPredictor;
 
 // Copied from dlib's model_selection_ex.cpp with the following modifications:
 // - Divides the data into a variable number of subsets for cross validation.
 // - Uses C-SVM rather than Nu-SVM
+// - Uses multiple threads (one for each fold of cross validation)
 // - TODO: Modify cross validation return value to be maximized.
 class cross_validation_objective
 {
  public:
-  cross_validation_objective (
-      const std::vector<sample_type>& samples_,
-      const std::vector<double>& labels_
-  ) : samples(samples_), labels(labels_) {}
+  cross_validation_objective (const std::vector<sample_type>& samples_,
+      const std::vector<double>& labels_, int folds_) :
+        samples(samples_), labels(labels_), folds(folds_) {}
 
   double operator() (const dlib::matrix<double>& params) const {
     // Pull out the two SVM model parameters.  Note that, in this case,
     // I have setup the parameter search to operate in log scale so we have
     // to remember to call exp() to put the parameters back into a normal scale.
     const double C = std::exp(params(0));
+#ifdef RBF_KERNEL
     const double gamma    = std::exp(params(1));
 
     // Make an SVM trainer and tell it what the parameters are supposed to be.
-    dlib::svm_c_trainer<kernel_type> trainer;
-    trainer.set_kernel(kernel_type(gamma));
+    dlib::svm_c_trainer<RBFKernel> trainer;
+    trainer.set_kernel(RBFKernel(gamma));
+#endif
+#ifdef LINEAR_KERNEL
+    dlib::svm_c_trainer<LinearKernel> trainer;
+#endif
     trainer.set_c(C);
 
     // Finally, perform 10-fold cross validation and then print and return the results.
-    cout << "Running cross validation in BOBYQA with ";
+#ifdef RBF_KERNEL
+    cout << "Running cross validation on RBF Kernel SVM with ";
     cout << "C: " << setw(11) << C << ", gamma: " << setw(11) << gamma << endl;
-    dlib::matrix<double> result = dlib::cross_validate_trainer_threaded(trainer, samples, labels, 10, 3);
+#endif
+#ifdef LINEAR_KERNEL
+    cout << "Running cross validation on Linear Kernel SVM with ";
+    cout << "C: " << setw(11) << C << endl;
+#endif
+    dlib::matrix<double> result = dlib::cross_validate_trainer_threaded(trainer, samples, labels, folds, folds);
+#ifdef RBF_KERNEL
     std::cout << "C: " << std::setw(11) << C << "  gamma: " << std::setw(11) << gamma
               <<  "  cross validation accuracy: " << result;
+#endif
+#ifdef LINEAR_KERNEL
+    std::cout << "C: " << std::setw(11) << C
+              << "   cross validation accuracy:  " << result;
+#endif
 
 
     // Here I'm just summing the accuracy on each class.  However, you could do something else.
@@ -78,6 +106,7 @@ class cross_validation_objective
 
   const std::vector<sample_type>& samples;
   const std::vector<double>& labels;
+  int folds;
 };
 
 
@@ -106,13 +135,24 @@ class libSVM {
   std::vector<double> labels;
 
   // the optimal gamma and C parameters for the SVM
+#ifdef RBF_KERNEL
   double gamma_optimal;
+#endif
   double C_optimal;
 
   // the final trained classifier which was trained with the
   // optimal gamma and C parameters
-  dec_funct_type final_predictor;
+#ifdef RBF_KERNEL
+  RBFSVMPredictor final_predictor;
+#endif
+#ifdef LINEAR_KERNEL
+  LinearSVMPredictor final_predictor;
+#endif
+
+
   string predictor_path; // path to save the final predictor in
+
+  bool predictor_loaded; // true only after loading the predictor
 };
 
 #endif

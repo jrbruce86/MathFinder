@@ -8,7 +8,6 @@ LT_INIT #libtool
 
 # Make files and scripts
 AC_CONFIG_FILES([Makefile
-                src/Makefile
                 src/Tesseract/Makefile
                 src/Groundtruth_Generation/select_random/Makefile 
                 src/Groundtruth_Generation/select_training/Makefile
@@ -30,7 +29,8 @@ AC_CONFIG_FILES([Makefile
                 src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile
                 src/Detection/Trainer/Makefile
                 src/Segmentation/Makefile
-                src/MEDS_Trainer/Makefile],
+                src/MEDS_Trainer/Makefile
+                src/Makefile],
                 [src/Groundtruth_Generation/removealpha],
                 [chmod +x src/Groundtruth_Generation/removealpha],
                 [src/Groundtruth_Generation/rename_pngs],

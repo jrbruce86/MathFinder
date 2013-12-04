@@ -1,10 +1,10 @@
 lib_LTLIBRARIES = libMEDS.la
 libMEDS_la_SOURCES = MEDS.h
-SUBDIRS = ../Grid ../Detection
+SUBDIRS = ../Grid ../dlib-18.4 ../Detection
 libMEDS_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la ../Grid/libGrid.la \
-../Utils/libUtils.la ../dlib-18.4/dlib/libdlib.la \
-../Detection/libDetection.la
+../Utils/libUtils.la \
+../Detection/libDetection.la ../dlib-18.4/dlib/libdlib.la
 libMEDS_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/ccmain -I../Tesseract/ccstruct \
 -I../Tesseract/ccutil -I../Tesseract/classify \
@@ -23,7 +23,7 @@ libMEDS_la_CPPFLAGS = -I../Tesseract/api \
 -I../Detection/FeatureExtractor/Implementations \
 -I../Detection/FeatureExtractor/Implementations/F_Ext1 \
 -I../Detection/FeatureExtractor/NGrams \
--I../Detection/Trainer -I../Detection/Sample \
+-I../Detection/Trainer -I../dlib-18.4 -I../Detection/Sample \
 -I../Detection/BinaryClassifier \
 -I../Detection/TessInterface \
 -I../Grid

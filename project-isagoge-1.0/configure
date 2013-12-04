@@ -11533,7 +11533,7 @@ CC="$lt_save_CC"
  #libtool
 
 # Make files and scripts
-ac_config_files="$ac_config_files Makefile src/Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile src/Grid/Makefile src/Detection/Makefile src/Detection/Sample/Makefile src/Detection/TessInterface/Makefile src/Detection/BinaryClassifier/Makefile src/Detection/FeatureExtractor/Makefile src/Detection/FeatureExtractor/NGrams/Makefile src/Detection/FeatureExtractor/NGrams/NGProfileGen/Makefile src/Detection/FeatureExtractor/Sentence/Makefile src/Detection/FeatureExtractor/Implementations/Makefile src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile src/Detection/Trainer/Makefile src/Segmentation/Makefile src/MEDS_Trainer/Makefile"
+ac_config_files="$ac_config_files Makefile src/Tesseract/Makefile src/Groundtruth_Generation/select_random/Makefile src/Groundtruth_Generation/select_training/Makefile src/Groundtruth_Generation/Makefile src/Utils/Makefile src/Evaluation/Makefile src/dlib-18.4/Makefile src/MEDS/Makefile src/Grid/Makefile src/Detection/Makefile src/Detection/Sample/Makefile src/Detection/TessInterface/Makefile src/Detection/BinaryClassifier/Makefile src/Detection/FeatureExtractor/Makefile src/Detection/FeatureExtractor/NGrams/Makefile src/Detection/FeatureExtractor/NGrams/NGProfileGen/Makefile src/Detection/FeatureExtractor/Sentence/Makefile src/Detection/FeatureExtractor/Implementations/Makefile src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile src/Detection/Trainer/Makefile src/Segmentation/Makefile src/MEDS_Trainer/Makefile src/Makefile"
 
 
 
@@ -17110,7 +17110,6 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/Tesseract/Makefile") CONFIG_FILES="$CONFIG_FILES src/Tesseract/Makefile" ;;
     "src/Groundtruth_Generation/select_random/Makefile") CONFIG_FILES="$CONFIG_FILES src/Groundtruth_Generation/select_random/Makefile" ;;
     "src/Groundtruth_Generation/select_training/Makefile") CONFIG_FILES="$CONFIG_FILES src/Groundtruth_Generation/select_training/Makefile" ;;
@@ -17133,6 +17132,7 @@ do
     "src/Detection/Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/Detection/Trainer/Makefile" ;;
     "src/Segmentation/Makefile") CONFIG_FILES="$CONFIG_FILES src/Segmentation/Makefile" ;;
     "src/MEDS_Trainer/Makefile") CONFIG_FILES="$CONFIG_FILES src/MEDS_Trainer/Makefile" ;;
+    "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -18620,7 +18620,6 @@ _LT_EOF
 
  ;;
     "Makefile":F) src/Groundtruth_Generation/removealpha ;;
-    "src/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Tesseract/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Groundtruth_Generation/select_random/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Groundtruth_Generation/select_training/Makefile":F) src/Groundtruth_Generation/removealpha ;;
@@ -18643,6 +18642,7 @@ _LT_EOF
     "src/Detection/Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/Segmentation/Makefile":F) src/Groundtruth_Generation/removealpha ;;
     "src/MEDS_Trainer/Makefile":F) src/Groundtruth_Generation/removealpha ;;
+    "src/Makefile":F) src/Groundtruth_Generation/removealpha ;;
 
   esac
 done # for ac_tag

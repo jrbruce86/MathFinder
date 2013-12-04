@@ -118,8 +118,9 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libBinaryClassifier_la_DEPENDENCIES = ../../dlib-18.4/dlib/libdlib.la \
-	../../Utils/libUtils.la
+libBinaryClassifier_la_DEPENDENCIES =  \
+	../../dlib-18.4/dlib/threads/libthreads.la \
+	../../dlib-18.4/dlib/libdlib.la ../../Utils/libUtils.la
 am_libBinaryClassifier_la_OBJECTS = libBinaryClassifier_la-libSVM.lo
 libBinaryClassifier_la_OBJECTS = $(am_libBinaryClassifier_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -331,7 +332,8 @@ libBinaryClassifier_la_SOURCES = IBinaryClassifier.h libSVM.h libSVM.cpp
 libBinaryClassifier_la_CPPFLAGS = -I../../dlib-18.4 -I../../Utils \
 -I../Sample
 
-libBinaryClassifier_la_LIBADD = ../../dlib-18.4/dlib/libdlib.la \
+libBinaryClassifier_la_LIBADD = ../../dlib-18.4/dlib/threads/libthreads.la \
+../../dlib-18.4/dlib/libdlib.la \
 ../../Utils/libUtils.la
 
 all: all-am

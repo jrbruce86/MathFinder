@@ -29,14 +29,27 @@
 
 using namespace dlib;
 
-libSVM::libSVM() : trained(false), gamma_optimal(-1), C_optimal(-1) {
-
-}
+libSVM::libSVM() : trained(false), gamma_optimal(-1), C_optimal(-1),
+    predictor_loaded(false) {}
 
 void libSVM::initClassifier(const string& predictor_path_, bool prediction) {
   predictor_path = predictor_path_ + (string)"predictor";
   if(prediction)
     loadPredictor();
+#ifdef RBF_KERNEL
+#ifdef LINEAR_KERNEL
+    cout << "ERROR: Can only train SVM with RBF or Linear kernel exclusively. ";
+         << "Both are enabled, need to disable one at the top of libSVM.h.\n";
+    exit(EXIT_FAILURE);
+#endif
+#endif
+#ifndef LINEAR_KERNEL
+#ifndef RBF_KERNEL
+    cout << "ERROR: Need to enable either the LINEAR_KERNEL or the RBF_KERNEL "
+         << "at the top of libSVM.h\n";
+    exit(EXIT_FAILURE);
+#endif
+#endif
 }
 
 void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
@@ -91,11 +104,21 @@ void libSVM::doCoarseCVTraining(int folds) {
   // for the C vector and Gamma vector (i.e. 2^-5,...,2^15 and 2^-15,....,2^3
   // respectively.
   matrix<double> C_vec = logspace(log10(pow(2,-5)), log10(pow(2,15)), 10);
+#ifdef RBF_KERNEL
   matrix<double> Gamma_vec = logspace(log10(pow(2,-5)), log10(pow(2,3)), 10);
+#endif
   // The vectors are then combined to create a 10x10 (C,Gamma) pair grid, on which
   // cross validation training is carried out for each pair to find the optimal
   // starting parameters for a finer optimization which uses the BOBYQA algorithm.
-  matrix<double> C_Gamma_Grid = cartesian_product(C_vec, Gamma_vec);
+  matrix<double> grid;
+#ifdef RBF_KERNEL
+  grid = cartesian_product(C_vec, Gamma_vec);
+#endif
+#ifdef LINEAR_KERNEL
+
+#endif
+  grid = C_vec;
+
   //    Carry out course grid search. The grid is actually implemented as a
   //    2x100 matrix where row 1 is the C part of the grid pair and row 2
   //    is the corresponding gamma part. Each index represents a pair on the
@@ -103,26 +126,39 @@ void libSVM::doCoarseCVTraining(int folds) {
   //    grid.
   matrix<double> best_result(2,1);
   best_result = 0;
-  for(int i = 0; i < C_Gamma_Grid.nc(); i++) {
+  for(int i = 0; i < grid.nc(); i++) {
     // grab the current pair
-    const double C = C_Gamma_Grid(0, i);
-    const double gamma = C_Gamma_Grid(1, i);
+    const double C = grid(0, i);
+#ifdef RBF_KERNEL
+    const double gamma = grid(1, i);
+#endif
     // set up C_SVC trainer using the current parameters
-    svm_c_trainer<kernel_type> trainer;
-    trainer.set_kernel(kernel_type(gamma));
+
+#ifdef RBF_KERNEL
+    svm_c_trainer<RBFKernel> trainer;
+    trainer.set_kernel(RBFKernel(gamma));
+#endif
+#ifdef LINEAR_KERNEL
+    svm_c_trainer<LinearKernel> trainer;
+#endif
     trainer.set_c(C);
     // do the cross validation
-    cout << "Running cross validation for " << "C: " << setw(11) << C << "  Gamma: "
-         << setw(11) << gamma << endl;
+    cout << "Running cross validation for " << "C: " << setw(11) << C
+#ifdef RBF_KERNEL
+         << "  Gamma: " << setw(11) << gamma << endl;
+#endif
+#ifdef LINEAR_KERNEL
+         << endl;
+#endif
     matrix<double> result = cross_validate_trainer(trainer, training_samples, labels, folds);
     cout << "C: " << setw(11) << C << "  Gamma: " << setw(11) << gamma
          <<  "  cross validation accuracy (positive, negative): " << result;
-    if(result(0) > .9) {
-      if(sum(result) > sum(best_result)) {
-        best_result = result;
-        gamma_optimal = gamma;
-        C_optimal = C;
-      }
+    if(sum(result) > sum(best_result)) {
+      best_result = result;
+#ifdef RBF_KERNEL
+      gamma_optimal = gamma;
+#endif
+      C_optimal = C;
     }
   }
   cout << "Best Result: " << best_result << ". Gamma = " << setw(11) << gamma_optimal
@@ -134,41 +170,59 @@ void libSVM::doCoarseCVTraining(int folds) {
 // this carries out BOBYQA algorithm to find optimal C and Gamma parameters
 void libSVM::doFineCVTraining(int folds) {
   // set the starting point
-  matrix<double, 2, 1> opt_C_Gamma_pair;
-  opt_C_Gamma_pair(0) = C_optimal;
-  opt_C_Gamma_pair(1) = gamma_optimal;
+  matrix<double, 2, 1> opt_params;
+  opt_params(0) = C_optimal;
+#ifdef RBF_KERNEL
+  opt_params(1) = gamma_optimal;
+#endif
 
   // set the upper and lower limits
+#ifdef RBF_KERNEL
   matrix<double, 2, 1> lowerbound, upperbound;
-  lowerbound = 1e-7, 1e-7; // for now I'm not giving it much as far as limits are concerned...
+  lowerbound = 1e-7, 1e-7;
   upperbound = 1000, 1000;
+#endif
+#ifdef LINEAR_KERNEL
+  matrix<double, 1, 1> lowerboud, upperbound;
+  lowerbound = 1e-7;
+  upperbound = 1000;
+#endif
 
   // try searching in log space like in the dlib example
-  opt_C_Gamma_pair = log(opt_C_Gamma_pair);
+  opt_params = log(opt_params);
   lowerbound = log(lowerbound);
   upperbound = log(upperbound);
 
   double best_score = find_max_bobyqa(
-      cross_validation_objective(training_samples, labels), // Function to maximize
-      opt_C_Gamma_pair,                                      // starting point
-      opt_C_Gamma_pair.size()*2 + 1,                         // See BOBYQA docs, generally size*2+1 is a good setting for this
+      cross_validation_objective(training_samples, labels, folds), // Function to maximize
+      opt_params,                                      // starting point
+      opt_params.size()*2 + 1,                         // See BOBYQA docs, generally size*2+1 is a good setting for this
       lowerbound,                                 // lower bound
       upperbound,                                 // upper bound
       min(upperbound-lowerbound)/10,             // search radius
       0.01,                                        // desired accuracy
       100                                          // max number of allowable calls to cross_validation_objective()
   );
-  opt_C_Gamma_pair = exp(opt_C_Gamma_pair); // convert back to normal scale from log scale
-  C_optimal = opt_C_Gamma_pair(0);
-  gamma_optimal = opt_C_Gamma_pair(1);
+  opt_params = exp(opt_params); // convert back to normal scale from log scale
+  C_optimal = opt_params(0);
+#ifdef RBF_KERNEL
+  gamma_optimal = opt_params(1);
+#endif
   cout << "Optimal C after BOBYQA: " << setw(11) << C_optimal << endl;
+#ifdef RBF_KERNEL
   cout << "Optimal gamma after BOBYQA: " << setw(11) << gamma_optimal << endl;
+#endif
   cout << "BOBYQA Score: " << best_score << endl;
 }
 
 void libSVM::trainFinalClassifier() {
-  svm_c_trainer<kernel_type> trainer;
-  trainer.set_kernel(kernel_type(gamma_optimal));
+#ifdef RBF_KERNEL
+  svm_c_trainer<RBFKernel> trainer;
+  trainer.set_kernel(RBFKernel(gamma_optimal));
+#endif
+#ifdef LINEAR_KERNEL
+  svm_c_trainer<LinearKernel> trainer;
+#endif
   trainer.set_c(C_optimal);
   final_predictor = trainer.train(training_samples, labels);
   cout << "The number of support vectors in the final learned function is: "
@@ -184,6 +238,7 @@ void libSVM::savePredictor() {
 void libSVM::loadPredictor() {
   ifstream fin(predictor_path.c_str(),ios::binary);
   deserialize(final_predictor, fin);
+  predictor_loaded = true;
 }
 
 bool libSVM::predict(const std::vector<double>& sample) {

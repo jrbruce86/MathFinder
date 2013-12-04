@@ -2,7 +2,7 @@ bin_PROGRAMS = isagoge
 
 SUBDIRS = Tesseract Groundtruth_Generation/select_random \
 Groundtruth_Generation/select_training \
-Groundtruth_Generation Utils Evaluation dlib-18.4 Grid \
+Groundtruth_Generation dlib-18.4 Utils Evaluation Grid \
 Detection Segmentation MEDS MEDS_Trainer 
 
 isagoge_CPPFLAGS = -ITesseract/api \
@@ -32,16 +32,16 @@ isagoge_CPPFLAGS = -ITesseract/api \
 isagoge_LDADD = /usr/local/lib/liblept.so \
 MEDS/libMEDS.la \
 Tesseract/api/libtesseract.la \
-dlib-18.4/dlib/libdlib.la \
 Grid/libGrid.la \
 MEDS_Trainer/libMEDS_Trainer.la \
 MEDS/libMEDS.la \
 Utils/libUtils.la \
 Evaluation/libevaluation.la \
 Segmentation/libSegmentation.la \
-Detection/libDetection.la \
+dlib-18.4/dlib/libdlib.la \
 Detection/FeatureExtractor/Implementations/F_Ext1/libF_Ext1.la \
 Detection/BinaryClassifier/libBinaryClassifier.la \
+Detection/libDetection.la \
 Detection/TessInterface/libTessInterface.la
 
 isagoge_SOURCES = IsagogeMain.cpp
