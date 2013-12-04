@@ -29,7 +29,7 @@
 
 #include <Sample.h>
 #include <Basic_Utils.h>
-#include <dlib/svm.h>
+#include <dlib/svm_threaded.h>
 
 typedef dlib::matrix<double, 0, 1> sample_type;
 typedef dlib::radial_basis_kernel<sample_type> kernel_type;
@@ -62,7 +62,7 @@ class cross_validation_objective
     // Finally, perform 10-fold cross validation and then print and return the results.
     cout << "Running cross validation in BOBYQA with ";
     cout << "C: " << setw(11) << C << ", gamma: " << setw(11) << gamma << endl;
-    dlib::matrix<double> result = cross_validate_trainer(trainer, samples, labels, 10);
+    dlib::matrix<double> result = dlib::cross_validate_trainer_threaded(trainer, samples, labels, 10, 3);
     std::cout << "C: " << std::setw(11) << C << "  gamma: " << std::setw(11) << gamma
               <<  "  cross validation accuracy: " << result;
 
