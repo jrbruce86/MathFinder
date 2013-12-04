@@ -29,8 +29,12 @@
 
 using namespace dlib;
 
-libSVM::libSVM() : trained(false), gamma_optimal(-1), C_optimal(-1),
-    predictor_loaded(false) {}
+libSVM::libSVM() : trained(false), C_optimal(-1),
+    predictor_loaded(false) {
+#ifdef RBF_KERNEL
+  gamma_optimal = -1;
+#endif
+}
 
 void libSVM::initClassifier(const string& predictor_path_, bool prediction) {
   predictor_path = predictor_path_ + (string)"predictor";
@@ -82,9 +86,7 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   // grid search then through a finer one. Once the "optimal" C and Gamma
   // parameters are found, the SVM is trained on these to give the final
   // predictor which can be serialized and saved for later usage.
-  //doCoarseCVTraining(10);
-  C_optimal = 322.54;
-  gamma_optimal = 8;
+  doCoarseCVTraining(10);
   doFineCVTraining(10);
   trainFinalClassifier();
   savePredictor();
@@ -161,8 +163,14 @@ void libSVM::doCoarseCVTraining(int folds) {
       C_optimal = C;
     }
   }
+#ifdef RBF_KERNEL
   cout << "Best Result: " << best_result << ". Gamma = " << setw(11) << gamma_optimal
        << ". C = " << setw(11) << C_optimal << endl;
+#endif
+#ifdef LINEAR_KERNEL
+  cout << "Best Result: " << best_result
+       << ", C = " << setw(11) << C_optimal << endl;
+#endif
 }
 
 // assumes that C_optimal and gamma_optimal have already
@@ -170,7 +178,12 @@ void libSVM::doCoarseCVTraining(int folds) {
 // this carries out BOBYQA algorithm to find optimal C and Gamma parameters
 void libSVM::doFineCVTraining(int folds) {
   // set the starting point
+#ifdef RBF_KERNEL
   matrix<double, 2, 1> opt_params;
+#endif
+#ifdef LINEAR_KERNEL
+  matrix<double, 1, 1> opt_params;
+#endif
   opt_params(0) = C_optimal;
 #ifdef RBF_KERNEL
   opt_params(1) = gamma_optimal;
@@ -183,7 +196,7 @@ void libSVM::doFineCVTraining(int folds) {
   upperbound = 1000, 1000;
 #endif
 #ifdef LINEAR_KERNEL
-  matrix<double, 1, 1> lowerboud, upperbound;
+  matrix<double, 1, 1> lowerbound, upperbound;
   lowerbound = 1e-7;
   upperbound = 1000;
 #endif

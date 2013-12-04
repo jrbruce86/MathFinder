@@ -33,8 +33,8 @@
 
 // only one of the following should be enabled!
 // the chosen kernel is used for training
-#define RBF_KERNEL
-//#define LINEAR_KERNEL
+//#define RBF_KERNEL
+#define LINEAR_KERNEL
 
 typedef dlib::matrix<double, 0, 1> sample_type;
 
