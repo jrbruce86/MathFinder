@@ -42,7 +42,7 @@ void libSVM::initClassifier(const string& predictor_path_, bool prediction) {
     loadPredictor();
 #ifdef RBF_KERNEL
 #ifdef LINEAR_KERNEL
-    cout << "ERROR: Can only train SVM with RBF or Linear kernel exclusively. ";
+    cout << "ERROR: Can only train SVM with RBF or Linear kernel exclusively. "
          << "Both are enabled, need to disable one at the top of libSVM.h.\n";
     exit(EXIT_FAILURE);
 #endif
@@ -82,6 +82,19 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   // samples are grouped by the image from which they came and each image
   // can, in some regards, be seen as a separate distribution.
   randomize_samples(training_samples, labels);
+
+  // Here we normalize all the samples by subtracting their mean and dividing by their
+  // standard deviation.  This is generally a good idea since it often heads off
+  // numerical stability problems and also prevents one large feature from smothering
+  // others.  Doing this doesn't matter much in this example so I'm just doing this here
+  // so you can see an easy way to accomplish this with the library.
+  vector_normalizer<sample_type> normalizer;
+  // let the normalizer learn the mean and standard deviation of the samples
+  normalizer.train(training_samples);
+  // now normalize each sample
+  for (unsigned long i = 0; i < training_samples.size(); ++i)
+    training_samples[i] = normalizer(training_samples[i]);
+
   // Now ready to find the optimal C and Gamma parameters through a coarse
   // grid search then through a finer one. Once the "optimal" C and Gamma
   // parameters are found, the SVM is trained on these to give the final
@@ -91,6 +104,8 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   trainFinalClassifier();
   savePredictor();
   trained = true;
+  cout << "Training Complete! The predictor has been saved to "
+       << predictor_path << endl;
 }
 
 // Much of the functionality of this training is inspired by:
@@ -152,7 +167,8 @@ void libSVM::doCoarseCVTraining(int folds) {
 #ifdef LINEAR_KERNEL
          << endl;
 #endif
-    matrix<double> result = cross_validate_trainer(trainer, training_samples, labels, folds);
+    matrix<double> result = cross_validate_trainer_threaded(trainer, training_samples,
+        labels, folds, folds);
     cout << "C: " << setw(11) << C << "  Gamma: " << setw(11) << gamma
          <<  "  cross validation accuracy (positive, negative): " << result;
     if(sum(result) > sum(best_result)) {
@@ -182,11 +198,14 @@ void libSVM::doFineCVTraining(int folds) {
   matrix<double, 2, 1> opt_params;
 #endif
 #ifdef LINEAR_KERNEL
-  matrix<double, 1, 1> opt_params;
+  matrix<double, 2, 1> opt_params;
 #endif
   opt_params(0) = C_optimal;
 #ifdef RBF_KERNEL
   opt_params(1) = gamma_optimal;
+#endif
+#ifdef LINEAR_KERNEL
+  opt_params(1) = 0; //fixed
 #endif
 
   // set the upper and lower limits
@@ -196,9 +215,9 @@ void libSVM::doFineCVTraining(int folds) {
   upperbound = 1000, 1000;
 #endif
 #ifdef LINEAR_KERNEL
-  matrix<double, 1, 1> lowerbound, upperbound;
-  lowerbound = 1e-7;
-  upperbound = 1000;
+  matrix<double, 2, 1> lowerbound, upperbound;
+  lowerbound = 1e-7, 0;
+  upperbound = 1000, 0;
 #endif
 
   // try searching in log space like in the dlib example
