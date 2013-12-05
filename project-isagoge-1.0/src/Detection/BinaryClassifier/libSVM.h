@@ -41,10 +41,12 @@ typedef dlib::matrix<double, 0, 1> sample_type;
 // RBF SVM Typedefs
 typedef dlib::radial_basis_kernel<sample_type> RBFKernel;
 typedef dlib::decision_function<RBFKernel> RBFSVMPredictor;
+typedef dlib::normalized_function<RBFSVMPredictor> RBFSVMNormalizedPredictor;
 
 // Linear SVM Typedefs
 typedef dlib::linear_kernel<sample_type> LinearKernel;
 typedef dlib::decision_function<LinearKernel> LinearSVMPredictor;
+typedef dlib::normalized_function<LinearSVMPredictor> LinearSVMNormalizedPredictor;
 
 // Copied from dlib's model_selection_ex.cpp with the following modifications:
 // - Divides the data into a variable number of subsets for cross validation.
@@ -140,6 +142,8 @@ class libSVM {
   std::vector<sample_type> training_samples;
   std::vector<double> labels;
 
+  dlib::vector_normalizer<sample_type> normalizer;
+
   // the optimal gamma and C parameters for the SVM
 #ifdef RBF_KERNEL
   double gamma_optimal;
@@ -149,10 +153,10 @@ class libSVM {
   // the final trained classifier which was trained with the
   // optimal gamma and C parameters
 #ifdef RBF_KERNEL
-  RBFSVMPredictor final_predictor;
+  RBFSVMNormalizedPredictor final_predictor;
 #endif
 #ifdef LINEAR_KERNEL
-  LinearSVMPredictor final_predictor;
+  LinearSVMNormalizedPredictor final_predictor;
 #endif
 
 

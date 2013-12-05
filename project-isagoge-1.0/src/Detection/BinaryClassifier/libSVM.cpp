@@ -97,7 +97,6 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   // numerical stability problems and also prevents one large feature from smothering
   // others.  Doing this doesn't matter much in this example so I'm just doing this here
   // so you can see an easy way to accomplish this with the library.
-  vector_normalizer<sample_type> normalizer;
   // let the normalizer learn the mean and standard deviation of the samples
   normalizer.train(training_samples);
   // now normalize each sample
@@ -129,13 +128,14 @@ void libSVM::doCoarseCVTraining(int folds) {
   // magnitude of the parameters without taking too much time.
   // --------------------------------------------------------------------------
   // Vectors of 10 logarithmically spaced points are created for both the C and
-  // Gamma parameters. The starting and ending values specified in [1] are used
-  // for the C vector and Gamma vector (i.e. 2^-5,...,2^15 and 2^-15,....,2^3
-  // respectively.
-  matrix<double> C_vec = logspace(log10(pow(2,-5)), log10(pow(2,15)), 10);
+  // Gamma parameters. The starting and ending values were chosen to cover a wide
+  // range. But since it was noticed that numerical difficulties are experienced for
+  // values over 1000 they are capped to that (numerical difficulties being that it
+  // was taking hours to do a single fold of cross validation...).
+  matrix<double> C_vec = logspace(log10(1e-7), log10(1000), 10);
 #ifdef RBF_KERNEL
   cout << "Started coarse training for RBF Kernel.\n";
-  matrix<double> Gamma_vec = logspace(log10(pow(2,-5)), log10(pow(2,3)), 10);
+  matrix<double> Gamma_vec = logspace(log10(1e-7), log10(1000), 10);
 #endif
   // The vectors are then combined to create a 10x10 (C,Gamma) pair grid, on which
   // cross validation training is carried out for each pair to find the optimal
@@ -315,9 +315,10 @@ void libSVM::trainFinalClassifier() {
   svm_c_trainer<LinearKernel> trainer;
 #endif
   trainer.set_c(C_optimal);
-  final_predictor = trainer.train(training_samples, labels);
+  final_predictor.normalizer = normalizer;
+  final_predictor.function = trainer.train(training_samples, labels);
   cout << "The number of support vectors in the final learned function is: "
-       << final_predictor.basis_vectors.size() << endl;
+       << final_predictor.function.basis_vectors.size() << endl;
 }
 
 void libSVM::savePredictor() {
