@@ -65,14 +65,17 @@ int main() {
   EquationDetectBase* tess_interface = new TessInterface();
   MEDS_Trainer<Detector1> trainer(train_always, trainpath, false);
   trainer.trainDetector();
-  //Detector1 detector = trainer.getDetector();
-  //detector.initPrediction(trainer.getPredictorPath());
+
+
+
+  Detector1 detector = trainer.getDetector();
+  detector.initPrediction(trainer.getPredictorPath());
 
   // Instantiate a MEDS module which uses the detector
-  //EquationDetectBase* meds = new MEDS<Detector1>;
+  EquationDetectBase* meds = new MEDS<Detector1>;
 
   // Test it
-  //evaluateDataSet(meds, topdir, dataset, "myMEDS");
+  evaluateDataSet(meds, topdir, dataset, "myMEDS");
 
   // test default
   //evaluateDataSet(NULL, topdir, dataset, "tessdefault");

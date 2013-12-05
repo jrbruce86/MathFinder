@@ -28,10 +28,14 @@
 DocumentLayoutTester::DocumentLayoutTester(EquationDetectBase* equ_detect) \
     : layoutruns(0), numfiles(0) {
   // set the equation detector (or just stick to the default)
-  if(equ_detect)
+  if(equ_detect) {
     new_equ_detector = equ_detect;
-  else
+    eval_default = false;
+  }
+  else {
     new_equ_detector = NULL;
+    eval_default = true;
+  }
 
   // initialize tesseract
   setTesseractParams();
@@ -197,8 +201,15 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir,
     // move all the output images to a directory
     exec((string) "mv *.png " + outputfile_path);
     exec((string) "mv *.tif " + outputfile_path);
-    exec((string) "cp " + outputfile_path + "*merge*" + " " \
-        + out_res_dir); // move all the relevent stuff up a directory
+    if(eval_default)
+      exec((string) "cp " + outputfile_path + "*merge*" + " " \
+          + out_res_dir); // move all the relevent stuff up a directory
+    else {
+      exec((string) "cp " + outputfile_path + "*MEDS_DBG_IM_*" + " "
+          + out_res_dir);
+      exec((string) "cp " + outputfile_path + "*.rect" + " "
+          + out_res_dir);
+    }
     cout << "Ran layout analysis on file " << i << " of " << numfiles << "\n";
   }
 
@@ -207,8 +218,15 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir,
   string mathresdir = out_res_dir + (string)"math_results/";
   if(!layout_alreadydone) {
     exec((string)"mkdir " + mathresdir); // make if not already made
-    exec((string)"mv " + out_res_dir + "*merge*" + \
-        " " + mathresdir); // move all relevant outputs to mathdir
+    if(eval_default)
+      exec((string)"mv " + out_res_dir + "*merge*" + \
+          " " + mathresdir); // move all relevant outputs to mathdir
+    else {
+      exec((string)"mv " + out_res_dir + "*MEDS_DBG_IM_*" + " "
+          + mathresdir);
+      exec((string)"mv " + out_res_dir + "*.rect" + " "
+          + mathresdir);
+    }
 
     // now run script to rename all the images
     exec((string)"cp " + topdir + (string)"rename_pngs" \
@@ -227,6 +245,9 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir,
     exec((string)"rm rename_pngs");
   }
 
+  //------------------------------------------------------------------------------
+  // The following only applies to evaluation of Tesseract's default Equation Detector
+  //------------------------------------------------------------------------------
   // Now convert the results into ones that will be useful for
   // pixel-accurate evaluation purposes (change the color of detected
   // foreground math regions such that they use the same convention as
@@ -238,12 +259,13 @@ void DocumentLayoutTester::runTessLayout(string out_res_subdir,
   // Green bounding boxes. Blue ones can be ignored.
   // --This also writes all the bounding boxes of the colored regions
   // to a file.
-  vector<LayoutEval::Color> significantcolors;
-  significantcolors.push_back(LayoutEval::RED);
-  significantcolors.push_back(LayoutEval::GREEN);
-  colorFoundBlobs(mathresdir, inputdir, 5, \
-      significantcolors, (string)".tif");
-
+  if(eval_default) {
+    vector<LayoutEval::Color> significantcolors;
+    significantcolors.push_back(LayoutEval::RED);
+    significantcolors.push_back(LayoutEval::GREEN);
+    colorFoundBlobs(mathresdir, inputdir, 5, \
+        significantcolors, (string)".tif");
+  }
   layoutruns++;
 }
 
@@ -296,8 +318,13 @@ void DocumentLayoutTester::evalTessLayout(string testname_, bool layoutdone) {
   // Make sure the hypothesis test results are ready for evaluation
   const string results_type = "math_results/";
   const string colorblobs = "colorblobs/";
-  const string evaldir = outputdir + testname + results_type \
+  string eval_dir_;
+  if(eval_default)
+    eval_dir_ = outputdir + testname + results_type \
       + colorblobs;
+  else
+    eval_dir_ = outputdir + testname + results_type;
+  const string evaldir = eval_dir_;
   const string hypboxfile = evaldir + (string)"Rectangles.dat";
   if(!existsDirectory(evaldir)) {
     cout << "ERROR: The directory, " + evaldir << ", doesn't exist!\n";
@@ -305,7 +332,7 @@ void DocumentLayoutTester::evalTessLayout(string testname_, bool layoutdone) {
   }
   bool readyfortest = true;
   string tmp;
-  for(int i = 1; i <= numfiles; i++) {
+  for(int i = 1; i <= numfiles; ++i) {
     tmp = evaldir + intToString(i) + ext;
     if(!existsFile(tmp)) {
       readyfortest = false;
@@ -313,10 +340,33 @@ void DocumentLayoutTester::evalTessLayout(string testname_, bool layoutdone) {
     }
   }
   if(readyfortest) {
-    // make sure the Rectangles.dat file is where it should be
-    if(!existsFile(hypboxfile)) {
-      cout << "ERROR: the file " << hypboxfile << ", couldn't be found!\n";
-      exit(EXIT_FAILURE);
+    if(eval_default) {
+      // make sure the Rectangles.dat file is where it should be
+      if(!existsFile(hypboxfile)) {
+        cout << "ERROR: the file " << hypboxfile << ", couldn't be found!\n";
+        exit(EXIT_FAILURE);
+      }
+    }
+    else {
+      // move all the contents in the .rect files to the Rectangles.dat
+      exec((string)"rm " + hypboxfile); // start anew
+      ofstream hboxstream(hypboxfile.c_str());
+      for(int i = 1; i <= numfiles; ++i) {
+        string curboxfile = evaldir + intToString(i) + (string)".rect";
+        ifstream s(curboxfile.c_str());
+        if(!s.is_open()) {
+          cout << "ERROR: Could not open boxfile " << curboxfile << endl;
+          exit(EXIT_FAILURE);
+        }
+        int maxlen = 100;
+        char ln[maxlen];
+        while(!s.eof()) {
+          s.getline(ln, maxlen);
+          if(!s)
+            continue;
+          hboxstream << ln << endl;
+        }
+      }
     }
   }
   if(!readyfortest) {

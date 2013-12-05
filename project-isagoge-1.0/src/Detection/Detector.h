@@ -176,7 +176,8 @@ class Detector {
       const string& predictor_path_) {
     predictor_path = predictor_path_;
     samples = samples_;
-    classifier.initClassifier(predictor_path_, false);
+    string feat_ext_name = featext.getFeatExtName();
+    classifier.initClassifier(predictor_path_, feat_ext_name, false);
     trainer.initTraining(classifier);
   }
 
@@ -193,7 +194,8 @@ class Detector {
       exit(EXIT_FAILURE);
     }
     initFeatExtFull(api, false); // initializes the feature extractor
-    classifier.initClassifier(predictor_path_, true);
+    string feat_ext_name = featext.getFeatExtName();
+    classifier.initClassifier(predictor_path_, feat_ext_name, true);
     predictor_path = predictor_path_;
   }
 

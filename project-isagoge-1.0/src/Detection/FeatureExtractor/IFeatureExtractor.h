@@ -55,6 +55,10 @@ class IFeatureExtractor {
     feat_ext.initFeatExtSinglePage();
   }
 
+  inline string getFeatExtName() {
+    return feat_ext.getFeatExtName();
+  }
+
   // this is good for training purposes, just calling extractFeatures
   // is more useful for situations wherein I'm just wanting to extract
   // features for a single page. In training I'll typically be training

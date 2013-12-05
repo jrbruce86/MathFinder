@@ -113,16 +113,22 @@ class cross_validation_objective
 class libSVM {
  public:
   libSVM();
-  void initClassifier(const string& predictor_path, bool prediction);
+  void initClassifier(const string& predictor_path,
+      const string& featext_name, bool prediction);
   void doTraining(const vector<vector<BLSample*> >& samples);
   bool predict(const std::vector<double>& sample);
   inline bool isTrained() { return trained; }
   void reset();
+  string feat_ext_name;
  private:
   bool trained; // flag that's true once training complete
 
   void doCoarseCVTraining(int folds); // coarse grid search to find starting params for doFineCVTraining
   void doFineCVTraining(int folds); // uses BOBYQA to get final optimized params
+
+  void saveOptParams(); // save optimal parameters for later use
+  bool loadOptParams(); // load optimal paramaters for given predictor if they don't exist
+                        // returns false
 
   void trainFinalClassifier();
 

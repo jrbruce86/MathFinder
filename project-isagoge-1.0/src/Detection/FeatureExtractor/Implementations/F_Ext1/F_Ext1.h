@@ -67,6 +67,10 @@ class F_Ext1 {
     dbgdir = dbgdir_;
   }
 
+  inline string getFeatExtName() {
+    return (string)"F_Ext1";
+  }
+
   int numFeatures();
 
   void dbgAfterExtraction();

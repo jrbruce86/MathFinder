@@ -79,9 +79,8 @@ class MEDS : public EquationDetectBase {
   // should be called after IdentifySpecialText function.
   int FindEquationParts(ColPartitionGrid* part_grid,
                                 ColPartitionSet** best_columns) {
-    // TODO: This will only work in non-trainmode. A separate class which also
-     //       overrides EquationDetectBase will be used for training. This one
-     //       requires use of templates which complicates things for training.
+    static int dbg_img_index = 1;
+    img = tess->pix_binary();
 
      // I'll extract features from my own custom grid which holds both
      // information that can be gleaned from language recognition as
@@ -110,14 +109,12 @@ class MEDS : public EquationDetectBase {
        blob->predicted_math = detector.predict(blob);
      }
 
-     // For now what I'll do is print out the images to be evaluated here and make
-     // sure that they don't get overwritten by Tesseract (i.e. turn off any parameter
-     // that will print anything later on with the same name)
+     // Print the results of this module to user-specified directory
+     dbgPrintDetectionResults(dbg_img_index);
+
+
+
      // TODO: Incorporate results into Tesseract!!!
-     dbgPrintDetectionResults();
-
-
-     exit(EXIT_SUCCESS);
 
 
      // ^^^ For creating the math segmentations I will be using my own custom data structure
@@ -176,7 +173,7 @@ class MEDS : public EquationDetectBase {
 
      //waitForInput();
 
-
+     ++dbg_img_index;
      return 0;
   }
 
@@ -209,8 +206,29 @@ class MEDS : public EquationDetectBase {
     //       specific to a single image
   }
 
-  void dbgPrintDetectionResults() {
+  void dbgPrintDetectionResults(const int& dbg_img_index) {
+    /// save images as this: MEDS_DBG_IM_
+    PIX* dbgimg = pixCopy(NULL, img);
+    dbgimg = pixConvertTo32(dbgimg);
+    string imgname = "MEDS_DBG_IM_" + intToString(dbg_img_index) + ".png";
 
+    // save rectange files as [im#].rect in the following format:
+    // #.ext type left top right bottom
+    string rectfile = intToString(dbg_img_index) + (string)".rect";
+    ofstream rectstream(rectfile.c_str(), ios::out); // overwrite existing
+    BLOBINFO* blob;
+    BlobInfoGridSearch bigs(blobinfogrid);
+    while((blob = bigs.NextFullSearch()) != NULL) {
+      if(blob->predicted_math) {
+        rectstream << dbg_img_index << ".png embedded "
+                   << blob->left() << " " << blob->top() << " "
+                   << blob->right() << " " << blob->bottom() << endl;
+        M_Utils m;
+        m.drawHlBlobInfoRegion(blob, dbgimg, (SimpleColor)RED);
+      }
+    }
+    pixWrite(imgname.c_str(), dbgimg, IFF_PNG);
+    pixDestroy(&dbgimg);
   }
 
   // The final results after segmentation is carried out
@@ -227,8 +245,8 @@ class MEDS : public EquationDetectBase {
   Tesseract* tess; // language-specific ocr engine
   PIX* img; // the binary image that is being operated on
   TessBaseAPI* newapi;
-
   DetectorType detector;
+  string dbg_results_dir;
 };
 
 }

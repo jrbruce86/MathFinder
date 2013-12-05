@@ -372,6 +372,8 @@ class DocumentLayoutTester : public Lept_Utils {
                         // (rather than just resetting all of them on each iteration)
   TessBaseAPI api; // the Tesseract API
   EquationDetectBase* new_equ_detector;
+  bool eval_default; // true if evaluating the tesseract default implementation
+                     // otherwise evaluating a MEDS module from this work
 };
 
 

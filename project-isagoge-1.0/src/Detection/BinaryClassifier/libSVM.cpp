@@ -36,8 +36,17 @@ libSVM::libSVM() : trained(false), C_optimal(-1),
 #endif
 }
 
-void libSVM::initClassifier(const string& predictor_path_, bool prediction) {
-  predictor_path = predictor_path_ + (string)"predictor";
+void libSVM::initClassifier(const string& predictor_path_,
+    const string& featextname, bool prediction) {
+  feat_ext_name = featextname;
+  predictor_path = predictor_path_ +
+#ifdef RBF_KERNEL
+      (string)"RBFSVM_" +
+#endif
+#ifdef LINEAR_KERNEL
+      (string)"LinearSVM_" +
+#endif
+      feat_ext_name + (string)"_" + (string)"predictor";
   if(prediction)
     loadPredictor();
 #ifdef RBF_KERNEL
@@ -99,8 +108,11 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   // grid search then through a finer one. Once the "optimal" C and Gamma
   // parameters are found, the SVM is trained on these to give the final
   // predictor which can be serialized and saved for later usage.
-  doCoarseCVTraining(10);
-  doFineCVTraining(10);
+  if(!loadOptParams()) {
+    doCoarseCVTraining(10);
+    doFineCVTraining(10);
+    saveOptParams();
+  }
   trainFinalClassifier();
   savePredictor();
   trained = true;
@@ -251,6 +263,49 @@ void libSVM::doFineCVTraining(int folds) {
   cout << "BOBYQA Score: " << best_score << endl;
 }
 
+void libSVM::saveOptParams() {
+  string param_path = predictor_path + (string)"_params";
+  ofstream s(param_path.c_str());
+  s << C_optimal << endl;
+#ifdef RBF_KERNEL
+  s << gamma_optimal << endl;
+#endif
+
+}
+
+bool libSVM::loadOptParams() {
+  string param_path = predictor_path + (string)"_params";
+  ifstream s(param_path.c_str());
+  if(!s.is_open())
+    return false;
+  int maxlen = 55;
+  char ln[maxlen];
+  std::vector<double> params;
+  while(!s.eof()) {
+    s.getline(ln, maxlen);
+    if(!s)
+      continue;
+    double p = atof(ln);
+    params.push_back(p);
+  }
+#ifdef RBF_KERNEL
+  if(params.size() > 2 || params.size() == 0) {
+    cout << "ERROR: Wrong number of parameters loaded in for RBF Kernel.\n";
+    exit(EXIT_FAILURE);
+  }
+  C_optimal = params[0];
+  gamma_optimal = params[1];
+#endif
+#ifdef LINEAR_KERNEL
+  if(params.size() > 1 || params.size() == 0) {
+    cout << "ERROR: Wrong number of parameters loaded in for Linear Kernel.\n";
+    exit(EXIT_FAILURE);
+  }
+  C_optimal = params[0];
+#endif
+  return true;
+}
+
 void libSVM::trainFinalClassifier() {
 #ifdef RBF_KERNEL
   svm_c_trainer<RBFKernel> trainer;
@@ -273,6 +328,10 @@ void libSVM::savePredictor() {
 
 void libSVM::loadPredictor() {
   ifstream fin(predictor_path.c_str(),ios::binary);
+  if(!fin.is_open()) {
+    cout << "ERROR: Could not open the predictor at " << predictor_path << endl;
+    exit(EXIT_FAILURE);
+  }
   deserialize(final_predictor, fin);
   predictor_loaded = true;
 }
