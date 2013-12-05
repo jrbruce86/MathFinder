@@ -122,6 +122,7 @@ void libSVM::doCoarseCVTraining(int folds) {
   // respectively.
   matrix<double> C_vec = logspace(log10(pow(2,-5)), log10(pow(2,15)), 10);
 #ifdef RBF_KERNEL
+  cout << "Started coarse training for RBF Kernel.\n";
   matrix<double> Gamma_vec = logspace(log10(pow(2,-5)), log10(pow(2,3)), 10);
 #endif
   // The vectors are then combined to create a 10x10 (C,Gamma) pair grid, on which
@@ -132,9 +133,9 @@ void libSVM::doCoarseCVTraining(int folds) {
   grid = cartesian_product(C_vec, Gamma_vec);
 #endif
 #ifdef LINEAR_KERNEL
-
-#endif
+  cout << "Started coarse training for linear kernel\n";
   grid = C_vec;
+#endif
 
   //    Carry out course grid search. The grid is actually implemented as a
   //    2x100 matrix where row 1 is the C part of the grid pair and row 2
@@ -169,7 +170,10 @@ void libSVM::doCoarseCVTraining(int folds) {
 #endif
     matrix<double> result = cross_validate_trainer_threaded(trainer, training_samples,
         labels, folds, folds);
-    cout << "C: " << setw(11) << C << "  Gamma: " << setw(11) << gamma
+    cout << "C: " << setw(11) << C
+#ifdef RBF_KERNEL
+         << "  Gamma: " << setw(11) << gamma
+#endif
          <<  "  cross validation accuracy (positive, negative): " << result;
     if(sum(result) > sum(best_result)) {
       best_result = result;
@@ -275,7 +279,7 @@ void libSVM::loadPredictor() {
 
 bool libSVM::predict(const std::vector<double>& sample) {
   sample_type sample_;
-  sample_.set_size(sample.size(), 1);
+  sample_.set_size(sample.size(), 1); // TODO: Make it so the sample vector memory is pre-allocated
   for(int i = 0; i < sample.size(); ++i)
     sample_(i) = sample[i];
   double result = final_predictor(sample_);
