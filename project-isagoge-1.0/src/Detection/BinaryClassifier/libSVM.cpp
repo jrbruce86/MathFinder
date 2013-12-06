@@ -343,6 +343,7 @@ void libSVM::loadPredictor() {
   }
   deserialize(final_predictor, fin);
   predictor_loaded = true;
+  cout << "Predictor at " << predictor_path << " was successfully loaded!\n";
 }
 
 bool libSVM::predict(const std::vector<double>& sample) {

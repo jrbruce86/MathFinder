@@ -49,7 +49,7 @@ void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
-  string dataset = "advcalc1_without_labels";
+  string dataset = "test";
   string train_dir = "training/";
   string train_set = "SVM_AdvCalc1_15/";
   const string trainpath = topdir+train_dir+train_set;
@@ -59,7 +59,7 @@ int main() {
 
   // set this to false if only want to train the module
   // if it hasn't been trained yet.
-  bool train_always = true;
+  bool train_always = false;
 
   // Pick a detector/segmentor combo and train if necessary
   EquationDetectBase* tess_interface = new TessInterface();
@@ -72,7 +72,8 @@ int main() {
   EquationDetectBase* meds = new MEDS<Detector1>;
 
   // Test it
-  evaluateDataSet(meds, topdir, dataset, "myMEDS");
+  for(int i = 0; i < 4; i++)
+    evaluateDataSet(meds, topdir, dataset + intToString(i+1), "myMEDS");
 
   // test default
   //evaluateDataSet(NULL, topdir, dataset, "tessdefault");
