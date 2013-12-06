@@ -66,10 +66,7 @@ int main() {
   MEDS_Trainer<Detector1> trainer(train_always, trainpath, false);
   trainer.trainDetector();
 
-
-
   Detector1 detector = trainer.getDetector();
-  detector.initPrediction(trainer.getPredictorPath());
 
   // Instantiate a MEDS module which uses the detector
   EquationDetectBase* meds = new MEDS<Detector1>;

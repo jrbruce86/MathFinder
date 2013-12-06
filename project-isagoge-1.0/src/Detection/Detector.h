@@ -172,12 +172,19 @@ class Detector {
     return entry;
   }
 
-  inline void initTraining(const vector<vector<BLSample*> >& samples_,
-      const string& predictor_path_) {
-    predictor_path = predictor_path_;
-    samples = samples_;
+  inline void initClassifier(const string& predictor_path_) {
     string feat_ext_name = featext.getFeatExtName();
-    classifier.initClassifier(predictor_path_, feat_ext_name, false);
+    classifier.initClassifier(predictor_path_, feat_ext_name);
+    predictor_path = classifier.getFullPredictorPath();
+  }
+
+  inline string getPredictorPath() {
+    assert(predictor_path == classifier.getFullPredictorPath());
+    return classifier.getFullPredictorPath();
+  }
+
+  inline void initTraining(const vector<vector<BLSample*> >& samples_) {
+    samples = samples_;
     trainer.initTraining(classifier);
   }
 
@@ -188,15 +195,13 @@ class Detector {
   // prediction is just done on one page and will be using some
   // binary classifier which has already been trained with the
   // features specified for this type of trainer_predictor
-  inline void initPrediction(string predictor_path_) {
+  inline void initPrediction() {
     if(!classifier.isTrained()) {
       cout << "ERROR: Attempted prediction using an untrained classifier!\n";
       exit(EXIT_FAILURE);
     }
     initFeatExtFull(api, false); // initializes the feature extractor
-    string feat_ext_name = featext.getFeatExtName();
-    classifier.initClassifier(predictor_path_, feat_ext_name, true);
-    predictor_path = predictor_path_;
+    classifier.initPredictor(); // loads up the predictor
   }
 
   inline bool predict(BLOBINFO* blob) {

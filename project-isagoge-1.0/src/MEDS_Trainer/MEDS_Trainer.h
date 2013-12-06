@@ -73,6 +73,10 @@ class MEDS_Trainer {
            << top_path << " but was not found.\n";
       exit(EXIT_FAILURE);
     }
+    // the following is the directory in which the predictor will be
+    // contained. the full path to the predictor is determined by
+    // the classifier during its initialization during trainDetector()
+    // function which must be called in order to fully initialize the detector.
     predictor_path = detector_path + (string)"predictor/";
     training_set_path = detector_path + (string)"training_set/";
     always_train = always_train_;
@@ -126,6 +130,8 @@ class MEDS_Trainer {
   // classifier/extractor/trainer/dataset combination. If it is false, then
   // training will only be carried out if the classifier hasn't been
   // trained on the chosen classifier/extractor/trainer/dataset combination
+  // -- If desired training was already carried out then the purpose of this
+  //    funciton is only to initialize the predictor
   void trainDetector() {
     if(tess_interface == NULL) {
       cout << "ERROR: trainDetector() called with a NULL TessInterface module."
@@ -151,15 +157,20 @@ class MEDS_Trainer {
     // do training only if necessary (i.e. if always_train is turned on
     // or it's not turned on and there is no trained predictor available
     // in the predictor_path)
-    if(always_train || (!always_train &&
-        Basic_Utils::fileCount(predictor_path) == 0)) {
+    detector.initClassifier(predictor_path); // this should determine the full predictor path
+    predictor_path = detector.getPredictorPath(); // change it to the full path
+    if(always_train || !Basic_Utils::existsFile(predictor_path)) {
       vector<vector<BLSample*> >* samples = getSamples();
-      detector.initTraining(*samples, predictor_path);
+      detector.initTraining(*samples);
       detector.train_();
     }
     else {
-      cout << "Predictor found so training was not carried out.\n";
+      cout << "Predictor found at " << predictor_path
+           << ". Training was not carried out.\n";
     }
+    cout << "Initializing the Detector to use the predictor at the "
+         << "following location: " << detector.getPredictorPath() << endl;
+    detector.initPrediction();
   }
 
   // Its much harder to do supervised training on this part. Much of the computations

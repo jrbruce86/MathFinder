@@ -46,10 +46,14 @@ class IBinaryClassifier {
   IBinaryClassifier() {}
 
   inline void initClassifier(const string& predictor_path,
-      const string& featext_name, bool prediction) {
+      const string& featext_name) {
     // allow for any initialization which may be required
     // for the classifier here....
-    classifier.initClassifier(predictor_path, featext_name, prediction);
+    classifier.initClassifier(predictor_path, featext_name);
+  }
+
+  inline void initPredictor() {
+    classifier.initPredictor();
   }
 
   inline void doTraining(const vector<vector<BLSample*> >& samples) {
@@ -76,6 +80,10 @@ class IBinaryClassifier {
 
   inline void reset() {
     classifier.reset();
+  }
+
+  inline string getFullPredictorPath() {
+    return classifier.getFullPredictorPath();
   }
 
   BinClassType classifier;

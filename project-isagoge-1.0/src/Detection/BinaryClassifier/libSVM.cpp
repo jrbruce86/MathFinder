@@ -30,14 +30,14 @@
 using namespace dlib;
 
 libSVM::libSVM() : trained(false), C_optimal(-1),
-    predictor_loaded(false) {
+    predictor_loaded(false), init_done(false) {
 #ifdef RBF_KERNEL
   gamma_optimal = -1;
 #endif
 }
 
 void libSVM::initClassifier(const string& predictor_path_,
-    const string& featextname, bool prediction) {
+    const string& featextname) {
   feat_ext_name = featextname;
   predictor_path = predictor_path_ +
 #ifdef RBF_KERNEL
@@ -47,8 +47,6 @@ void libSVM::initClassifier(const string& predictor_path_,
       (string)"LinearSVM_" +
 #endif
       feat_ext_name + (string)"_" + (string)"predictor";
-  if(prediction)
-    loadPredictor();
 #ifdef RBF_KERNEL
 #ifdef LINEAR_KERNEL
     cout << "ERROR: Can only train SVM with RBF or Linear kernel exclusively. "
@@ -63,6 +61,16 @@ void libSVM::initClassifier(const string& predictor_path_,
     exit(EXIT_FAILURE);
 #endif
 #endif
+    init_done = true;
+}
+
+void libSVM::initPredictor() {
+  if(!init_done) {
+    cout << "ERROR: Attempted to initialize predictor before initializing "
+         << "the classifier.\n";
+    exit(EXIT_FAILURE);
+  }
+  loadPredictor();
 }
 
 void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {

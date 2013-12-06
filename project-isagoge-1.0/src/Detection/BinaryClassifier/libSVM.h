@@ -116,12 +116,18 @@ class libSVM {
  public:
   libSVM();
   void initClassifier(const string& predictor_path,
-      const string& featext_name, bool prediction);
+      const string& featext_name);
+  void initPredictor();
   void doTraining(const vector<vector<BLSample*> >& samples);
   bool predict(const std::vector<double>& sample);
   inline bool isTrained() { return trained; }
   void reset();
-  string feat_ext_name;
+  inline string getFullPredictorPath() {
+    return predictor_path;
+  }
+  inline string getFeatExtName() {
+    return feat_ext_name;
+  }
  private:
   bool trained; // flag that's true once training complete
 
@@ -162,7 +168,10 @@ class libSVM {
 
   string predictor_path; // path to save the final predictor in
 
+  string feat_ext_name;
+
   bool predictor_loaded; // true only after loading the predictor
+  bool init_done; // true after initialization successfully completed
 };
 
 #endif
