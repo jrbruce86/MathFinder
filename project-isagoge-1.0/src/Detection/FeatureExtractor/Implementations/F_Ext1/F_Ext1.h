@@ -37,25 +37,23 @@ enum Direction {LEFT, RIGHT, UP, DOWN};
 enum SubSuperScript {SUB, SUPER};
 
 class F_Ext1 {
-  typedef GenericVector<NGramFrequency*> RankedNGramVec; // holds counts for just uni/bi/tri gram
-  typedef GenericVector<RankedNGramVec> RankedNGramVecs; // holds counts for uni, bi and tri grams
  public:
   F_Ext1();
 
-  ~F_Ext1();
+  virtual ~F_Ext1();
 
-  void initFeatExtFull(TessBaseAPI& api, const string& groundtruth_path,
+  void initFeatExtFull(TessBaseAPI* api, const string& groundtruth_path,
       const string& training_set_path, const string& ext, bool makenew);
 
-  void initFeatExtSinglePage();
+  virtual void initFeatExtSinglePage();
 
-  std::vector<double> extractFeatures(tesseract::BLOBINFO* blob);
+  virtual std::vector<double> extractFeatures(tesseract::BLOBINFO* blob);
 
   inline void setImage(PIX* im) {
     curimg = im;
   }
 
-  inline void setApi(const TessBaseAPI& api_) {
+  inline void setApi(TessBaseAPI* api_) {
     api = api_;
   }
 
@@ -67,18 +65,19 @@ class F_Ext1 {
     dbgdir = dbgdir_;
   }
 
-  inline string getFeatExtName() {
+  virtual inline string getFeatExtName() {
     return (string)"F_Ext1";
   }
 
-  int numFeatures();
+  virtual int numFeatures();
 
   void dbgAfterExtraction();
 
   void reset();
 
- private :
-
+ protected :
+  typedef GenericVector<NGramFrequency*> RankedNGramVec; // holds counts for just uni/bi/tri gram
+  typedef GenericVector<RankedNGramVec> RankedNGramVecs; // holds counts for uni, bi and tri grams
   // cover feature
   int countCoveredBlobs(BLOBINFO* blob, Direction dir);
   bool isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir);
@@ -90,7 +89,6 @@ class F_Ext1 {
   void setBlobSubSuperScript(BLOBINFO* blob, SubSuperScript subsuper);
 
   // baseline feature
-  GenericVector<double> avg_baseline_dist; // should have the same # elements as grid's row vector
   double findBaselineDist(BLOBINFO* blob);
 
   // stacked blob feature
@@ -141,8 +139,10 @@ class F_Ext1 {
   double avg_whr;
   bool bad_page;
   PIX* curimg;
-  TessBaseAPI api;
+  TessBaseAPI* api;
   string training_set_path;
+
+  PIX* dbgim;
 };
 
 #endif

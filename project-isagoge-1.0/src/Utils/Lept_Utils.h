@@ -27,17 +27,21 @@
 #include <allheaders.h>   // leptonica api
 #include <vector>
 #include <iostream>
+#include <assert.h>
 using namespace std;
 #define fgthresh 100   // this may need to change depending on the image..
 
-// only colors of interest for evaluation purposes are as follows
+// these are the colors for type-specific pixel evaluation and
+// pixel tracking/drawing purposes
 namespace LayoutEval {
   typedef enum {
-    RED, BLUE, GREEN, NONE
+    RED, BLUE, GREEN, WHITE, ORANGE, NONE
   } Color;
+  static int eval_colors = 3;  // the first eval_colors # of colors in the enum
+                        // should represent the color codes being evaluated
+                        // the rest can be used only for pixel tracking or
+                        // or debugging but not for evaluation purposes.
 }
-
-enum SimpleColor { RED, BLUE, GREEN, NONE };
 
 typedef l_int32 rgbtype;
 
@@ -46,10 +50,8 @@ class Lept_Utils {
 public:
   // Returns a 3 byte array where (from left to right) the bytes
   // represent red, green, and blue.
-  static inline void getPixelRGB(l_uint32* pixel, \
-      rgbtype* rgb) {
-    extractRGBValues(*pixel, &rgb[0], &rgb[1], \
-        &rgb[2]);
+  static inline void getPixelRGB(l_uint32* pixel, rgbtype* rgb) {
+    extractRGBValues(*pixel, &rgb[0], &rgb[1], &rgb[2]);
   }
 
   // Sets the given pixel location to the given color
@@ -64,6 +66,10 @@ public:
       green = 255; break;
     case LayoutEval::BLUE :
       blue = 255; break;
+    case LayoutEval::WHITE :
+      red = green = blue = 255; break;
+    case LayoutEval::ORANGE :
+      red = 255; green = 100; break;
     default : break;
     }
     composeRGBPixel(red, green, blue, pixel);
@@ -71,7 +77,7 @@ public:
   }
 
   // thickness is both how many pixels wide and high to be drawn with the given x,y in the center
-  static inline void drawAtXY(PIX* im, int x, int y, SimpleColor color, int thickness=5) {
+  static inline void drawAtXY(PIX* im, int x, int y, LayoutEval::Color color, int thickness=5) {
     if(thickness < 1) {
       cout << "ERROR: Cannot draw a point less than 1 pixel thick >:-(\n";
       exit(EXIT_FAILURE);
@@ -83,10 +89,10 @@ public:
     int starty = y - ((thickness - 1)/2);
     int endx = startx + thickness;
     int endy = starty + thickness;
-    for(int i = starty; i < endy; i++) {
-      for(int j = startx; j < endx; j++) {
+    for(int i = starty; i < endy; ++i) {
+      for(int j = startx; j < endx; ++j) {
         l_uint32* curpix = startpix + l_uint32(j + (i*im->w));
-        setPixelRGB(im, curpix, j, i, (LayoutEval::Color)color);
+        setPixelRGB(im, curpix, j, i, color);
       }
     }
   }
@@ -112,14 +118,21 @@ public:
       return LayoutEval::GREEN;
     else if(checkRGBEqual(rgb, 0, 0, 255))
       return LayoutEval::BLUE;
+    else if(checkRGBEqual(rgb, 255, 255, 255))
+      return LayoutEval::WHITE;
+    else if(checkRGBEqual(rgb, 255, 100, 0))
+      return LayoutEval::ORANGE;
     else
       return LayoutEval::NONE;
   }
 
   // Returns true if color is either red, green, or blue, otherwise false
   static inline bool isColorSignificant(LayoutEval::Color color) {
-    if(color != LayoutEval::NONE)
-       return true;
+    for(int i = 0; i < LayoutEval::eval_colors; ++i) {
+      LayoutEval::Color evalcolor = static_cast<LayoutEval::Color>(i);
+      if(color == evalcolor)
+        return true;
+    }
     return false;
   }
 
@@ -138,34 +151,18 @@ public:
     return false;
   }
 
-  // counts the pixels of the given color in the hypothesis image
-  // within the hypbox that aren't within the bounds of any of the
-  // groundtruth boxes in gtboxes (this gives the false positives
-  // for the given hypbox)
-  static int countFalsePositives(BOX* hypbox, vector<BOX*> gtboxes, \
-      PIX* hypim, LayoutEval::Color color, PIX* dbg=0);
+  static inline void dispRegion(BOX* box, PIX* im) {
+    PIX* bboxim = pixClipRectangle(im, box, NULL);
+    pixDisplay(bboxim, 100, 100);
+  }
 
-  // counts the pixels of the given color in any of the boxes in
-  // the groundtruth box vector of gtim that are also in the
-  // hypothesis box (this gives the number of true positives for the
-  // given hypbox)
-  static int countTruePositives(BOX* hypbox, vector<BOX*> gtboxes, \
-      PIX* gtim, LayoutEval::Color color, PIX* dbg=0);
-
-  // counts the pixels of the given color in the groundtruth image
-  // within the gtbox that aren't within the bounds of any of the
-  // hypothesis boxes in hypboxes (this gives the false negatives
-  // for the given gtbox)
-  static int countFalseNegatives(BOX* gtbox, vector<BOX*> hypboxes, \
-      PIX* gtim, LayoutEval::Color color, PIX* dbg=0);
-
-  // counts the number of pixels in the Box region of
-  // the given Pix that have the given color. if
-  // countallnonewhite is true then just counts all
-  // colors that aren't foreground (assumes all background
-  // pixels are white)
-  static int countColorPixels(BOX* box, PIX* pix, \
-      LayoutEval::Color color, bool countallnonewhite=false);
+  static inline void dispHLBoxRegion(BOX* box, PIX* im) {
+    PIX* imcpy = pixCopy(NULL, im);
+    imcpy = pixConvertTo32(imcpy);
+    fillBoxForeground(imcpy, box, LayoutEval::RED);
+    pixDisplay(imcpy, 100, 100);
+    pixDestroy(&imcpy);
+  }
 
   // Returns true if the rgb color specified has the same red,
   // green, and blue values specified
@@ -198,7 +195,7 @@ public:
   static Pix* fillBoxesForeground(Pix* inputimg, BOXA* boxes, LayoutEval::Color color);
 
   // Fills the foreground pixels for a single box
-  static void fillBoxForeground(Pix* inputimg, BOX* box, LayoutEval::Color color, \
+  static void fillBoxForeground(Pix* inputimg, BOX* box, LayoutEval::Color color,
       PIX* imread=0);
 
   inline LayoutEval::Color getRGBAbove(const l_uint32& row, \
@@ -219,6 +216,13 @@ public:
       return getColor(rgbnextpixy);
     }
     return LayoutEval::NONE;
+  }
+
+  static inline l_uint32* getPixelAtXY(PIX* im, l_int32 x, l_int32 y) {
+    assert(x > -1 && y > -1);
+    l_uint32* startpixel = pixGetData(im);
+    l_int32 imwidth = pixGetWidth(im);
+    return startpixel + (l_uint32)(y*imwidth) + (l_uint32)x;
   }
 };
 

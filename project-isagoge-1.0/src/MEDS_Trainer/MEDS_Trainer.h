@@ -38,9 +38,9 @@
 #include <fstream>
 using namespace std;
 
-
 //#define DBG_MEDS_TRAINER // comment this out to turn off debugging
 //#define DBG_MEDS_TRAINER_SHOW_TRAINDATA
+
 // This class carry out any training needed for both the detector and segmenter
 template <typename DetectorType>
 class MEDS_Trainer {
@@ -159,6 +159,9 @@ class MEDS_Trainer {
     // in the predictor_path)
     detector.initClassifier(predictor_path); // this should determine the full predictor path
     predictor_path = detector.getPredictorPath(); // change it to the full path
+    // tell the detector where it can find the groundtruth.dat file
+    // so it can determine the label of each sample
+    detector.initTrainingPaths(groundtruth_path, training_set_path, ext);
     if(always_train || !Basic_Utils::existsFile(predictor_path)) {
       vector<vector<BLSample*> >* samples = getSamples();
       detector.initTraining(*samples);
@@ -202,8 +205,8 @@ class MEDS_Trainer {
     cout << "Success!\n";
   }
 
-  inline DetectorType getDetector() {
-    return detector;
+  inline DetectorType* getDetector() {
+    return &detector;
   }
 
   inline string getPredictorPath() {
@@ -237,18 +240,15 @@ class MEDS_Trainer {
   // does feature extraction on the detector to get all of the samples,
   // also optionally writes them to a file
   void getNewSamples(bool write_to_file) {
-    // tell the detector where it can find the groundtruth.dat file
-    // so it can determine the label of each sample
-    detector.initTrainingPaths(groundtruth_path, training_set_path, ext);
     // set the tesseract api's equation detector to the one being used
-    api.setEquationDetector((tesseract::EquationDetectBase*)tess_interface);
+    api.setEquationDetector(tess_interface);
     // count the number of training images in the training_set_path
     int img_num = Basic_Utils::fileCount(training_set_path);
     // api that will be used for recognition
     // i'm putting it on the stack here, in hopes that
     // this may help avoid memory allocation conflicts
     tesseract::TessBaseAPI newapi;
-    tess_interface->setTessAPI(newapi);
+    ((TessInterface*)tess_interface)->setTessAPI(newapi);
     // assumes all n files in the training dir are images
     // named 1.png, 2.png, 3.png, .... n.png
     // iterate the images in the dataset, getting the features
@@ -258,7 +258,7 @@ class MEDS_Trainer {
     // precomputations on the entire training set prior to any feature
     // extraction. this may or may not be applicable depending on the
     // feature extraction implementation being used by the detector
-    detector.initFeatExtFull(api, false);
+    detector.initFeatExtFull(&api, false);
     for(int i = 1; i <= img_num; i++) {
       string img_name = Basic_Utils::intToString(i) + ext;
       string img_filepath = training_set_path + img_name;
@@ -266,9 +266,9 @@ class MEDS_Trainer {
       api.SetImage(curimg); // SetImage SHOULD deallocate everything from the last page
       // including my MEDS module, the BlobInfoGrid, etc!!!!
       api.AnalyseLayout(); // Run Tesseract's layout analysis
-      tesseract::BlobInfoGrid* grid = tess_interface->getGrid();
+      tesseract::BlobInfoGrid* grid = ((TessInterface*)tess_interface)->getGrid();
       detector.setImage(curimg);
-      detector.setAPI(api);
+      detector.setAPI(&api);
       // now to get the features from the grid and append them to the
       // samples vector.
       vector<BLSample*> img_samples = detector.getAllSamples(grid, i);
@@ -308,7 +308,7 @@ class MEDS_Trainer {
       samples_extracted.push_back(img_samples);
       pixDestroy(&curimg); // destroy finished image
       // clear the memory used by the current MEDS module and the feature extractor
-      tess_interface->reset();
+      ((TessInterface*)tess_interface)->reset();
       detector.reset();
 #ifdef DBG_MEDS_TRAINER
       delete gridviewer;
@@ -513,7 +513,7 @@ class MEDS_Trainer {
   // it can utilize compile-time polymorphism to choose its detector and
   // segmenter (??? will this still work in the Tesseract framework or will I need to
   // make modifications???.. if it needs to be templated then I will template it.....)
-  tesseract::TessInterface* tess_interface; // overrides Tesseract's EquationDetectBase class
+  tesseract::EquationDetectBase* tess_interface; // overrides Tesseract's EquationDetectBase class
 
   // here different trainer_predictors in Detection/Detection.h can be chosen from
   // and experimented with through compile-time polymorphism

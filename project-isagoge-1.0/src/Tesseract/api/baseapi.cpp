@@ -1508,17 +1508,11 @@ void TessBaseAPI::End() {
     thresholder_ = NULL;
   }
   if (page_res_ != NULL) {
-//    printf("the page res's charcount: %d\n", page_res_->char_count);
-//    printf("the block_res_list is of size: %d\n", page_res_->block_res_list.length());
-//    printf("before deleting page_res_\n");
     delete page_res_;
-//    printf("after deleting page_res_\n");
     page_res_ = NULL;
   }
   if (block_list_ != NULL) {
-//    printf("before deleting block_list_\n");
     delete block_list_;
-//    printf("after deleting block_list \n");
     block_list_ = NULL;
   }
   if (paragraph_models_ != NULL) {
@@ -1527,9 +1521,7 @@ void TessBaseAPI::End() {
     paragraph_models_ = NULL;
   }
   if (tesseract_ != NULL) {
-//    printf("before deleting tesseract\n");
     delete tesseract_;
-//    printf("after deleting tesseract\n");
     if (osd_tesseract_ == tesseract_)
       osd_tesseract_ = NULL;
     tesseract_ = NULL;

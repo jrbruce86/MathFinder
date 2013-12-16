@@ -148,6 +148,8 @@ double strToDouble(const string& str) {
 }
 
 char* removeExtraNLs(char* str) {
+  if(!str)
+    return NULL;
   int end = (int)strlen(str);
   if(str[end-1] != '\n')
     return str;
@@ -170,6 +172,8 @@ char* removeExtraNLs(char* str) {
 }
 
 char* ensureTrailingNL(char* str) {
+  if(!str)
+    return NULL;
   const int end = (int)strlen(str);
   if(str[end-1] == '\n')
     return str;

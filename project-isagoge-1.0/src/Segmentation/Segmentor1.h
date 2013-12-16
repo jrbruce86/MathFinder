@@ -25,6 +25,7 @@
 #define SEGMENTOR1_H
 
 class Segmentor1 {
+ public:
   Segmentor1();
 
 };

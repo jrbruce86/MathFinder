@@ -119,9 +119,9 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libevaluation_la_DEPENDENCIES = /usr/local/lib/liblept.so \
-	../Tesseract/api/libtesseract.la ../Utils/libUtils.la
-am_libevaluation_la_OBJECTS = libevaluation_la-DocumentLayoutTest.lo \
-	libevaluation_la-BipartiteGraph.lo
+	../Tesseract/api/libtesseract.la ../Utils/libUtils.la \
+	../MEDS/libMEDS.la
+am_libevaluation_la_OBJECTS = libevaluation_la-BipartiteGraph.lo
 libevaluation_la_OBJECTS = $(am_libevaluation_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -329,13 +329,12 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libevaluation.la
 libevaluation_la_SOURCES = DocumentLayoutTest.h \
-DocumentLayoutTest.cpp \
 BipartiteGraph.h \
 BipartiteGraph.cpp
 
 libevaluation_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la \
-../Utils/libUtils.la
+../Utils/libUtils.la ../MEDS/libMEDS.la
 
 libevaluation_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/ccmain -I../Tesseract/ccstruct \
@@ -348,7 +347,16 @@ libevaluation_la_CPPFLAGS = -I../Tesseract/api \
 -I../Tesseract/po -I../Tesseract/tessdata \
 -I../Tesseract/testing -I../Tesseract/textord \
 -I../Tesseract/training -I../Tesseract/viewer \
--I../Tesseract/wordrec -I../Utils -I../Tesseract/
+-I../Tesseract/wordrec -I../Utils -I../Tesseract \
+-I../MEDS -I../Grid -I../Detection/FeatureExtractor/NGrams \
+-I../Detection/FeatureExtractor/Sentence -I../Detection \
+-I../Detection/Sample -I../Detection/Trainer \
+-I../Detection/BinaryClassifier -I../dlib-18.4 \
+-I../Detection/FeatureExtractor \
+-I../Detection/FeatureExtractor/Implementations \
+-I../Detection/FeatureExtractor/Implementations/F_Ext1 \
+-I../Detection/FeatureExtractor/NGrams/NGProfileGen \
+-I../Segmentation
 
 all: all-am
 
@@ -430,7 +438,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libevaluation_la-BipartiteGraph.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libevaluation_la-DocumentLayoutTest.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -452,13 +459,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
-
-libevaluation_la-DocumentLayoutTest.lo: DocumentLayoutTest.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libevaluation_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libevaluation_la-DocumentLayoutTest.lo -MD -MP -MF $(DEPDIR)/libevaluation_la-DocumentLayoutTest.Tpo -c -o libevaluation_la-DocumentLayoutTest.lo `test -f 'DocumentLayoutTest.cpp' || echo '$(srcdir)/'`DocumentLayoutTest.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libevaluation_la-DocumentLayoutTest.Tpo $(DEPDIR)/libevaluation_la-DocumentLayoutTest.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='DocumentLayoutTest.cpp' object='libevaluation_la-DocumentLayoutTest.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libevaluation_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libevaluation_la-DocumentLayoutTest.lo `test -f 'DocumentLayoutTest.cpp' || echo '$(srcdir)/'`DocumentLayoutTest.cpp
 
 libevaluation_la-BipartiteGraph.lo: BipartiteGraph.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libevaluation_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libevaluation_la-BipartiteGraph.lo -MD -MP -MF $(DEPDIR)/libevaluation_la-BipartiteGraph.Tpo -c -o libevaluation_la-BipartiteGraph.lo `test -f 'BipartiteGraph.cpp' || echo '$(srcdir)/'`BipartiteGraph.cpp

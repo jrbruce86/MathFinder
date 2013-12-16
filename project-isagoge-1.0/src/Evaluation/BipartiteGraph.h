@@ -55,6 +55,7 @@ struct GraphInput {
   string hypboxfile; // text file holding the hypothesis rectangles
   string gtboxfile; // text file holding the groundtruth rectangles
   string imgname; // the name of the image being evaluated
+  string dbgdir; // the directory to place all debug output
   PIX* hypimg;
   PIX* gtimg;
   PIX* inimg;
@@ -63,6 +64,8 @@ struct GraphInput {
 struct Vertex {
   BOX* rect;
   int pix_foreground;
+  int pix_foreground_duplicate; // part of the foreground but overlaps another vertex
+                                // this is recorded in order to avoid double counting
   int area;
   string whichset; // either hypothesis or groundtruth
   int setindex;
@@ -116,6 +119,7 @@ struct GroundTruthMetrics {
 // from the hypothesis vertices to these ones.
 struct RegionDescription {
   int num_fg_pixels;
+  int num_fg_pixels_duplicate;
   int area;
   BOX* box;
   Vertex* vertptr;
@@ -123,6 +127,8 @@ struct RegionDescription {
                  // divided by the total positives in the groundtruth
   double fallout; // total false positive pixels detected in the region
                   // divided by the total negative pixels in the groundtruth
+  double fallout_duplicate; // portion of the region which was already counted
+                            // if applicable (to avoid double counts!)
   double precision; // total true positive pixels detected in region
                     // divided by the total positive pixels in hypothesis
                     // (including incorrect ones ie false postives)
@@ -131,6 +137,7 @@ struct RegionDescription {
                           // in the hypothesis
   int true_positive_pix;
   int false_positive_pix;
+  int false_positive_pix_duplicate; // to avoid double-counts
   int false_negative_pix; // the number of pixels which are in the groundtruth
                           // but do not overlap with the hypothesis
   int num_gt_overlap; // the number of groundtruth regions which overlap this one
@@ -144,6 +151,7 @@ struct OverlappingGTRegion {
   Vertex* vertptr;
   BOX* box;
   int falsenegativepix;
+  int falsenegativepix_duplicates; // to track double-counts
   int numedges;
 };
 
@@ -266,6 +274,7 @@ public:
   // or equation labels.
   BipartiteGraph(string type, GraphInput input);
 
+  ~BipartiteGraph();
 
   void getHypothesisMetrics();
 
@@ -285,7 +294,6 @@ public:
   GroundTruthMetrics gtmetrics;
 
 private:
-
   // creates all the vertices for the given set in the
   // bipartite graph (either hypothesis or groundtruth)
   // while appending them to their appropriate vector
@@ -296,16 +304,62 @@ private:
   // and appends them to their appropriate vertex
   void makeEdges(Bipartite::GraphChoice graph);
 
+  // deletes all the boxes allocated for vertices then nullifies
+  // all dangling edge pointers
+  void destroyVerticesAndEdges(Bipartite::GraphChoice graph);
+
+  // nullifies dangling pointers in both hypothesis and groundtruth metrics.
+  void destroyMetrics();
+
   void getGroundTruthMetrics();
 
   LayoutEval::Color getColorFromType(const string& type);
+
+  // true negatives are color-coded to orange
+  int countTrueNegatives();
+
+  // counts the pixels of the given color in the hypothesis image
+  // within the hypbox that aren't within the bounds of any of the
+  // groundtruth boxes in gtboxes (this gives the false positives
+  // for the given hypbox). False positives are color coded to blue.
+  int countFalsePositives(BOX* hypbox, vector<BOX*> gtboxes, int& duplicates);
+
+  // counts the pixels of the given color in any of the boxes in
+  // the groundtruth box vector of gtim that are also in the
+  // hypothesis box (this gives the number of true positives for the
+  // given hypbox). True positives are color-coded to red.
+  int countTruePositives(BOX* hypbox, vector<BOX*> gtboxes, int& duplicates);
+
+  // counts the pixels of the given color in the groundtruth image
+  // within the gtbox that aren't within the bounds of any of the
+  // hypothesis boxes in hypboxes (this gives the false negatives
+  // for the given gtbox). False negatives are color coded to green.
+  int countFalseNegatives(BOX* gtbox, vector<BOX*> hypboxes, int& duplicates);
+
+  // counts the number of pixels in the Box region of
+  // the given Pix that have the given color. if
+  // countallnonewhite is true then just counts all
+  // colors that are foreground (assumes all background
+  // pixels are white). The tracker image is used to keep track
+  // of what pixels have already been counted and make sure nothing
+  // is double-counted.
+  int countColorPixels(BOX* box, PIX* pix,
+      LayoutEval::Color color, PIX* tracker, bool countallnonewhite,
+      int& duplicate_cnt);
+
+  // increments the given count if the pixel at the given x,y coords has not already been
+  // color coded in the given pixel tracker image. this is useful for keeping
+  // track of pixel counts to ensure that pixels are not double-counted.
+  static void countAndTrackPixel(l_int32 x, l_int32 y, int& count, PIX* tracker,
+      LayoutEval::Color colorcode, int& duplicate_cnt);
+
+
 
   string type; // the type of rectangle to look for in the txt file
   LayoutEval::Color color; // the color associated with the type
 
   vector<Vertex> GroundTruth; // the groudtruth set
   vector<Vertex> Hypothesis; // the hypothesis set
-  Lept_Utils lu;
 
   ifstream gtfile;
   ifstream hypfile;
@@ -314,6 +368,12 @@ private:
   PIX* inimg;
   PIX* hypimg;
   PIX* gtimg;
+  bool typemode; // in type mode, only a single color (representing a type) is evaluated
+                 // if this argument is turned off then all non-dark colors
+                 // are evaluated
+  PIX* gt_tracker; // tracks pixel counts made from groundtruth image
+  PIX* hyp_tracker; // tracks pixel counts made from hypothesis image
+  string tracker_dir; // directory to place all debug output
 };
 
 #endif

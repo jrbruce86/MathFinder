@@ -43,11 +43,10 @@ class IFeatureExtractor {
   IFeatureExtractor<FeatureExtType>() {}
 
   // Required initialization of the feature extractor for both training and prediction
-  inline void initFeatExtFull(TessBaseAPI& api, const string& groundtruth_path,
+  inline void initFeatExtFull(TessBaseAPI* api, const string& groundtruth_path,
       const string& training_set_path, const string& ext, bool makenew) {
     feat_ext.initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
   }
-
 
   // do feature extraction initializations
   // specific to a single page
@@ -96,7 +95,7 @@ class IFeatureExtractor {
     feat_ext.setImage(im);
   }
 
-  inline void setApi(const TessBaseAPI& api) {
+  inline void setApi(TessBaseAPI* api) {
     feat_ext.setApi(api);
   }
 

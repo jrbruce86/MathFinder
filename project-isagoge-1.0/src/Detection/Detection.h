@@ -44,8 +44,37 @@
 #include "Detector.h"
 
 // Detector1 is the first Detector implementation.
-// TODO Add more details!
-typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext1> Detector1;
+// Uses a binary SVM classifier trained through 10-fold cross validation on 15 training
+// pages randomly selected from E. Bidwell, Advanced Calculus. (1911). The following
+// 21 features are implemented during classifier training and prediction (See thesis
+// for more details on each feature):
+//   1.  Rightward horizontally adjacent blobs covered (rhabc)
+//   2.  Upward vertically adjacent blobs covered (uvabc)
+//   3.  Downard vertically adjacent blobs covered (dvabc)
+//   4.  Number of completely nested characters (cn)
+//   5.  Has a superscript
+//   6.  Has a subscript
+//   7.  Is a superscript
+//   8.  Is a subscript
+//   9.  Blob height (h)
+//   10. Blob width/height ratio (whr)
+//   11. Vertical distance above row baseline (vdarb)
+//   12. Count of stacked blobs at blob position (cosbabp)
+//   13. Is blob in math word (imw)
+//   14. Italicized text (is_italic)
+//   15. OCR confidence rating (ocr_conf)
+//   16. Unigram Feature (unigram)
+//   17. Bigram Feature (bigram)
+//   18. Trigram Feature (trigram)
+//   19. Blob belongs to row with normal text (in_valid_row)
+//   20. Blob belongs to normal text (in_valid_word)
+//   21. Page Doesn't Have Normal Text (bad_page)
+typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext1> SVMDetector;
+
+// The following is a slight adaptation of SVMDetector. It was observed that
+// the height and width-height ratio features can often result in false positive
+// detections. This is the same detector but trained without those two features.
+typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext2> SVMDetector2;
 
 #endif
 

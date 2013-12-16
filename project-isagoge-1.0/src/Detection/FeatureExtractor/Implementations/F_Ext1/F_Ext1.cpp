@@ -50,22 +50,20 @@ typedef GenericVector<NGramFrequency*> RankedNGramVec;
 typedef GenericVector<RankedNGramVec> RankedNGramVecs;
 
 F_Ext1::F_Ext1() : curimg(NULL), grid(NULL), avg_blob_height(-1),
-    bad_page(false), avg_whr(-1), avg_confidence(0) {}
+    bad_page(false), avg_whr(-1), avg_confidence(0), api(NULL), dbgim(NULL) {}
 
 F_Ext1::~F_Ext1() {
-  avg_baseline_dist.clear();
   NGramRanker ng;
   ng.destroyNGramVecs(math_ngrams);
 }
 
-void F_Ext1::reset() {
-  avg_baseline_dist.clear();
-}
+void F_Ext1::reset() {}
 
-void F_Ext1::initFeatExtFull(TessBaseAPI& api, const string& groundtruth_path_,
+void F_Ext1::initFeatExtFull(TessBaseAPI* api, const string& groundtruth_path_,
     const string& training_set_path_, const string& ext, bool makenew) {
   NGramProfileGenerator ng_gen(training_set_path_);
-  math_ngrams = ng_gen.generateMathNGrams(api, groundtruth_path_,
+  cout << "initFeatExtFull, training_set_path_ = " << training_set_path_ << endl;
+  math_ngrams = ng_gen.generateMathNGrams(*api, groundtruth_path_,
       training_set_path_, ext, makenew);
   training_set_path = training_set_path_;
   string mathwordsfile = training_set_path_ + (string)"../../mathwords";
@@ -88,14 +86,13 @@ void F_Ext1::initFeatExtFull(TessBaseAPI& api, const string& groundtruth_path_,
 // All features or calculations which require evaluating the entire
 // page rather than just one blob at a time are found here
 void F_Ext1::initFeatExtSinglePage() {
-  M_Utils m;
+  dbgim = pixCopy(NULL, curimg);
+  dbgim = pixConvertTo32(dbgim);
   // search initialization
   BlobInfoGridSearch bigs(grid);
   BLOBINFO* blob = NULL;
 
-#ifdef DBG_F_EXT1
   grid->setFeatExtFormat(training_set_path, "F_Ext1", (int)NUM_FEATURES);
-#endif
 
   // Determine the average height and width/height ratio of normal text on the page
   bigs.StartFullSearch();
@@ -147,22 +144,24 @@ void F_Ext1::initFeatExtSinglePage() {
   pixDestroy(&dbgss_im);
   m.waitForInput();
 #endif
-
   // --- Baseline distance feature ---
   // for each row, compute the average vertical distance from the baseline for all
   // blobs belonging to normal words
-  GenericVector<ROW*> rows = grid->getRows();
+  GenericVector<ROW_INFO*> rows = grid->getRows();
   for(int i = 0; i < rows.length(); i++) {
     double avg_baseline_dist_ = 0;
     double count = 0;
-    ROW* row = rows[i];
-    BlobInfoGridSearch bigs(grid);
-    bigs.StartFullSearch();
-    BLOBINFO* blob;
-    while((blob = bigs.NextFullSearch()) != NULL) {
-      if(blob->row == row) {
-        if(blob->validword) {
-          double dist = findBaselineDist(blob);
+    ROW_INFO* row = rows[i];
+    GenericVector<WORD_INFO*> words = row->wordinfovec;
+    for(int j = 0; j < words.length(); ++j) {
+      GenericVector<BLOBINFO*> blobs = words[j]->blobs;
+      for(int k = 0; k < blobs.length(); ++k) {
+        BLOBINFO* curblob = blobs[k];
+        assert(curblob->row_index == i);
+        assert(curblob->row() != NULL);
+        assert(curblob->row()->bounding_box() == row->row()->bounding_box());
+        if(curblob->validword) {
+          double dist = findBaselineDist(curblob);
           avg_baseline_dist_ += dist;
           ++count;
         }
@@ -175,10 +174,8 @@ void F_Ext1::initFeatExtSinglePage() {
 #ifdef DBG_DRAW_BASELINE
     cout << "row " << i << " average baseline dist: " << avg_baseline_dist_ << endl;
 #endif
-    avg_baseline_dist.push_back(avg_baseline_dist_);
-    grid->appendAvgBaseline(avg_baseline_dist_);
+    rows[i]->avg_baselinedist = avg_baseline_dist_;
   }
-  assert(avg_baseline_dist.length() == grid->getRows().length());
 #ifdef DBG_DRAW_BASELINES
   PIX* dbgim = pixCopy(NULL, curimg);
   dbgim = pixConvertTo32(dbgim);
@@ -212,7 +209,6 @@ void F_Ext1::initFeatExtSinglePage() {
   pixWrite((dbgdir + "baselines.png").c_str(), dbgim, IFF_PNG);
   pixDestroy(&dbgim);
 #endif
-
   // count of stacked characters at character position (coscacp)
   bigs.StartFullSearch();
   while((blob = bigs.NextFullSearch()) != NULL) {
@@ -253,9 +249,9 @@ void F_Ext1::initFeatExtSinglePage() {
   // determine whether or not each blob belongs to a "math word"
   bigs.StartFullSearch();
   while((blob = bigs.NextFullSearch()) != NULL) {
-    if(blob->wordstr == NULL)
+    if(blob->wordstr() == NULL)
       continue;
-    string blobword = (string)blob->wordstr;
+    string blobword = (string)blob->wordstr();
     for(int i = 0; i < mathwords.length(); i++) {
       if(blobword == mathwords[i]) {
         blob->ismathword = true;
@@ -302,6 +298,7 @@ void F_Ext1::initFeatExtSinglePage() {
     }
   }
   avg_confidence /= validblobcount;
+
 #ifdef DBG_CERTAINTY
   cout << "Average valid word certainty: " << avg_confidence << endl;
 #endif
@@ -310,7 +307,7 @@ void F_Ext1::initFeatExtSinglePage() {
   // -- first get the ranked ngram vectors for each sentence
   GenericVector<Sentence*> page_sentences = grid->getSentences();
   NGramRanker ng(training_set_path);
-  ng.setTessAPI(&api);
+  ng.setTessAPI(api);
   for(int i = 0; i < page_sentences.length(); i++) {
     Sentence* cursentence = page_sentences[i];
     RankedNGramVecs* sentence_ngrams = new RankedNGramVecs;
@@ -333,7 +330,6 @@ void F_Ext1::initFeatExtSinglePage() {
       ng_features->push_back(getNGFeature(cursentence, j+1));
     cursentence->ngram_features = ng_features;
   }
-
 }
 
 /* Carries out feature extraction on the given blob returning the
@@ -475,22 +471,14 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
     double rowheight = -1;
     double avg_baseline_dist_ = (double)-1;
     // find the average baseline for the blob's row
-    GenericVector<ROW*> rows = grid->getRows();
-    assert(rows.length() == avg_baseline_dist.length());
-    for(int i = 0; i < rows.length(); i++) {
-      if(rows[i] == blob->row) {
-        avg_baseline_dist_ = avg_baseline_dist[i];
-        rowheight = rows[i]->bounding_box().height();
-      }
-    }
-    if(avg_baseline_dist_ == (double)-1) {
-      cout << "ERROR: The blob row vector has been corrupted >:-[\n";
-      exit(EXIT_FAILURE);
-    }
+    ROW_INFO* rowinfo = blob->rowinfo();
+    assert(rowinfo != NULL); // if row_has_valid is true, should be on a row...
+    avg_baseline_dist_ = rowinfo->avg_baselinedist;
+    assert(avg_baseline_dist_ >= 0);
     double baseline_dist = findBaselineDist(blob);
     blob->dist_above_baseline = baseline_dist;
-    assert(avg_baseline_dist_ >= 0);
     vdarb = baseline_dist - avg_baseline_dist_;
+    rowheight = rowinfo->row()->bounding_box().height();
     if(vdarb < 0)
       vdarb = (double)0;
     else {
@@ -608,7 +596,7 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
   // TODO: For increased efficiency do fewer searches (come up with reasonable empirical
   //       way of dividing the current blob so enough searches are done but it isn't excessive
   for(int i = 0; i < range; i++) {
-    BLOBINFO* n;
+    BLOBINFO* n = NULL;
     if(dir == RIGHT) {
       bigs.StartSideSearch(blob->right() + 1, blob->bottom()+i, blob->bottom()+i+1);
       n = bigs.NextSideSearch(false); // this starts with the current blob
@@ -755,18 +743,14 @@ void F_Ext1::setBlobSubSuperScript(BLOBINFO* blob, SubSuperScript subsuper) {
   // the blob belongs to a valid word, the subscript or superscript can only
   // reside on the last blob of that word
   if(blob->validword) {
-    if(blob->blobindex_inword == -1) {
-      cout << "ERROR: blob index in a valid word was not set!\n";
-      exit(EXIT_FAILURE);
-    }
-    if(blob->blobindex_inword != blob->word_lastblob)
+    if(!blob->isRightmostInWord())
       return;
   }
 
   // if the word this blob belongs to ends in punctuation then don't bother
   // looking for the subscript, the punctuation is all that will be found
   if(subsuper == SUB) {
-    char* word = blob->wordstr;
+    const char* word = blob->wordstr();
     if(word != NULL) {
       int lastchar = strlen(word) - 1;
       if(word[lastchar] == '.' || word[lastchar] == ',' || word[lastchar] == '?')
@@ -807,7 +791,7 @@ void F_Ext1::setBlobSubSuperScript(BLOBINFO* blob, SubSuperScript subsuper) {
     if(h_dist > h_adj_thresh)
       continue; // too far away
     if(neighbor->validword) {
-      if(neighbor->blobindex_inword != 0)
+      if(!neighbor->isLeftmostInWord())
         continue; // if the super/subscript is in a valid word, it has to be at the first letter
     }
     if(subsuper == SUPER) {
@@ -839,7 +823,7 @@ void F_Ext1::setBlobSubSuperScript(BLOBINFO* blob, SubSuperScript subsuper) {
 
 double F_Ext1::findBaselineDist(BLOBINFO* blob) {
   // calculate the current blob's distance from the baseline
-  double blob_baseline = (double)blob->row->base_line(blob->centerx());
+  double blob_baseline = (double)blob->row()->base_line(blob->centerx());
   double blob_bottom = (double)blob->bottom();
   double baseline_dist = blob_bottom - blob_baseline;
   if(baseline_dist < 0) {
@@ -1041,8 +1025,8 @@ void F_Ext1::dbgSubSuper(BLOBINFO* blob, BLOBINFO* neighbor, SubSuperScript subs
   cout << "found a " << ((subsuper == SUPER) ? "super" : "sub")
        << "-script for the displayed blob\n";
   cout << "heres the recognition result for that blob's word: "
-       << ((blob->wordstr == NULL) ? "NULL" : blob->wordstr) << endl;
-  if(blob->word == NULL)
+       << ((blob->wordstr() == NULL) ? "NULL" : blob->wordstr()) << endl;
+  if(blob->word() == NULL)
     cout << "no blobs were recognized in the blob's word!\n";
   dbgDisplayBlob(blob);
   cout << "displayed is the previous blob's "

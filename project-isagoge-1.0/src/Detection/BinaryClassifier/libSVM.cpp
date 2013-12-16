@@ -36,6 +36,8 @@ libSVM::libSVM() : trained(false), C_optimal(-1),
 #endif
 }
 
+libSVM::~libSVM() {}
+
 void libSVM::initClassifier(const string& predictor_path_,
     const string& featextname) {
   feat_ext_name = featextname;
@@ -71,6 +73,7 @@ void libSVM::initPredictor() {
     exit(EXIT_FAILURE);
   }
   loadPredictor();
+  trained = true;
 }
 
 void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {

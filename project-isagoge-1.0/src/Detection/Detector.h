@@ -59,7 +59,22 @@ class Detector {
   typedef IFeatureExtractor<FeatExtType> IFeatExt;
 
   Detector<TrainerType, BinClassType, FeatExtType>()
-    : training_done(false), curimg(NULL) {}
+    : training_done(false), curimg(NULL), api(NULL) {
+    trainer = new I_Trainer(); // this constructs both the trainer and classifier
+    featext = new IFeatExt();
+    classifier = trainer->classifier; // classifier memory is managed by trainer interface
+  }
+
+  ~Detector<TrainerType, BinClassType, FeatExtType>() {
+    if(featext != NULL) {
+      delete featext;
+      featext = NULL;
+    }
+    if(trainer != NULL) {
+      delete trainer; // this also deletes the classifier object
+      trainer = NULL;
+    }
+  }
 
   inline void initTrainingPaths(const string& groundtruth_path_,
       const string& training_set_path_, const string& ext_) {
@@ -69,12 +84,18 @@ class Detector {
   }
 
   // Initialization required by both training and prediction
-  inline void initFeatExtFull(TessBaseAPI& api, bool makenew) {
-    featext.initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
+  inline void initFeatExtFull(TessBaseAPI* api, bool makenew) {
+    featext->initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
   }
 
   inline void initFeatExtSinglePage() {
-    featext.initFeatExtSinglePage();
+    featext->initFeatExtSinglePage();
+  }
+
+  inline void setFeatExtPage(BlobInfoGrid* g, TessBaseAPI* a, PIX* i) {
+    featext->setGrid(g);
+    featext->setApi(a);
+    featext->setImage(i);
   }
 
   // When doing training it is necessary to first get all the samples
@@ -88,12 +109,12 @@ class Detector {
   // implementation is being utilized.
   inline vector<BLSample*> getAllSamples(tesseract::BlobInfoGrid* grid,
       int image_index) {
-    featext.setImage(curimg);
-    featext.setApi(api);
-    featext.setGrid(grid);
-    featext.setDBGDir(training_set_path + "../");
-    featext.initFeatExtSinglePage();
-    grid = featext.extractAllFeatures(grid);
+    featext->setImage(curimg);
+    featext->setApi(api);
+    featext->setGrid(grid);
+    featext->setDBGDir(training_set_path + "../");
+    featext->initFeatExtSinglePage();
+    grid = featext->extractAllFeatures(grid);
     tesseract::BlobInfoGridSearch bigs(grid);
     tesseract::M_Utils mutils;
     bigs.StartFullSearch();
@@ -173,58 +194,63 @@ class Detector {
   }
 
   inline void initClassifier(const string& predictor_path_) {
-    string feat_ext_name = featext.getFeatExtName();
-    classifier.initClassifier(predictor_path_, feat_ext_name);
-    predictor_path = classifier.getFullPredictorPath();
+    string feat_ext_name = featext->getFeatExtName();
+    classifier->initClassifier(predictor_path_, feat_ext_name);
+    predictor_path = classifier->getFullPredictorPath();
   }
 
   inline string getPredictorPath() {
-    assert(predictor_path == classifier.getFullPredictorPath());
-    return classifier.getFullPredictorPath();
+    assert(predictor_path == classifier->getFullPredictorPath());
+    return classifier->getFullPredictorPath();
   }
 
   inline void initTraining(const vector<vector<BLSample*> >& samples_) {
     samples = samples_;
-    trainer.initTraining(classifier);
+    trainer->initTraining(classifier);
   }
 
   inline void train_() {
-    classifier = trainer.train_(samples);
+    classifier = trainer->train_(samples);
   }
 
   // prediction is just done on one page and will be using some
   // binary classifier which has already been trained with the
   // features specified for this type of trainer_predictor
   inline void initPrediction() {
-    if(!classifier.isTrained()) {
-      cout << "ERROR: Attempted prediction using an untrained classifier!\n";
-      exit(EXIT_FAILURE);
-    }
     initFeatExtFull(api, false); // initializes the feature extractor
-    classifier.initPredictor(); // loads up the predictor
+    classifier->initPredictor(); // loads up the predictor, halts with an error if there is none.
   }
 
   inline bool predict(BLOBINFO* blob) {
-    vector<double> sample = featext.extractFeatures(blob);
-    return classifier.predict(sample);
+    vector<double> sample = featext->extractFeatures(blob);
+    blob->features = sample;
+  //  if(blob->validword && !blob->ismathword) // this is cheating and also won't be correct in
+                                               // many cases since valid words can be mathematical
+                                               // >:-|... try and avoid this.
+  //    return false;
+    return classifier->predict(sample);
   }
 
   inline void setImage(PIX* im) {
     curimg = im;
   }
 
-  inline void setAPI(const TessBaseAPI& api_) {
+  inline void setAPI(TessBaseAPI* api_) {
     api = api_;
   }
 
   inline void reset() {
-    classifier.reset();
-    featext.reset();
-    trainer.reset();
+    classifier->reset();
+    featext->reset();
+    trainer->reset();
   }
 
   inline int numFeatures() {
-    return featext.numFeatures();
+    return featext->numFeatures();
+  }
+
+  inline string getTrainingPath() {
+    return training_set_path;
   }
 
  private:
@@ -242,12 +268,12 @@ class Detector {
   string ext; // image extension
   string predictor_path; // the path where the trained classifier will be
                          // or is stored for later use in prediction
-  IClassifier classifier;
-  IFeatExt featext;
-  I_Trainer trainer;
+  I_Trainer* trainer;
+  IFeatExt* featext;
+  IClassifier* classifier;
 
   PIX* curimg; // the image on which detection is being carried out
-  TessBaseAPI api;
+  TessBaseAPI* api;
 };
 
 #endif

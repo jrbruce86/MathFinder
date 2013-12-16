@@ -44,6 +44,115 @@ class ColPartition;
 class ColPartitionGrid;
 class ColPartitionSet;
 
+class ROW_INFO;
+
+class BLOBINFO;
+
+static TBOX getBlobTBox(BLOBINFO* blob);
+
+
+
+struct WORD_INFO {
+  WORD_INFO() : rowinfo(NULL), wordres(NULL),
+      sentence_start(false), sentence_end(false) {}
+  ~WORD_INFO() {
+    rowinfo = NULL;
+    wordres = NULL;
+    for(int i = 0; i < blobs.length(); ++i)
+      blobs[i] = NULL;
+    blobs.clear();
+  }
+
+  inline const char* wordstr() {
+    if(bestchoice() != NULL)
+      return bestchoice()->unichar_string().string();
+    return NULL;
+  }
+
+  inline WERD_CHOICE* bestchoice() {
+    return wordres->best_choice;
+  }
+  inline WERD* word() {
+    return wordres->word;
+  }
+
+  // removes the blob from the word and returns the index
+  // at which the blob resided. if the blob wasn't in the word
+  // in the first place then returns -1
+  inline int removeBlob(BLOBINFO* blob) {
+    TBOX rmbox = getBlobTBox(blob);
+    int index = -1;
+    for(int i = 0; i < blobs.length(); ++i) {
+      TBOX curbox = getBlobTBox(blobs[i]);
+      if(rmbox == curbox) {
+        index = i;
+        break;
+      }
+    }
+    if(index >= 0) {
+      blobs.remove(index);
+    }
+    return index;
+  }
+  ROW_INFO* rowinfo;
+  WERD_RES* wordres;
+  GenericVector<BLOBINFO*> blobs;
+  bool sentence_start;
+  bool sentence_end;
+};
+
+//enum ROW_TYPE {NORMAL, ABNORMAL};
+struct ROW_INFO {
+  ROW_INFO() : rowres(NULL), has_valid_word(false),
+      avg_baselinedist((double)0), words(NULL), rowid(-1) {}
+
+  ~ROW_INFO() {
+    rowres = NULL;
+    for(int i = 0; i < wordinfovec.length(); ++i) {
+      if(wordinfovec[i] != NULL) {
+        delete wordinfovec[i];
+        wordinfovec[i] = NULL;
+      }
+    }
+    wordinfovec.clear();
+  }
+
+  string getRowText() {
+    string str;
+    for(int i = 0; i < wordinfovec.length(); ++i)
+      str += (string)((wordinfovec[i]->wordstr()) + (string)" ");
+    return str;
+  }
+
+  // this provides the bounding box, baseline, and various other
+  // useful information about the row as found in the tesseract api.
+  inline ROW* row() {
+    return rowres->row;
+  }
+
+  // unmodified words found directly by the tesseract api
+  WERD_RES_LIST* words;
+
+  // list of the same words as found by tesseract api but also
+  // holding pointers to all of the BLOBINFO elements contained in that
+  // word.
+  inline void push_back_wordinfo(WORD_INFO* wordinfo) {
+    wordinfovec.push_back(wordinfo);
+  }
+  inline WORD_INFO* get_wordinfo_last() {
+    return wordinfovec.back();
+  }
+  GenericVector<WORD_INFO*> wordinfovec;
+
+  ROW_RES* rowres; // tesseract api information on the row
+  bool has_valid_word;
+  double avg_baselinedist; // average distance of a blob from
+                           // the row's baseline (only non-zero if
+                           // row has at leat one valid word.
+  int rowid;
+};
+
+
 // Each blobinfo object has the following:
 // 1. A pointer to the original ColPartition in which the blob is contained after
 //    all previous document layout analysis.
@@ -55,18 +164,21 @@ class ColPartitionSet;
 //    what is in the original ColPartitionGrid provided to this function after page
 //    layout analysis, and what this module is expected to return a ColPartitionGrid
 //    consisting of. The C_BLOB's on the other hand are the result of using the API
-//    to recognize all normal text in partitions (so that basic information like that
-//    the dot in an "i" is unimportant is quickly and painlessly ascertained. Every
+//    to recognize all normal text on the page (so that basic information like
+//    the dot in an "i" is quickly and painlessly ascertained). Every
 //    BLOBINFO object will have at least one BLOBNBOX, but may not have a C_BLOB as
-//    explained in (2) as that would mean a recognition result was ascertained. A
+//    explained in (2) if a recognition result was not ascertained. A
 //    BLOBINFO object may also have multiple BLOBNBOXes. The total BLOBNBOX objects
-//    over the entire grid should amount to the total number of BLOBNBOXes in the
+//    over the entire BlobInfoGrid should amount to the total number of BLOBNBOXes in the
 //    BlobGrid.
 // 4. The WERDCHOICE to which the blob belongs. this gives the word the blob belongs to
 //    (if the blob was recognized as part of a word) and also a certainty for the
 //    word which is set to the lowest certainty for all the blobs recognized in the
 //    word. This will be NULL for the case where no recognition result was ascertained.
-// 5. A pointer to the sentence to which the blob's word belongs (if it belongs to a
+// 5. Pointer to the WORD_INFO object to which this blob belongs. This gives the blob's
+//    location on the row it belongs to only if it belongs to a word and row as found during
+//    Tesseract's page recognition.
+// 6. A pointer to the sentence to which the blob's word belongs (if it belongs to a
 //    sentence)
 class BLOBINFO;
 ELISTIZEH (BLOBINFO)
@@ -75,39 +187,30 @@ class BLOBINFO:public ELIST_LINK {
   // constructor sets the box's grid coordinates
   BLOBINFO(TBOX boxgridc) : box(boxgridc), original_part(NULL),
            recognized_blob(NULL), unrecognized_blobs(NULL),
-           sentence(NULL), word(NULL), validword(false), dbgjustadded(false),
-           wordstr(NULL), linestrindex(-1), sentenceindex(-1), linewordindex(-1),
-           line_rel_colpart(-1), has_sup(false), has_sub(false), is_sup(false),
-           is_sub(false), row_has_valid(false), row(NULL),
+           werdres(NULL), validword(false), dbgjustadded(false),
+           sentenceindex(-1), word_index(-1), reinserted(false),
+           row_index(-1), block_index(-1), has_sup(false), has_sub(false), is_sup(false),
+           is_sub(false), row_has_valid(false), wordinfo(NULL),
            cosbabp(0), cosbabp_processed(false), ismathword(false),
-           is_italic(false), blobindex_inword(-1), word_lastblob(-1),
+           is_italic(false),
            has_nested(false), certainty((double)-20), features_extracted(false),
            dist_above_baseline((double)0), predicted_math(false) {}
-  // TODO: Make sure this copies everything (if necessary)!!!
-  // for now I'm just using it to copy the BLOBNBOXes and that's it
-  BLOBINFO(const BLOBINFO& copy) : original_part(copy.original_part),
-      recognized_blob(NULL), sentence(NULL), word(NULL),
-      validword(copy.validword), box(copy.box), linestrindex(-1),
-      unrecognized_blobs(NULL), dbgjustadded(false), wordstr(NULL),
-      sentenceindex(-1), linewordindex(-1), line_rel_colpart(-1),
-      has_sup(false), has_sub(false), is_sup(false), is_sub(false),
-      row_has_valid(copy.row_has_valid), row(copy.row), cosbabp(copy.cosbabp),
-      cosbabp_processed(copy.cosbabp_processed), ismathword(copy.ismathword),
-      is_italic(copy.is_italic), blobindex_inword(-1), word_lastblob(-1),
-      has_nested(false), certainty((double)-20), features_extracted(false),
-      dist_above_baseline(copy.dist_above_baseline),
-      predicted_math(copy.predicted_math) {
-    // cout << "in blobinfo copy constrctor!!\n";
-    unrecognized_blobs = new BLOBNBOX_LIST();
-    BLOBNBOX_LIST* cpyblobs = copy.unrecognized_blobs;
+
+  // Copy construtor is simply not used and avoided here so was not implemented
+
+  // make copies of BLOBNBOXes and return them
+  BLOBNBOX_LIST* copyBlobNBoxes() {
+    BLOBNBOX_LIST* new_unrecognized_blobs = new BLOBNBOX_LIST();
+    BLOBNBOX_LIST* cpyblobs = unrecognized_blobs;
     BLOBNBOX_IT bbit(cpyblobs);
     bbit.move_to_first();
-    for(int i = 0; i < cpyblobs->length(); i++) {
+    for(int i = 0; i < cpyblobs->length(); ++i) {
       BLOBNBOX* cur = bbit.data();
       BLOBNBOX* newcur = new BLOBNBOX(*cur); // uses the default copy constructor
-      unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, newcur);
+      new_unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, newcur);
       bbit.forward();
     }
+    return new_unrecognized_blobs;
   }
 
   ~BLOBINFO() {
@@ -115,49 +218,110 @@ class BLOBINFO:public ELIST_LINK {
   }
 
   inline void clear() {
-    if(word != NULL) {
-      delete word;
-      word = NULL;
-    }
-    if(wordstr != NULL) {
-      delete [] wordstr;
-      wordstr = NULL;
-    }
+    werdres = NULL;
+    original_part = NULL;
+    recognized_blob = NULL;
     if(unrecognized_blobs != NULL) {
-      unrecognized_blobs->clear(); // this does a deep delete I believe TODO: Confirm...
+      unrecognized_blobs->clear();
       delete unrecognized_blobs;
       unrecognized_blobs = NULL;
     }
-    if(recognized_blob != NULL) {
-      delete recognized_blob;
-      recognized_blob = NULL;
-    }
+    wordinfo = NULL;
     features.clear();
   }
 
   ColPartition* original_part;
   C_BLOB* recognized_blob;
   BLOBNBOX_LIST* unrecognized_blobs;
-  char* sentence; // the sentence to which this blob belongs
   // Best I can do is give each blob a word to which it can be associated
   // there is no way of knowing exactly what CBLOB a BLOB_CHOICE corresponds
   // to using the api. The certainty of the word (which is the same as the
   // worst certainty of all of its blobs) is used as a metric for my classifier
-  WERD_CHOICE* word; // the recognized word to which this blob belongs (can be NULL)
-  char* wordstr; // the recognized word to which the blob belongs
-  int blobindex_inword; // the blob's index within it's word
-  int word_lastblob;
-  int linestrindex; // index to the BlobInfoGrid's vector of line strings to which this blob belongs
-  int line_rel_colpart; // the blob's row index in relation to the tesseract colpartition to which it belongs
-  int linewordindex; // the word index on the current line
+  WERD_RES* werdres;
+
+  // this gives access the word's specific location within it's row, the row it is on
+  // as well as all of the other words on the row and all of the other blobs within
+  // the word that this blob is in
+  WORD_INFO* wordinfo;
+
+  inline ROW_INFO* rowinfo() {
+    if(wordinfo == NULL)
+      return NULL;
+    return wordinfo->rowinfo;
+  }
+
+  inline ROW* row() {
+    if(wordinfo == NULL)
+      return NULL;
+    return wordinfo->rowinfo->row();
+  }
+
+  // the recognized word to which this blob belongs (can be NULL)
+  inline WERD_CHOICE* wordchoice() {
+    if(werdres == NULL)
+      return NULL;
+    return werdres->best_choice;
+  }
+
+  inline WERD* word() {
+    if(werdres == NULL)
+      return NULL;
+    return werdres->word;
+  }
+
+  // TODO: Add a method to BlobInfoGrid which sorts all of the blobs
+  //       in each word in left to right fashion and then replace these
+  //       inefficient functions with simply grabbing the right and left
+  //       most element in the sorted vector.
+  // true if this blob is the right-most blob in its word, if this
+  // blob isn't the rightmost or it doesn't belong to a word then
+  // returns false.
+  inline bool isRightmostInWord() {
+      if(wordinfo == NULL)
+        return false;
+    const TBOX thisbox = box;
+    GenericVector<BLOBINFO*> blobs = wordinfo->blobs;
+    for(int i = 0; i < blobs.length(); ++i) {
+      const TBOX otherbox = blobs[i]->bounding_box();
+      if(otherbox == thisbox)
+        continue;
+      if(otherbox.right() > thisbox.right())
+        return false;
+    }
+    return true;
+  }
+  // returns true if this blob is the left-most in its word
+  inline bool isLeftmostInWord() {
+    if(wordinfo == NULL)
+      return false;
+    const TBOX thisbox = box;
+    GenericVector<BLOBINFO*> blobs = wordinfo->blobs;
+    for(int i = 0; i < blobs.length(); ++i) {
+      const TBOX otherbox = blobs[i]->bounding_box();
+      if(otherbox == thisbox)
+        continue;
+      if(otherbox.left() < thisbox.left())
+        return false;
+    }
+    return true;
+  }
+
+  // the recognized word to which the blob belongs
+  inline const char* wordstr() {
+    if(!wordchoice())
+      return NULL;
+    return wordchoice()->unichar_string().string();
+  }
+
+  int block_index; // the blob's block index with respect to the entire page
+  int row_index; // the blob's row index with respect to the entire page
+  int word_index; // the word index on the current row
   int sentenceindex; // index to the BlobInfoGrid's sentence to which this blob belongs
   bool validword; // true if the word corresponding to this blob is valid,
                   // false if it's invalid or doesn't exist
   float certainty; // # from [-20,0] indicating Tesseract's worst blob recognition confidence
                    // for the word to which this blob belongs
 
-  ROW* row; // pointer to the row on which this blob resides assuming it resides on
-            // a row with at least one valid word.. otherwise this is NULL
   double dist_above_baseline; // the blob's distance above its row's baseline
 
   vector<double> features; // feature vector for detection binary classifier
@@ -225,6 +389,7 @@ class BLOBINFO:public ELIST_LINK {
     return ScrollView::WHITE;
   }
 
+  bool reinserted; // true if the blob was inserted after initial page recognition
   bool dbgjustadded;
 
  private:
@@ -234,11 +399,16 @@ class BLOBINFO:public ELIST_LINK {
 
 CLISTIZEH(BLOBINFO)
 
-struct Line {
-  int originalindex;
-  int newindex;
-  bool has_something;
+TBOX getBlobTBox(BLOBINFO* blob) {
+  return blob->bounding_box();
+}
+
+struct BlobIndex {
+  int rowindex;
+  int wordindex;
+  int blobindex;
 };
+typedef GenericVector<BlobIndex> BlobIndices;
 
 typedef GridSearch<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> BlobInfoGridSearch;
 
@@ -285,7 +455,7 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
     partGridToBBGrid();
     // do language-specific recognition on all the partitions found through
     // previous layout analysis done by the tesseract framework
-    recognizeColParts();
+    recognizePage();
     // keep word segmentation results of language regions (recognized with
     // high confidence by language OCR) and split up regions not recognized
     // well into separate blobs. This generally preserves blobs that should
@@ -296,20 +466,20 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
     findSentences();
   }
 
-  void setColPart(ColPartitionGrid* partgrid_, ColPartitionSet** bcd) {
+  inline void setColPart(ColPartitionGrid* partgrid_, ColPartitionSet** bcd) {
     part_grid = partgrid_;
     best_col_divisions = bcd;
   }
-  void setTessAndPix(Tesseract* tess_) {
+  inline void setTessAndPix(Tesseract* tess_) {
     tess = tess_;
     img = tess->pix_binary();
   }
+
   void partGridToBBGrid();
 
-  // recognize all the colpartitions using the language OCR and then
-  // insert information ascertained from this recognition into the grid
-  void recognizeColParts();
-
+  // Recognizes the entire page, organizes the results into a list of rows
+  // holding all of their recognized blobs grouped into words.
+  void recognizePage();
 
   // insertRemainingBlobs():
   // To be called after recognizeColParts(), insert whatever blobs weren't
@@ -343,8 +513,8 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   //    display the regions by highlighting foreground pixels.
   void getSentenceRegions();
 
-  inline void setTessAPI(TessBaseAPI* api) {
-    newapi = api;
+  inline void setTessAPI(TessBaseAPI* api_) {
+    api = api_;
   }
 
   inline Pix* getImg() {
@@ -355,15 +525,8 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
     return recognized_sentences;
   }
 
-  inline GenericVector<char*> getTextLines() {
-    return recognized_lines;
-  }
-
-  inline GenericVector<ROW*> getRows() {
-    return valid_rows;
-  }
-  inline void appendAvgBaseline(double avg_baseline) {
-    valid_rows_avg_baselinedist.push_back(avg_baseline);
+  inline GenericVector<ROW_INFO*> getRows() {
+    return rows;
   }
 
   inline Sentence* getBlobSentence(BLOBINFO* blob) {
@@ -385,6 +548,44 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   bool dbgfeatures;
 
  private:
+  // allocates ROW_INFO corresponding to the given ROW_RES. Appends the
+  // resulting ROW_INFO pointer to this class's "rows" vector.
+  void initRowInfo(ROW_RES* rowres);
+  // iterates the words on the given row and if any valid word is found
+  // then sets the row's has_valid_word flag to true
+  bool findValidWordOnRow(ROW_INFO* row);
+  // adds the given word to the last ROW_INFO element on the rows vector
+  void addWordToLastRowInfo(WERD_RES* word);
+  // adds the given blob the last WORD_INFO element on the last ROW_INFO element
+  // of the rows vector
+  void addBlobToLastRowWord(BLOBINFO* blob);
+  // removes all shallow copies of the given blob from the ROW_INFO vector. A blob
+  // may occur multiple times and thus if it is deleted all pointers to it must
+  // be deleted as well in order to prevent dangling pointers. Further, if a blob
+  // is being replaced with multiple children blobs then the replacement must occur
+  // for all indices at which a shallow copy of the blob resides. The BlobIndices
+  // at which the shallow copy/copies were found in returned so that the children
+  // blobs can be inserted back into the appropriate positions on the page.
+  BlobIndices removeAllBlobOccurrences(BLOBINFO* blob);
+  // inserts shallow copies of given blob into the ROW_INFO vector for all of the
+  // provided replacement indices. this complements the removeAllBlobOccurrences
+  // method in that it is used to reinsert the "children" of the "parent" blob
+  // that was removed by it. The removed blob is called a "parent" because it is
+  // being broken up into two or more smaller blobs ("children") to facilitate
+  // more detailed analysis.
+  void insertBlobReplacements(BLOBINFO* blob, const BlobIndices& replacement_indices,
+      const int& replacement_num);
+  // walks through the rows and prints each word in them with a new line after the
+  // end of each row.
+  void dbgDisplayRowText();
+  // copies text in the rows vector into the sentence based upon the
+  // indices found previously. assumes that the start row, end row,
+  // start word, and end word indices have already been found.
+  void copyRowTextIntoSentence(Sentence* sentence);
+  // finds the sentence at the given row and word index and returns it's index.
+  // if the sentence doesn't exist then returns -1
+  int findSentence(const int& rowindex, const int& wordindex);
+
   ColPartitionGrid* part_grid; // this should remain as the original
                               // from Tesseract's document layout
                               // analysis and not be modified until
@@ -398,28 +599,17 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
                     // managing the memory of these as they are managed outside
                     // the scope of my module. They are all just shallow copies.
 
-  GenericVector<char*> recognized_text; // this holds a list of
-                                        // text results, each entry being
-                                        // the string corresponding to a
-                                        // colpartition (the entries are
-                                        // in the order that their corresponding
-                                        // partitions are visited by grid search).
-
-  GenericVector<char*> recognized_lines;        // holds list of of all the recognized text on the
-                                                // page, this time split into lines
-  GenericVector<int> recognized_lines_numwrds;  // the number of words on each line in
-                                                // recognized_lines
 
   GenericVector<Sentence*> recognized_sentences; // this holds the same text as
                                                  // recognized_text/lines, but now
                                                  // split into sentences.
 
-  GenericVector<ROW*> valid_rows; // list of the rows on the page which have atleast one valid word
-  GenericVector<double> valid_rows_avg_baselinedist;
+  GenericVector<ROW_INFO*> rows; // list of all rows on the page including their
+                                 // BLOBINFO elements grouped into their words
+                                 // depending on how Tesseract initially segmented them
 
-  M_Utils mutils; // static class with assorted functions
   Tesseract* tess; // the language-specific OCR engine used
-  TessBaseAPI* newapi; // I instantiate a new api for recognizing normal text
+  TessBaseAPI* api; // I instantiate a new api for recognizing normal text
                       // This api will not do any equation detection, just
                       // normal language detection. Once I have extracted
                       // all the information I need from it, it will be

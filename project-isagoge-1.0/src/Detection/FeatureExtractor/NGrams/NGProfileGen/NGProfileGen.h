@@ -104,7 +104,7 @@ class NGramProfileGenerator {
   // colors the foreground of all blobs belonging to a sentence
   // (for debugging)
   void colorSentenceBlobs(Pix* im, int sentencenum,
-      BlobInfoGrid* grid, SimpleColor color);
+      BlobInfoGrid* grid, LayoutEval::Color color);
   // writes the math and nonmath sentences each to their separate file
   void dbgWriteMathNonMathFiles(const string& training_path,
       const GenericVector<Sentence*>& math_s,

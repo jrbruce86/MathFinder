@@ -27,5 +27,6 @@
 #define FE_IMPLEMENTATIONS_H
 
 #include <F_Ext1.h>
+#include <F_Ext2.h>
 
 #endif

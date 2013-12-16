@@ -115,6 +115,7 @@ class cross_validation_objective
 class libSVM {
  public:
   libSVM();
+  ~libSVM();
   void initClassifier(const string& predictor_path,
       const string& featext_name);
   void initPredictor();

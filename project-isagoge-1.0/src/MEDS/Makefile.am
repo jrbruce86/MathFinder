@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libMEDS.la
-libMEDS_la_SOURCES = MEDS.h
+libMEDS_la_SOURCES = MEDS.h MEDS_Types.h
 SUBDIRS = ../Grid ../dlib-18.4 ../Detection
 libMEDS_la_LIBADD = /usr/local/lib/liblept.so \
 ../Tesseract/api/libtesseract.la ../Grid/libGrid.la \

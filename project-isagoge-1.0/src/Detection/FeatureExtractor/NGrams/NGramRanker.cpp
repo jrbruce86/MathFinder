@@ -398,7 +398,6 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
         }
       }
     }
-
     // get rid of any left overs (i.e. if sentence ended while looking for more
     // words for the n-gram which just get rid of the remainder).
     for(int j = 0; j < ngram.length(); j++) {
@@ -416,7 +415,7 @@ GenericVector<char*> NGramRanker::readInStopWords(const string& training_set_pat
   string stopwordfile = training_set_path + (string)"../../stopwords";
   ifstream stpwrdfs(stopwordfile.c_str());
   if(!stpwrdfs.is_open()) {
-    cout << "ERROR: Could not open the stopword file!\n";
+    cout << "ERROR: Could not open the stopword file at " << stopwordfile << endl;
     exit(EXIT_FAILURE);
   }
   int maxsize = 55;

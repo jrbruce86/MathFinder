@@ -41,14 +41,23 @@ class ITrainer {
   typedef IBinaryClassifier<BinClassType> IClassifier;
 
  public:
-  ITrainer<TrainerType, BinClassType>() {}
+  ITrainer<TrainerType, BinClassType>() {
+    classifier = new IClassifier();
+  }
 
-  inline void initTraining(IClassifier& classifier_) {
+  ~ITrainer<TrainerType, BinClassType>() {
+    if(classifier != NULL) {
+      delete classifier;
+      classifier = NULL;
+    }
+  }
+
+  inline void initTraining(IClassifier* classifier_) {
     classifier = classifier_;
     trainer.initTraining(classifier);
   }
 
-  IClassifier train_(const vector<vector<BLSample*> >& samples) {
+  IClassifier* train_(const vector<vector<BLSample*> >& samples) {
     classifier = trainer.train_(samples);
     // return the interface to the trained classifier
     return classifier;
@@ -59,7 +68,7 @@ class ITrainer {
   }
 
   TrainerType trainer;
-  IClassifier classifier;
+  IClassifier* classifier;
 };
 
 #endif

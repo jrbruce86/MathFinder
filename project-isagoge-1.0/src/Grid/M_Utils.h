@@ -56,6 +56,10 @@ class M_Utils {
   // it altogether).
   static TBOX imToCBlobGridCoords(BOX* box, PIX* im);
 
+  // Finds a column partition in the given grid that overlaps
+  // the given TBOX and returns it. Returns NULL if none exists.
+  static ColPartition* getTBoxColPart(ColPartitionGrid* cpgrid, TBOX t, PIX* im);
+
   // Similar to getBlobBoxImCoords but instead returns the bounding box
   // for an entire ColPartition in the same image coordinate space
   static BOX* getColPartImCoords(ColPartition* cp, PIX* im);
@@ -108,9 +112,12 @@ class M_Utils {
   // the foreground pixels of the blob of interest highlighted in red
   static void dispHlBlobInfoRegion(BLOBINFO* bb, PIX* im);
 
+  // similar to previous but takes tbox as input instead of blobinfo
+  static void dispHlTBoxRegion(TBOX tbox, PIX* im);
+
   // similar to dispHlBlobInfoRegion but only draws, doesn't display
   // draws directly on the pix, rather than making a temp copy
-  static void drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, SimpleColor color);
+  static void drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, LayoutEval::Color color);
 
   static void dispTBoxCoords(TBOX* box);
 

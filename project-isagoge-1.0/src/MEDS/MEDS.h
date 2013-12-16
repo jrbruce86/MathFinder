@@ -34,6 +34,12 @@
 #include <equationdetectbase.h>
 
 #include <Detection.h>
+#include <Segmentation.h>
+
+#define DATASET_SIZE 1 // the expected number of files in a dataset
+                       // specifying how to save results for debugging and evaluation
+
+#define SHOW_GRID
 
 namespace tesseract {
 
@@ -42,12 +48,12 @@ class ColPartition;
 class ColPartitionGrid;
 class ColPartitionSet;
 
-template <typename DetectorType>
+template <typename DetectorType, typename SegmentorType>
 class MEDS : public EquationDetectBase {
  public:
 
   MEDS() : tess(NULL), blobinfogrid(NULL), img(NULL),
-  newapi(NULL) {}
+  detector(NULL), segmentor(NULL), api(NULL) {}
 
   ~MEDS() {
     reset();
@@ -81,38 +87,42 @@ class MEDS : public EquationDetectBase {
                                 ColPartitionSet** best_columns) {
     static int dbg_img_index = 1;
     img = tess->pix_binary();
-
-     // I'll extract features from my own custom grid which holds both
-     // information that can be gleaned from language recognition as
-     // well as everything which couldn't (will hold all of the blobs
+    // I'll extract features from my own custom grid which holds both
+    // information that can be gleaned from language recognition as
+    // well as everything which couldn't (will hold all of the blobs
      // and if they were recognized then holds the word and sentence
      // it belongs to as well)
      blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
          part_grid->tright());
-     TessBaseAPI a;
-     if(newapi == NULL)
-       newapi = &a; // can allocate this one on the stack if necessary
-                    // (uninitialized it isn't expensive at all)
-     blobinfogrid->setTessAPI(newapi);
+     TessBaseAPI* api = new TessBaseAPI; // this is owned by the grid but is also used by
+                                       // the feature extractor
+     blobinfogrid->setTessAPI(api);
      blobinfogrid->prepare(part_grid, best_columns, tess);
+
      // Once the blobinfo grid has been established, it becomes possible to then run
      // each individual blobinfo element through feature detection and classification.
      // After the feature detection/classification step, merging will be carried out
      // in order to ensure proper segmentation.
-
-     // Go on and do predictions now if not in training mode
-     detector.initFeatExtSinglePage();
+     detector->setFeatExtPage(blobinfogrid, api, img);
+     detector->initFeatExtSinglePage();
      BLOBINFO* blob;
      BlobInfoGridSearch bigs(blobinfogrid);
      bigs.StartFullSearch();
      while((blob = bigs.NextFullSearch()) != NULL) {
-       blob->predicted_math = detector.predict(blob);
+       blob->predicted_math = detector->predict(blob);
      }
 
      // Print the results of this module to user-specified directory
      dbgPrintDetectionResults(dbg_img_index);
 
-
+#ifdef SHOW_GRID
+     string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(dbg_img_index);
+     ScrollView* gridviewer = blobinfogrid->MakeWindow(100, 100, winname.c_str());
+     blobinfogrid->DisplayBoxes(gridviewer);
+     Basic_Utils::waitForInput();
+     delete gridviewer;
+     gridviewer = NULL;
+#endif
 
      // TODO: Incorporate results into Tesseract!!!
 
@@ -173,7 +183,11 @@ class MEDS : public EquationDetectBase {
 
      //waitForInput();
 
+
      ++dbg_img_index;
+     if(dbg_img_index > DATASET_SIZE)
+       dbg_img_index = 1;
+     reset();
      return 0;
   }
 
@@ -187,10 +201,6 @@ class MEDS : public EquationDetectBase {
     return blobinfogrid;
   }
 
-  inline void setTessAPI(TessBaseAPI& api) {
-    newapi = &api;
-  }
-
   // Clear all heap memory that is specific to just one image
   // so that memory is available to another one. This
   // includes the BlobInfoGrid. The TessBaseApi is owned
@@ -202,6 +212,7 @@ class MEDS : public EquationDetectBase {
       delete blobinfogrid;
       blobinfogrid = NULL;
     }
+    detector->reset();
     // TODO: Delete any other heap allocated datastructures
     //       specific to a single image
   }
@@ -210,21 +221,24 @@ class MEDS : public EquationDetectBase {
     /// save images as this: MEDS_DBG_IM_
     PIX* dbgimg = pixCopy(NULL, img);
     dbgimg = pixConvertTo32(dbgimg);
-    string imgname = "MEDS_DBG_IM_" + intToString(dbg_img_index) + ".png";
+    string imgname = "MEDS_DBG_IM_" + Basic_Utils::intToString(dbg_img_index) + ".png";
 
     // save rectange files as [im#].rect in the following format:
     // #.ext type left top right bottom
-    string rectfile = intToString(dbg_img_index) + (string)".rect";
+    string rectfile = Basic_Utils::intToString(dbg_img_index) + (string)".rect";
     ofstream rectstream(rectfile.c_str(), ios::out); // overwrite existing
     BLOBINFO* blob;
     BlobInfoGridSearch bigs(blobinfogrid);
+    bigs.StartFullSearch();
     while((blob = bigs.NextFullSearch()) != NULL) {
       if(blob->predicted_math) {
-        rectstream << dbg_img_index << ".png embedded "
-                   << blob->left() << " " << blob->top() << " "
-                   << blob->right() << " " << blob->bottom() << endl;
         M_Utils m;
-        m.drawHlBlobInfoRegion(blob, dbgimg, (SimpleColor)RED);
+        BOX* bbox = m.getBlobInfoBox(blob, img);
+        rectstream << dbg_img_index << ".png embedded "
+                   << bbox->x << " " << bbox->y << " "
+                   << bbox->x + bbox->w << " " << bbox->y + bbox->h << endl;
+        m.drawHlBlobInfoRegion(blob, dbgimg, LayoutEval::RED);
+        boxDestroy(&bbox);
       }
     }
     pixWrite(imgname.c_str(), dbgimg, IFF_PNG);
@@ -236,6 +250,9 @@ class MEDS : public EquationDetectBase {
 
   }
 
+  inline void setDetector(DetectorType* det) {
+    detector = det;
+  }
 
  private:
   BlobInfoGrid* blobinfogrid; // blob grid on which I extract features, carry out
@@ -244,8 +261,9 @@ class MEDS : public EquationDetectBase {
   M_Utils mutils; // static class with assorted useful functions
   Tesseract* tess; // language-specific ocr engine
   PIX* img; // the binary image that is being operated on
-  TessBaseAPI* newapi;
-  DetectorType detector;
+  TessBaseAPI* api;
+  DetectorType* detector;
+  SegmentorType* segmentor;
   string dbg_results_dir;
 };
 

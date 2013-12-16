@@ -27,6 +27,10 @@
 
 namespace tesseract {
 
+// TODO: Migrate everything here that belongs in basic_utils and lept_utils to there
+//       and make sure everything using those functions uses the function from the right
+//       file.
+
 BOX* M_Utils::getBlobBoxImCoords(BLOBNBOX* blob, PIX* im) {
   l_int32 height = (l_int32)im->h;
   l_int32 left = (l_int32)blob->cblob()->bounding_box().left();
@@ -79,6 +83,31 @@ TBOX M_Utils::getColPartTBox(ColPartition* cp, PIX* im) {
   TBOX tbox = imToCBlobGridCoords(cpbox, im);
   boxDestroy(&cpbox);
   return tbox;
+}
+
+ColPartition* M_Utils::getTBoxColPart(ColPartitionGrid* cpgrid,
+    TBOX t, PIX* img) {
+  ColPartitionGridSearch colsearch(cpgrid);
+  colsearch.StartFullSearch();
+   ColPartition* curpart = NULL;
+   while ((curpart = colsearch.NextFullSearch()) != NULL) {
+     BOX* partbox;
+     if(curpart->boxes_count() > 0)
+       partbox = getColPartImCoords(curpart, img);
+     else {
+       TBOX b = curpart->bounding_box();
+       partbox = tessTBoxToImBox(&b, img);
+     }
+     TBOX rtbox = t;
+     BOX* box = tessTBoxToImBox(&rtbox, img);
+     int intersects;
+     boxIntersects(partbox, box, &intersects);
+     if(intersects)
+       return curpart;
+     boxDestroy(&partbox);
+     boxDestroy(&box);
+   }
+   return NULL;
 }
 
 BOX* M_Utils::getCBlobImCoords(C_BLOB* blob, PIX* im) {
@@ -193,21 +222,23 @@ void M_Utils::dispBlobInfoRegion(BLOBINFO* bb, PIX* im) {
 
 void M_Utils::dispHlBlobInfoRegion(BLOBINFO* bb, PIX* im) {
   TBOX t = bb->bounding_box();
-  BOX* box = tessTBoxToImBox(&t, im);
+  dispHlTBoxRegion(t, im);
+}
+
+void M_Utils::dispHlTBoxRegion(TBOX tbox, PIX* im) {
+  BOX* box = tessTBoxToImBox(&tbox, im);
   PIX* imcpy = pixCopy(NULL, im);
   imcpy = pixConvertTo32(imcpy);
-  Lept_Utils lu;
-  lu.fillBoxForeground(imcpy, box, LayoutEval::RED);
+  Lept_Utils::fillBoxForeground(imcpy, box, LayoutEval::RED);
   pixDisplay(imcpy, 100, 100);
   pixDestroy(&imcpy);
   boxDestroy(&box);
 }
 
-void M_Utils::drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, SimpleColor color) {
+void M_Utils::drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, LayoutEval::Color color) {
   TBOX t = bb->bounding_box();
   BOX* box = tessTBoxToImBox(&t, im);
-  Lept_Utils lu;
-  lu.fillBoxForeground(im, box, (LayoutEval::Color)color);
+  Lept_Utils::fillBoxForeground(im, box, color);
   boxDestroy(&box);
 }
 

@@ -28,24 +28,28 @@
 #include <allheaders.h>
 #include <MEDS_Trainer.h>
 #include <DocumentLayoutTest.h>
-#include <MEDS.h>
+#include <MEDS_Types.h>
 
 #include <iostream>
 #include <string>
 using namespace std;
+
+// Modify these to try different detector-segmentor combinations
+// as defined in MEDS_Types.h
+typedef MEDS2 MEDSType;
+typedef MEDS2Detector DetectorType;
 
 // Runs evaluation test on the given detector for the given dataset
 // which should be within the "topdir" specified (if detector is null
 // then uses Tesseract's default one. The testname is the name of
 // the test to be run on the dataset and the name of directory
 // wherein the test results will be held (this name should be indicative
-// of which equation detector is being used)
-void evaluateDataSet(EquationDetectBase* detector,
-    string topdir, string dataset, string testname,
+// of which equation detector is being used). if the bool argument, type_eval
+// is turned off then only math/non-math is evaluated, if it is turned on then
+// displayed, embedded, and labels are evaluated seperately.
+void evaluateDataSets(EquationDetectBase*& detector,
+    string topdir, vector<string> datasets, string testname, bool type_eval=true,
     string extension=(string)".png");
-
-// For debugging the evaluator
-void dbgColorCount(DocumentLayoutTester*);
 
 int main() {
   string topdir = "../test_sets/";
@@ -53,69 +57,50 @@ int main() {
   string train_dir = "training/";
   string train_set = "SVM_AdvCalc1_15/";
   const string trainpath = topdir+train_dir+train_set;
-  // Test Tesseract's default equation detector
- // evaluateDataSet(NULL, topdir, dataset, "tessdefault");
-
 
   // set this to false if only want to train the module
   // if it hasn't been trained yet.
   bool train_always = false;
 
   // Pick a detector/segmentor combo and train if necessary
-  EquationDetectBase* tess_interface = new TessInterface();
-  MEDS_Trainer<Detector1> trainer(train_always, trainpath, false);
+  MEDS_Trainer<DetectorType> trainer(train_always, trainpath, false);
+
   trainer.trainDetector();
 
-  Detector1 detector = trainer.getDetector();
-
-  // Instantiate a MEDS module which uses the detector
-  EquationDetectBase* meds = new MEDS<Detector1>;
+  // Instantiate a MEDS module which uses the detector that was
+  // initialized by the trainer
+  EquationDetectBase* meds = new MEDSType();
+  DetectorType* detector = trainer.getDetector();
+  ((MEDSType*)meds)->setDetector(detector);
 
   // Test it
-  for(int i = 0; i < 4; i++)
-    evaluateDataSet(meds, topdir, dataset + intToString(i+1), "myMEDS");
+  vector<string> datasets;
+  for(int i = 0; i < 4; ++i) {
+    string dataset_ = dataset + intToString(i+1);
+    datasets.push_back(dataset_);
+  }
+  evaluateDataSets(meds, topdir, datasets, "myMEDS", false);
 
-  // test default
-  //evaluateDataSet(NULL, topdir, dataset, "tessdefault");
-
-
-  // TODO: Compare the results!
+  // TODO: Evaluate default and compare the results!
 
   return 0;
 }
 
-void evaluateDataSet(EquationDetectBase* detector, \
-    string topdir, string dataset, string testname, \
+void evaluateDataSets(EquationDetectBase*& meds, string topdir,
+    vector<string> datasets, string testname, bool type_eval,
     string extension) {
-  // constructor sets the equation detector
-  DocumentLayoutTester test(detector);
-  // create the file structure
-  test.setFileStructure(topdir, dataset, extension);
+  bool meds_given = false;
+  if(meds)
+    meds_given = true;
+  DocumentLayoutTester<MEDSType> test(meds);
+  if(!type_eval)
+    test.turnOffTypeEval();
   test.activateEquOutput();
-
-  // run layout analysis on the images first (this includes
-  // running the equation detection as well)
-  // WARNING: All output .png images (and maybe .tifs?)
-  // from tesseract get cut and pasted to the test
-  // set's output directory!!
-  test.runTessLayout(testname);
-
-  test.evalTessLayout(testname, true);
-
-  // TODO: Modify DocumentLayoutTester's destructor to avoid
-  //       memory leaks!!!
-  //dbgColorCount(&test);
-}
-
-void dbgColorCount(DocumentLayoutTester* dlt) {
-  cout << "True Positive Pixels: " \
-       << dlt->dbgColorCount((string)"Eval_DBG.png", LayoutEval::RED) \
-       << endl;
-  cout << "False Positive Pixels: " \
-       << dlt->dbgColorCount((string)"Eval_DBG.png", LayoutEval::BLUE) \
-       << endl;
-  cout << "False Negative Pixels: " \
-       << dlt->dbgColorCount((string)"Eval_DBG.png", LayoutEval::GREEN) \
-       << endl;
+  for(int i = 0; i < datasets.size(); ++i) {
+    string dataset = datasets[i];
+    test.setFileStructure(topdir, dataset, extension);
+    test.runTessLayout(testname);
+    test.evalTessLayout(testname, true);
+  }
 }
 

@@ -39,14 +39,21 @@
 using namespace Basic_Utils;
 
 #define debug 0
+//#define SHOW_HYP_VERTICES
+//#define SHOW_VERTICES
+//#define SHOW_TRUE_NEGATIVES
+#define SHOW_HYP_TRACKER_FINAL
 
 BipartiteGraph::BipartiteGraph(string type_, GraphInput input)
-: type(type_) {
+: type(type_), typemode(true) {
+  if(type == "all")
+    typemode = false;
   color = getColorFromType(type);
-  if(color == LayoutEval::NONE) {
-    cout << "ERROR: No color associated with specified type\n";
+  if(!Lept_Utils::isColorSignificant(color)) {
+    cout << "ERROR: No evaluation color-code associated with specified type\n";
     exit(EXIT_FAILURE);
   }
+  tracker_dir = input.dbgdir;
   // extract all the info from the GraphInput struct
   string hypboxfilename = input.hypboxfile;
   string gtboxfilename  = input.gtboxfile;
@@ -57,6 +64,10 @@ BipartiteGraph::BipartiteGraph(string type_, GraphInput input)
   hypimg       = input.hypimg;
   gtimg        = input.gtimg;
   inimg        = input.inimg;
+  assert(hypimg->w == gtimg->w && hypimg->w == inimg->w
+      && hypimg->h == gtimg->h && hypimg->h == inimg->h);
+  gt_tracker = pixCreate(gtimg->w, gtimg->h, 32); // TODO: Make the background white!!
+  hyp_tracker = pixCreate(gtimg->w, gtimg->h, 32);
 
   // open both of the files for reading
   gtfile.open(gtboxfilename.c_str(), ifstream::in);
@@ -75,6 +86,20 @@ BipartiteGraph::BipartiteGraph(string type_, GraphInput input)
   makeVertices(Bipartite::GroundTruth);
   makeVertices(Bipartite::Hypothesis);
 
+#ifdef SHOW_VERTICES
+  string gt_vertex_file = tracker_dir + "gt_vertices.png";
+  cout << "Showing the foreground regions of the vertices in the groundtruth image "
+       << "and saving them to " << gt_vertex_file << endl;
+  pixDisplay(gt_tracker, 100, 100);
+  pixWrite(gt_vertex_file.c_str(), gt_tracker, IFF_PNG);
+  waitForInput();
+  string hyp_vertex_file = tracker_dir + "hyp_vertices.png";
+  cout << "Showing the foreground regions of the vertices in the hypothesis image "
+       << "and saving them to " << hyp_vertex_file << endl;
+  pixDisplay(hyp_tracker, 100, 100);
+  pixWrite(hyp_vertex_file.c_str(), hyp_tracker, IFF_PNG);
+  waitForInput();
+#endif
   // build and append all of the edges to the vertices for the
   // groundtruth set and then the hypothesis set
   makeEdges(Bipartite::GroundTruth);
@@ -89,19 +114,66 @@ BipartiteGraph::BipartiteGraph(string type_, GraphInput input)
   }
 }
 
+//TODO: Run valgrind to make sure I'm not missing anything...
+BipartiteGraph::~BipartiteGraph() {
+  if(gt_tracker != NULL)
+    pixDestroy(&gt_tracker);
+  if(hyp_tracker != NULL)
+    pixDestroy(&hyp_tracker);
+  destroyVerticesAndEdges(Bipartite::GroundTruth);
+  destroyVerticesAndEdges(Bipartite::Hypothesis);
+  destroyMetrics();
+}
+
+void BipartiteGraph::destroyVerticesAndEdges(Bipartite::GraphChoice graphchoice) {
+  vector<Vertex>* graph;
+  if(graphchoice == Bipartite::GroundTruth)
+    graph = &GroundTruth;
+  else
+    graph = &Hypothesis;
+  for(int i = 0; i < graph->size(); ++i) {
+    Vertex v = (*graph)[i];
+    BOX* b = v.rect;
+    boxDestroy(&b);
+    vector<Edge> edges = v.edges;
+    for(int j = 0; j < edges.size(); ++j) {
+      Edge e = edges[j];
+      e.vertexptr = NULL; // avoid dangling pointer
+    }
+  }
+}
+
+void BipartiteGraph::destroyMetrics() {
+  vector<RegionDescription> pbox_metrics = hypmetrics.boxes;
+  for(int i = 0; i < pbox_metrics.size(); ++i) {
+    RegionDescription rd = pbox_metrics[i];
+    rd.box = NULL;
+    rd.vertptr = NULL;
+  }
+  vector<OverlappingGTRegion> fnbox_metrics = hypmetrics.overlapgts;
+  for(int i = 0; i < fnbox_metrics.size(); ++i) {
+    OverlappingGTRegion gtr = fnbox_metrics[i];
+    gtr.box = NULL;
+    gtr.vertptr = NULL;
+  }
+}
+
 void BipartiteGraph::makeVertices(Bipartite::GraphChoice graph) {
   ifstream* file;
   PIX* img;
   vector<Vertex>* set;
+  PIX* tracker;
 
   if(graph == Bipartite::GroundTruth) {
     file = &gtfile;
     img = gtimg;
     set = &GroundTruth;
+    tracker = gt_tracker;
   } else {
     file = &hypfile;
     img = hypimg;
     set = &Hypothesis;
+    tracker = hyp_tracker;
   }
   int idx = 0;
   int max = 55;
@@ -132,22 +204,38 @@ void BipartiteGraph::makeVertices(Bipartite::GraphChoice graph) {
       continue;
     if(curfilenum > filenum)
       break;
-    if(recttype != type)
+    if(recttype != type && typemode)
       continue;
 
     // now we know we have a vertex so build and append
     // it to the appropriate vector
-    BOX* box = boxCreate(rectleft, recttop, rectright-rectleft, \
+    if(graph == Bipartite::GroundTruth &&
+        (rectleft == -1 || recttop == -1  || rectright == -1 || rectbottom == -1))
+      continue; // empty groundtruth images have an entry like this, just skip it
+    BOX* box = boxCreate(rectleft, recttop, rectright-rectleft,
         rectbottom-recttop); // create the box
     Vertex vert; // create the vertex
     vert.rect = box; // put the box in the vertex
     // count the foreground pixels and put them in the vertex
-    vert.pix_foreground = \
-        lu.countColorPixels(box, img, color);
+    int duplicate_cnt = 0;
+    vert.pix_foreground = countColorPixels(box, img, color, tracker,
+        !typemode, duplicate_cnt);
+    vert.pix_foreground_duplicate = duplicate_cnt;
     vert.setindex = idx;
     vert.area = (rectright-rectleft)*(rectbottom-recttop);
     vert.whichset = (graph == Bipartite::Hypothesis) ?\
         (string)"Hypothesis" : (string)"GroundTruth";
+#ifdef SHOW_HYP_VERTICES
+    if(graph == Bipartite::Hypothesis) {
+      cout << "Creating hypothesis vertex for displayed highlighted region\n";
+      Lept_Utils::dispHLBoxRegion(box, inimg);
+      Lept_Utils::dispRegion(box, hypimg);
+      cout << "Region has " << vert.pix_foreground << " foreground pixels.\n";
+      cout << vert.pix_foreground_duplicate
+           << " of them were already counted by a different vertex.\n";
+      waitForInput();
+    }
+#endif
     set->push_back(vert);
     idx++;
   }
@@ -158,23 +246,29 @@ void BipartiteGraph::makeEdges(Bipartite::GraphChoice graph) {
   vector<Vertex>* make_edges_from; // the set the edges will point to
   PIX* edge_for_pix;
   PIX* edge_from_pix;
+  PIX* edge_for_pix_tracker;
+  PIX* edge_from_pix_tracker;
   if(graph == Bipartite::GroundTruth) {
     make_edges_for = &GroundTruth;
     make_edges_from = &Hypothesis;
     edge_for_pix = gtimg;
     edge_from_pix = hypimg;
+    edge_for_pix_tracker = gt_tracker;
+    edge_from_pix_tracker = hyp_tracker;
   } else {
     make_edges_for = &Hypothesis;
     make_edges_from = &GroundTruth;
     edge_for_pix = hypimg;
     edge_from_pix = gtimg;
+    edge_for_pix_tracker = hyp_tracker;
+    edge_from_pix_tracker = gt_tracker;
   }
-  for(vector<Vertex>::iterator vert = make_edges_for->begin(); \
+  for(vector<Vertex>::iterator vert = make_edges_for->begin();
       vert != make_edges_for->end(); vert++) {
     // look for intersections of pixels and add an edge for each
     // one that is found
     BOX* vertbox = vert->rect;
-    for(vector<Vertex>::iterator edgevert = make_edges_from->begin(); \
+    for(vector<Vertex>::iterator edgevert = make_edges_from->begin();
         edgevert != make_edges_from->end(); edgevert++) {
       BOX* edgebox = edgevert->rect; // potential edge
       l_int32 intersects = 0;
@@ -185,14 +279,48 @@ void BipartiteGraph::makeEdges(Bipartite::GraphChoice graph) {
       // vertex's edge list. first need to find the number of pixels
       // that intersect as well as the area that intersects
       BOX* overlap = boxOverlapRegion(vertbox, edgebox);
-      int intersect1 = lu.countColorPixels(overlap, edge_for_pix, color);
-      int intersect2 = lu.countColorPixels(overlap, edge_from_pix, color);
+      int intersect1 = 0;
+      int notcounted1 = countColorPixels(overlap, edge_for_pix, color,
+          edge_for_pix_tracker, !typemode, intersect1);
+      int intersect2 = 0;
+      int notcounted2 = countColorPixels(overlap, edge_from_pix, color,
+          edge_from_pix_tracker, !typemode, intersect2);
+      if(debug) {
+        if(intersect1 != intersect2) {
+          cout << "edge from " << (make_edges_from == &Hypothesis ? "hypthesis" : "groundtruth")
+               << " to " << (make_edges_for == &Hypothesis ? "hypthesis" : "groundtruth")
+               << " has an unexpected number of color pixels at region of intersection!\n";
+          Lept_Utils::dispRegion(overlap, edge_from_pix);
+          cout << "showing vertex from which edge is measured. "
+               << intersect2 << " pixels found\n";
+          waitForInput();
+          Lept_Utils::dispRegion(overlap, edge_for_pix);
+          cout << "showing vertex to which edge is measured. "
+               << intersect1 << " pixels found\n";
+          waitForInput();
+          if(edge_from_pix->w == edge_for_pix->w
+              && edge_from_pix->h == edge_for_pix->h) {
+            cout << "The images have the same dimensions.\n";
+          }
+          else
+            cout << "The images have different dimensions!!!\n";
+          cout << "showing the entire image from which edge is measured\n";
+          pixDisplay(edge_from_pix, 100, 100);
+          waitForInput();
+          cout << "showing the entire image to whic hthe edge is measured\n";
+          pixDisplay(edge_for_pix, 100, 100);
+        }
+      }
+      // the region of overlap should have the same number of color-coded pixels in each image
       assert(intersect1 == intersect2);
+      // the foreground region of all vertices should have already been counted
+      assert(notcounted1 == 0 && notcounted2 == 0);
       Edge edge;
       edge.vertexptr = &(*edgevert);
       edge.pixfg_intersecting = intersect1;
       edge.overlap_area = (int)(overlap->w) * (int)(overlap->h);
       vert->edges.push_back(edge);
+      boxDestroy(&overlap);
     }
   }
 }
@@ -201,6 +329,13 @@ void BipartiteGraph::getHypothesisMetrics() {
   getGroundTruthMetrics();
   // total segmented foreground pixels in the groundtruth
   const int gt_positive_fg_pix = gtmetrics.total_seg_fg_pixels;
+  // make sure it matches up to what was found when making the vertices
+  int check_gt_positives = 0;
+  for(int i = 0; i < GroundTruth.size(); ++i)
+    check_gt_positives += GroundTruth[i].pix_foreground;
+  assert(check_gt_positives == gt_positive_fg_pix);
+
+
   // initialize everything
   hypmetrics.total_fg_pix = gtmetrics.total_fg_pixels;
   hypmetrics.correctsegmentations = 0;
@@ -232,6 +367,17 @@ void BipartiteGraph::getHypothesisMetrics() {
       hyp_it != Hypothesis.end(); hyp_it++)
     hyp_positive_fg_pix_tmp += hyp_it->pix_foreground;
   const int hyp_positive_fg_pix = hyp_positive_fg_pix_tmp;
+  // make sure that the number of positive pixels counted here is the same as the
+  // number of positive ones (color-coded white) in the hyp_tracker image.
+  int hyp_positives = 0;
+  for(int i = 0; i < hypimg->h; ++i) {
+    for(int j = 0; j < hypimg->w; ++j) {
+      l_uint32* curpix = Lept_Utils::getPixelAtXY(hyp_tracker, j, i);
+      if(Lept_Utils::getPixelColor(curpix) == LayoutEval::WHITE)
+        ++hyp_positives;
+    }
+  }
+  assert(hyp_positives == hyp_positive_fg_pix);
 
   // if there aren't any segmented regions in the groundtruth
   // then there can't be any correct segmentations and
@@ -245,69 +391,30 @@ void BipartiteGraph::getHypothesisMetrics() {
     // then we already know off the bat that something is seriously
     // wrong here.
     if(GroundTruth.size() > 0) {
-      cout << "ERROR: None of the foreground pixels in the " \
+      cout << "ERROR: None of the foreground pixels in the "
            << "GroundTruth.dat rectangles were detected!!\n";
       exit(EXIT_FAILURE);
     }
   }
 
-  PIX* dbg = pixCreate(gtimg->w, gtimg->h, 32);
-
-  // go ahead and count (and color if debugging) all the true negative
+  // go ahead and count and track all the true negative
   // pixels in the hypothesis
-  int counted_truenegatives = 0;
-  l_uint32* cur_gt_pixel;
-  l_uint32* cur_hyp_pixel;
-  l_uint32* cur_dbg_pixel;
-  l_uint32* startpixel_gt = pixGetData(gtimg);
-  l_uint32* startpixel_hyp = pixGetData(hypimg);
-  l_uint32* startpixel_dbg = pixGetData(dbg);
-  for(l_int32 i = 0; i < gtimg->h; i++) {
-    for(l_int32 j = 0; j < gtimg->w; j++) {
-      cur_gt_pixel = startpixel_gt + l_uint32((i*gtimg->w) + j);
-      cur_hyp_pixel = startpixel_hyp + l_uint32((i*hypimg->w) + j);
-      cur_dbg_pixel = startpixel_dbg + l_uint32((i*dbg->w) + j);
-      rgbtype pixcolorgt;
-      lu.getPixelRGB(cur_gt_pixel, &pixcolorgt);
-      LayoutEval::Color colorgt = lu.getColor(&pixcolorgt);
-      if((!lu.isColorSignificant(colorgt) && lu.isDark(&pixcolorgt))\
-          // ^^checks for an actual negative in the groundtruth that is
-          // simply a foreground pixel. below we check
-          // for a pixel that may be significant but isn't what we are
-          // looking at now (i.e. an embedded pixel when we are evaluating
-          // for displayed expressions)
-          || (lu.isColorSignificant(colorgt) && (colorgt != color))) {
-        // negative detected from the groundtruth
-        // if the hypothesis pixel here is also negative then we have
-        // a true negative!
-        LayoutEval::Color colorhyp = lu.getPixelColor(cur_hyp_pixel);
-        if(colorgt != color && colorhyp != color) {
-          // found a true negative!!!
-          counted_truenegatives++;
-          // set the true negative to orange in the debug image
-          if(dbg) {
-            composeRGBPixel(255, 127, 0, cur_dbg_pixel);
-            pixSetPixel(dbg, j, i, *cur_dbg_pixel);
-          }
-        }
-      }
-    }
-  }
-  //pixDisplay(dbg, 100, 100);
+  int counted_truenegatives = countTrueNegatives();
+
+#ifdef SHOW_TRUE_NEGATIVES
+  string dbgTNfile = tracker_dir + "TrueNegatives.png";
+  cout << "Displaying the hypothesis image with the true negatives in orange and "
+       << "the positively recognized pixels (tp+fp) in white. The image is also "
+       << "saved to " << dbgTNfile << ".\n";
+  pixDisplay(hyp_tracker, 100, 100);
+  pixWrite(dbgTNfile.c_str(), hyp_tracker, IFF_PNG);
+  waitForInput();
+#endif
 
   // iterate through the hypothesis boxes (vertices) to get
   // metrics on each individual one
-  /*  cout << "the image has " << Hypothesis.size() << " hypothesis boxes.\n";
-  for(vector<Vertex>::iterator hyp_it = Hypothesis.begin(); \
+  for(vector<Vertex>::iterator hyp_it = Hypothesis.begin();
       hyp_it != Hypothesis.end(); hyp_it++) {
-    static int ___i = 0;
-    cout << "hypbox " << ___i << ": " << hyp_it->rect->x << ", " << hyp_it->rect->y \
-         << ", width: " << hyp_it->rect->w << ", height: " << hyp_it->rect->h << endl;
-    ___i++;
-  }*/
-  for(vector<Vertex>::iterator hyp_it = Hypothesis.begin(); \
-      hyp_it != Hypothesis.end(); hyp_it++) {
-
     // initialize some parameters for the hypothesis box
     // to be used in determining the metrics for the box
     l_int32 h_x, h_y, h_w, h_h; // hypothesis box top left,
@@ -315,12 +422,14 @@ void BipartiteGraph::getHypothesisMetrics() {
     BOX* hyp_box = hyp_it->rect;
     boxGetGeometry(hyp_box, &h_x, &h_y, &h_w, &h_h);
     int hyp_box_fg_pix = hyp_it->pix_foreground;
+    int hyp_box_fg_pix_duplicate = hyp_it->pix_foreground_duplicate;
     vector<Edge> edges = hyp_it->edges;
 
     // initialize the current box's description
     // before we calculate it
     RegionDescription hyp_box_desc; // description of the current box
     hyp_box_desc.num_fg_pixels = hyp_box_fg_pix;
+    hyp_box_desc.num_fg_pixels_duplicate = hyp_box_fg_pix_duplicate;
     hyp_box_desc.area = hyp_it->area;
     hyp_box_desc.box = hyp_it->rect;
     hyp_box_desc.vertptr = &(*hyp_it);
@@ -334,35 +443,36 @@ void BipartiteGraph::getHypothesisMetrics() {
     const int num_edges = edges.size();
     hyp_box_desc.num_gt_overlap = num_edges;
 
+
     if(num_edges == 0) {
       // no intersections with the groundtruth
       // all the pixels in this region are false positives
       vector<BOX*> bv;
       BOX* b = boxCreate(0,0,0,0);
       bv.push_back(b);
-      int falsepositive_pix = lu.countFalsePositives(hyp_box, \
-          bv, hypimg, color, dbg);
-      double fallout = (double)falsepositive_pix /\
+      int duplicate_fp = 0;
+      const int falsepositive_pix = countFalsePositives(hyp_box,
+          bv, duplicate_fp);
+      double fallout = ((double)falsepositive_pix + (double)duplicate_fp) /
           (double)gt_negative_fg_pix;
+      double fallout_duplicate = (double)duplicate_fp / (double)gt_negative_fg_pix;
       hyp_box_desc.fallout = fallout;
+      hyp_box_desc.fallout_duplicate = fallout_duplicate;
       hypmetrics.falsepositives++;
       hyp_box_desc.false_positive_pix = falsepositive_pix;
-      //cout << "false pos: " << falsepositive_pix << endl;
+      hyp_box_desc.false_positive_pix_duplicate = duplicate_fp;
     }
     else if(num_edges >= 1) {
       // there is at least one region in the groundtruth
-      // that intersects with this one. If there is more
-      //cout << hypmetrics.total_fallout * 1173355 << endl;
-      //exit(EXIT_FAILURE);    // than one then we know the region is undersegmented.
+      // that intersects with this one.
       // each overlapping groundtruth region is either a
       // correct segmentation or is only partially correct.
-      // it may also have false positives and negatives as well.
       if(num_edges > 1) {
         hypmetrics.undersegmentations += num_edges;
         hypmetrics.undersegmentedcomponents++;
       }
 
-      // first we'll count all the false positive pixels
+      // first count all the false positive pixels
       // in the hypothesis box and also count the number
       // of false negatives which could spring up in the
       // case that the hypothesis box does not completely
@@ -371,48 +481,61 @@ void BipartiteGraph::getHypothesisMetrics() {
       // region and the hypothesis region)
       vector<Box*> edgeboxes; // first put all of the boxes
                               // into a vector
-      for(vector<Edge>::iterator edgeit = edges.begin(); \
+      for(vector<Edge>::iterator edgeit = edges.begin();
           edgeit != edges.end(); edgeit++)
         edgeboxes.push_back(edgeit->vertexptr->rect);
-
-      const int falsepositives = lu.countFalsePositives(hyp_box, \
-          edgeboxes, hypimg, color, dbg);
-
-      const int truepositives = lu.countTruePositives(hyp_box, \
-          edgeboxes, gtimg, color, dbg);
-
-      if((truepositives + falsepositives) != hyp_box_fg_pix) {
+      int fp_duplicates = 0;
+      const int falsepositives = countFalsePositives(hyp_box,
+          edgeboxes, fp_duplicates);
+      int tp_duplicates = 0;
+      const int truepositives = countTruePositives(hyp_box,
+          edgeboxes, tp_duplicates);
+      if((truepositives + tp_duplicates + falsepositives + fp_duplicates)
+          != (hyp_box_fg_pix + hyp_box_fg_pix_duplicate)) {
         cout << "ERROR: The sum of the true and false positives found in "
              << "a rectangle is not equal to the number of foreground "
              << "pixels in that region!\n";
         cout << "This occurred in image: " << filename << endl;
         cout << "Here is the sum of true and false positives: "
              << truepositives+falsepositives << endl;
+        cout << "here's the sum of the duplicate true and false positives: "
+             << tp_duplicates + fp_duplicates << endl;
         cout << "Here is the number of foreground pixels in the region: "
              << hyp_box_fg_pix << endl;
-        cout << "Here is the number of true positives in the region : "
+        cout << "here is the number of duplicate fg pixels in the region: "
+             << hyp_box_fg_pix_duplicate << endl;
+        cout << "Here is the number of true positives in the region: "
              << truepositives << endl;
+        cout << "Here is the number of true positives that werealready counted: "
+             << tp_duplicates << endl;
         cout << "Here is the number of false positives in the region: "
              << falsepositives << endl;
+        cout << "Here is the number of false positives that were already counted: "
+             << fp_duplicates << endl;
         cout << "Here are the dimensions of the hypothesis region "
              << "(l,t,w,h): " << h_x << ", " << h_y << ", " << h_w
              << ", " << h_h << endl;
+        cout << "Here are the dimensions of the overlapping groundtruth region(s):\n";
+        for(int i = 0; i < edgeboxes.size(); i++) {
+          cout << "(l,t,w,h): " << edgeboxes[i]->x << ", " << edgeboxes[i]->y
+               << ", " << edgeboxes[i]->w << ", " << edgeboxes[i]->h << endl;
+          Lept_Utils::dispRegion(edgeboxes[i], gtimg);
+        }
+        Lept_Utils::dispRegion(hyp_box, hypimg);
+        pixDisplay(hyp_tracker, 100, 100);
         exit(EXIT_FAILURE);
       }
 
-      // now go ahead and calculate all the metrics for the box
-      // we add them here for the case when the hypothesis region
-      // is undersegmented (if that is the case the entire box should
-      // account for the true positives, false negatives, and false
-      // positives for all of the undersegmented groundtruth boxes
-      hyp_box_desc.recall = (double)truepositives/\
-          (double)gt_positive_fg_pix;
-      hyp_box_desc.fallout = (double)falsepositives/\
-          (double)gt_negative_fg_pix;
-      hyp_box_desc.precision = (double)truepositives/\
-          (double)hyp_positive_fg_pix;
-      hyp_box_desc.false_discovery = (double)falsepositives/\
-          (double)hyp_positive_fg_pix;
+      // only true and false positives can be detected from counting pixels in the
+      // hypothesis boxes and comparing them to the groundtruth. When counting pixels in
+      // the groundtruth boxes and comparing them to the hypothesis the true and false
+      // negative rates can then be counted. For now only the true positive rate,
+      // false positive rate, precision and false discovery rate are calculated
+      // for each region.
+      hyp_box_desc.recall = (double)truepositives/(double)gt_positive_fg_pix;
+      hyp_box_desc.fallout = (double)falsepositives/(double)gt_negative_fg_pix;
+      hyp_box_desc.precision = (double)truepositives/(double)hyp_positive_fg_pix;
+      hyp_box_desc.false_discovery = (double)falsepositives/(double)hyp_positive_fg_pix;
       hyp_box_desc.true_positive_pix = truepositives;
       hyp_box_desc.false_positive_pix = falsepositives;
     }
@@ -423,24 +546,23 @@ void BipartiteGraph::getHypothesisMetrics() {
     hypmetrics.boxes.push_back(hyp_box_desc);
   }
   if(hypmetrics.undersegmentations > 0) {
-    hypmetrics.avg_undersegmentations_perbox = \
-        (double)hypmetrics.undersegmentations /\
+    hypmetrics.avg_undersegmentations_perbox = (double)hypmetrics.undersegmentations /
         (double)hypmetrics.undersegmentedcomponents;
   }
 
-  // now iterate the groundtruth to catch any remaining false negative
+  // now iterate the groundtruth to count the false negative
   // regions in the hypothesis and go ahead and add them onto the
   // vector of RegionDescriptions
   // also find the regions that were oversegmented by the hypothesis
   // and include that information in the hypothesis metrics as well
   vector<OverlappingGTRegion> overlappingregions;
-  for(vector<Vertex>::iterator gt_it = GroundTruth.begin(); \
+  for(vector<Vertex>::iterator gt_it = GroundTruth.begin();
       gt_it != GroundTruth.end(); gt_it++) {
     BOX* gtbox = gt_it->rect;
     vector<Edge> edges = gt_it->edges;
     const int numedges = edges.size();
     vector<Box*> hypboxes;
-    for(vector<Edge>::iterator edgeit = edges.begin(); \
+    for(vector<Edge>::iterator edgeit = edges.begin();
         edgeit != edges.end(); edgeit++)
       hypboxes.push_back(edgeit->vertexptr->rect);
     const int gt_fg_pix = gt_it->pix_foreground;
@@ -460,21 +582,20 @@ void BipartiteGraph::getHypothesisMetrics() {
       missedregion.false_positive_pix = 0;
       missedregion.num_gt_overlap = 0;
       missedregion.false_negative_pix = gt_fg_pix;
-      if(dbg)
-        lu.fillBoxForeground(dbg, gt_it->rect, LayoutEval::GREEN, inimg);
+      Lept_Utils::fillBoxForeground(hyp_tracker, gt_it->rect, LayoutEval::GREEN, inimg);
       hypmetrics.boxes.push_back(missedregion);
       hypmetrics.falsenegatives++;
     }
     else {
       OverlappingGTRegion overlapgt;
       // check for false negatives
-      int falsenegatives = lu.countFalseNegatives(gtbox, hypboxes, \
-          gtimg, color, dbg);
-      //cout << "partial false negatives (gt vertex "
-      //     << gt_it->setindex << "): " << falsenegatives << endl;
-      if(falsenegatives == 0)
+      int fn_duplicates = 0;
+      int falsenegatives = countFalseNegatives(gtbox, hypboxes,
+          fn_duplicates);
+      if(falsenegatives == 0 && fn_duplicates == 0)
         hypmetrics.correctsegmentations++;
       overlapgt.falsenegativepix = falsenegatives;
+      overlapgt.falsenegativepix_duplicates = fn_duplicates;
       overlapgt.box = gtbox;
       overlapgt.vertptr = &(*gt_it);
       overlapgt.numedges = numedges;
@@ -487,15 +608,14 @@ void BipartiteGraph::getHypothesisMetrics() {
   }
   hypmetrics.overlapgts = overlappingregions;
   if(hypmetrics.oversegmentations > 0) {
-    hypmetrics.avg_oversegmentations_perbox = \
-        (double)hypmetrics.oversegmentations /\
+    hypmetrics.avg_oversegmentations_perbox = (double)hypmetrics.oversegmentations /
         (double)hypmetrics.oversegmentedcomponents;
   }
   // now that we have all the metrics for each rectangle it is
   // time to combine all that information in order to get the
   // total metrics for the entire image
   vector<RegionDescription> regions = hypmetrics.boxes;
-  for(vector<RegionDescription>::iterator region = regions.begin(); \
+  for(vector<RegionDescription>::iterator region = regions.begin();
       region != regions.end(); region++) {
     hypmetrics.total_recall += region->recall;
     hypmetrics.total_fallout += region->fallout;
@@ -510,11 +630,20 @@ void BipartiteGraph::getHypothesisMetrics() {
     hypmetrics.total_false_negative_pix += fn;
     hypmetrics.total_true_positive_fg_pix += tp;
   }
+  if(debug) {
+    if(hyp_positive_fg_pix != hypmetrics.total_positive_fg_pix) {
+      cout << "the correct positives: " << hyp_positive_fg_pix << endl;
+      cout << "the one found from combining total true and false positives: "
+           << hypmetrics.total_positive_fg_pix << endl;
+    }
+  }
+  assert(hyp_positive_fg_pix == hypmetrics.total_positive_fg_pix);
 
-  // add any other false negatives for overlapping groundtruth
-  // boxes
-  for(vector<OverlappingGTRegion>::iterator ogt_it = \
-      overlappingregions.begin(); ogt_it != overlappingregions.end(); \
+  // add false negatives for overlapping groundtruth boxes (already counted
+  // the false negatives for non-overlapping groundtruth boxes, i.e. ones
+  // that are completely missing in the hypothesis)
+  for(vector<OverlappingGTRegion>::iterator ogt_it =
+      overlappingregions.begin(); ogt_it != overlappingregions.end();
       ogt_it++) {
     hypmetrics.total_false_negative_pix += ogt_it->falsenegativepix;
   }
@@ -530,24 +659,23 @@ void BipartiteGraph::getHypothesisMetrics() {
   // the total actual negatives are known from the groundtruth
   // metrics and the true negatives found in the hypothesis can
   // be either a subset of the actual negatives or their entirety
-  // if the specificity was perfect
+  // if the specificity (TNR) was perfect
   const int total_false_neg_pix = hypmetrics.total_false_negative_pix;
-  const int hyp_true_negatives = total_hyp_negative -\
-      total_false_neg_pix;
+  const int hyp_true_negatives = total_hyp_negative - total_false_neg_pix;
   if(hyp_true_negatives != counted_truenegatives) {
-    cout << "ERROR: the total false negatives and true negatives " \
-         << "counted don't add up to the total negatives " \
+    cout << "ERROR: the total false negatives and true negatives "
+         << "counted don't add up to the total negatives "
          << "(i.e. total_foreground - total_positive)!\n";
     cout << "hyp_true_negatives: " << hyp_true_negatives << endl;
     cout << "counted true negatives: " << counted_truenegatives << endl;
     cout << "false negatives: " << total_false_neg_pix << endl;
-    cout << "false positives: " << hypmetrics.total_false_positive_pix << endl;\
+    cout << "false positives: " << hypmetrics.total_false_positive_pix << endl;
     cout << "total_fg - false negatives: " << total_hyp_negative << endl;
-    cout << "negatives in the groundtruth: " \
+    cout << "negatives in the groundtruth: "
          << gtmetrics.total_nonseg_fg_pixels << endl;
-    cout << "positives in the groundtruth: " \
+    cout << "positives in the groundtruth: "
          << gtmetrics.total_seg_fg_pixels << endl;
-    pixDisplay(dbg, 100, 100);
+    pixDisplay(hyp_tracker, 100, 100);
     exit(EXIT_FAILURE);
   }
   hypmetrics.total_true_negative_fg_pix = hyp_true_negatives;
@@ -558,35 +686,35 @@ void BipartiteGraph::getHypothesisMetrics() {
   // FPR = FP/N
   // SPC = TN/N
   // N/N - FP/N = TN/N -> N-FP=TN
-  double specificity = (double)hyp_true_negatives/\
+  double specificity = (double)hyp_true_negatives /
       (double)gt_true_negatives;
 
   //assert(specificity == (1.-hypmetrics.total_fallout));
   double oneminusfpr = (double)1- (double)hypmetrics.total_fallout;
   if(specificity != oneminusfpr) {
-    if((gt_true_negatives - hypmetrics.total_false_positive_pix) \
+    if((gt_true_negatives - hypmetrics.total_false_positive_pix)
         == hyp_true_negatives) {
       cout << "WARNING: The specificity and 1-FPR are not equal, however ";
       cout << "the false positive and true negative pixels add up to the ";
       cout << "total negatives in the groundtruth.\n";
       cout.precision(20);
-      cout << "The specificity and 1-FPR are only off by " \
+      cout << "The specificity and 1-FPR are only off by "
            << specificity-oneminusfpr << endl;
       // something weird happened with division... if the false positives
       // and true negatives add up then there should be nothing wrong!!
       goto noerror;
     }
-    cout << "ERROR:: for some reason the specificity does not equal 1-FPR!!!\n";
+    cout << "ERROR:: for some reason the specificity does not equal 1-FPR!\n";
     cout << "image: " << filename << endl;
     cout.precision(20);
     cout << "specificity: " << specificity << endl;
     cout << "1-FPR      : " << oneminusfpr << endl;
-    cout << "specificity is " << (double)hyp_true_negatives \
+    cout << "specificity is " << (double)hyp_true_negatives
          << " / " << (double)gt_true_negatives << endl;
-    cout << "1-FPR is " << (double)1 << " - " \
+    cout << "1-FPR is " << (double)1 << " - "
          << (double)hypmetrics.total_fallout << endl;
     cout << "FPR         : " << hypmetrics.total_fallout << endl;
-    cout << "Expected FPR: " << (double)hypmetrics.total_false_positive_pix /\
+    cout << "Expected FPR: " << (double)hypmetrics.total_false_positive_pix /
         (double)gt_true_negatives << endl;
     cout << "False positives in hypothesis: " << hypmetrics.total_false_positive_pix << endl;
     cout << "True positives in hypothesis: " << hypmetrics.total_true_positive_fg_pix << endl;
@@ -597,23 +725,10 @@ void BipartiteGraph::getHypothesisMetrics() {
     cout << "positives in the hypothesis: " << total_positive_fg << endl;
     cout << "positives in the groundtruth: " << gtmetrics.total_seg_fg_pixels << endl;
     cout << "negatives in the hypothesis: " << total_hyp_negative << endl;
-    // try drawing all the negatives on the image for debugging
-    BOX* imbox = boxCreate(0, 0, hypimg->w, hypimg->h);
-    vector<Box*> hypboxes;
-    for(vector<RegionDescription>::iterator regionit = hypmetrics.boxes.begin(); \
-        regionit != hypmetrics.boxes.end(); regionit++) {
-      hypboxes.push_back(regionit->box);
-    }
-    Pix* allnegim = pixCreate(gtimg->w, gtimg->h, 32);
-    int negatives = lu.countFalseNegatives(imbox, hypboxes, gtimg, color, allnegim);
-    pixWrite(((string)"Eval_DBG_allnegative_" + type + (string)"_" + filename).c_str(),\
-         allnegim, IFF_PNG);
-    cout << "after counting all the regions not in the hypothesis boxes we have "
-         << negatives << " total false negatives in the hypothesis\n";
     cout << "negatives in the groundtruth: " << gtmetrics.total_nonseg_fg_pixels << endl;
     cout << "total foreground pixels in the hypothesis: " << total_fg << endl;
     cout << "total foreground pixels in the groundtruth: " << gtmetrics.total_fg_pixels << endl;
-    cout << "here is the sum of the false positives and the true negatives in hypothesis: " \
+    cout << "here is the sum of the false positives and the true negatives in hypothesis: "
          << hyp_true_negatives + hypmetrics.total_false_positive_pix << endl;
     int diff = hyp_true_negatives + hypmetrics.total_false_positive_pix - gt_true_negatives;
     cout << "there are " << diff << " more true negatives than there are supposed to be in the hyp!!\n";
@@ -635,9 +750,208 @@ void BipartiteGraph::getHypothesisMetrics() {
   assert(p+n == hypmetrics.total_fg_pix);
   double accuracy = ((double)tp+(double)tn)/((double)p+(double)n);
   hypmetrics.accuracy = accuracy;
-  pixWrite(((string)"Eval_DBG_" + type + (string)"_" + filename).c_str(),\
-      dbg, IFF_PNG);
-  pixDestroy(&dbg);
+#ifdef SHOW_HYP_TRACKER_FINAL
+  string final_tracker_im = tracker_dir + (string)"hyp_tracker_final.png";
+  cout << "Displaying the final hypothesis tracker image and saving it to "
+       << final_tracker_im << endl;
+  pixDisplay(hyp_tracker, 100, 100);
+  pixWrite(final_tracker_im.c_str(), hyp_tracker, IFF_PNG);
+  waitForInput();
+#endif
+}
+
+int BipartiteGraph::countTrueNegatives() {
+  int counted_truenegatives = 0;
+  for(l_int32 i = 0; i < gtimg->h; i++) {
+    for(l_int32 j = 0; j < gtimg->w; j++) {
+      l_uint32* cur_gt_pixel = Lept_Utils::getPixelAtXY(gtimg, j, i);
+      l_uint32* cur_hyp_pixel = Lept_Utils::getPixelAtXY(hypimg, j, i);
+      l_uint32* cur_tracker_pixel = Lept_Utils::getPixelAtXY(hyp_tracker, j, i);
+      rgbtype gt_pix_rgb[3];
+      rgbtype hyp_pix_rgb[3];
+      Lept_Utils::getPixelRGB(cur_gt_pixel, gt_pix_rgb);
+      Lept_Utils::getPixelRGB(cur_hyp_pixel, hyp_pix_rgb);
+      LayoutEval::Color colorgt = Lept_Utils::getPixelColor(cur_gt_pixel);
+      if((!Lept_Utils::isColorSignificant(colorgt) && Lept_Utils::isDark(gt_pix_rgb))
+          // ^^checks for an actual negative in the groundtruth that is
+          // simply a foreground pixel. below we check
+          // for a pixel that may be significant but isn't what we are
+          // looking at now (i.e. an embedded pixel when we are evaluating
+          // for displayed expressions <- this doesn't apply when typemode is disabled)
+          || ((Lept_Utils::isColorSignificant(colorgt) && (colorgt != color)) && typemode)) {
+        // negative detected from the groundtruth
+        // if the hypothesis pixel here is also negative then we have
+        // a true negative!
+        LayoutEval::Color colorhyp = Lept_Utils::getPixelColor(cur_hyp_pixel);
+        if((colorgt != color && colorhyp != color && typemode)
+            || (!Lept_Utils::isColorSignificant(colorgt)
+             && !Lept_Utils::isColorSignificant(colorhyp) && !typemode)) {
+          // found a true negative!!!
+          // set the true negative to orange in tracker image and increment if
+          // it hasn't already been counted
+          int duplicates = 0;
+          countAndTrackPixel(j, i, counted_truenegatives,
+              hyp_tracker, LayoutEval::ORANGE, duplicates);
+          assert(duplicates == 0); // there's no reason why anything would be double counted here...
+        }
+      }
+    }
+  }
+  return counted_truenegatives;
+}
+
+int BipartiteGraph::countFalsePositives(BOX* hypbox, vector<BOX*> gtboxes,
+    int& duplicates) {
+  assert(duplicates == 0);
+  bool insidegt = false;
+  int falsepositives = 0;
+  l_int32 x1, y1, w1, h1;
+  boxGetGeometry(hypbox, &x1, &y1, &w1, &h1);
+  for(l_int32 i = y1; i < y1+h1; i++) {
+    for(l_int32 j = x1; j < x1+w1; j++) {
+      // if inside one of the groundtruth rectangles then move on
+      insidegt = false;
+      for(vector<Box*>::iterator boxit = gtboxes.begin();
+         boxit != gtboxes.end(); boxit++) {
+        Box* box = *boxit;
+        l_int32 x2, y2, w2, h2;
+        boxGetGeometry(box, &x2, &y2, &w2, &h2);
+        if(j >= x2 && i >= y2 && j < x2+w2 && i < y2+h2) {
+          insidegt = true;
+          break;
+        }
+      }
+      if(insidegt)
+        continue;
+      // otherwise, if we are at a foreground pixel that hasn't
+      // already been counted then increment the counter
+      l_uint32* curpixel = Lept_Utils::getPixelAtXY(hypimg, j, i);
+      if(Lept_Utils::getPixelColor(curpixel) == color
+          || (!typemode &&
+              Lept_Utils::isColorSignificant(Lept_Utils::getPixelColor(curpixel)))) {
+        countAndTrackPixel(j, i, falsepositives, hyp_tracker,
+            LayoutEval::BLUE, duplicates);
+      }
+    }
+  }
+  return falsepositives;
+}
+
+int BipartiteGraph::countTruePositives(BOX* hypbox, vector<BOX*> gtboxes,
+    int& duplicates) {
+  assert(duplicates == 0);
+  bool insidegt = false;
+  int truepositives = 0;
+  l_int32 x1, y1, w1, h1;
+  boxGetGeometry(hypbox, &x1, &y1, &w1, &h1);
+  for(l_int32 i = y1; i < y1+h1; i++) {
+    for(l_int32 j = x1; j < x1+w1; j++) {
+      // if not inside any of the gtboxes then continue
+      insidegt = false;
+      for(vector<Box*>::iterator gtboxit = gtboxes.begin();
+          gtboxit != gtboxes.end(); gtboxit++) {
+        Box* gtbox = *gtboxit;
+        l_int32 x2, y2, w2, h2;
+        boxGetGeometry(gtbox, &x2, &y2, &w2, &h2);
+        if(x2 <= j && y2 <= i && x2+w2 > j && y2+h2 > i) {
+          insidegt = true;
+          break;
+        }
+      }
+      if(!insidegt)
+        continue;
+      l_uint32* curpixel = Lept_Utils::getPixelAtXY(hypimg, j, i);
+      if(Lept_Utils::getPixelColor(curpixel) == color
+          || (!typemode
+              && Lept_Utils::isColorSignificant(Lept_Utils::getPixelColor(curpixel)))) {
+        countAndTrackPixel(j, i, truepositives, hyp_tracker,
+            LayoutEval::RED, duplicates);
+      }
+    }
+  }
+  return truepositives;
+}
+
+int BipartiteGraph::countFalseNegatives(BOX* gtbox, vector<BOX*> hypboxes,
+    int& duplicates) {
+  bool in_hypbox = false;
+  int falseneg = 0;
+  l_int32 x1, y1, w1, h1;
+  boxGetGeometry(gtbox, &x1, &y1, &w1, &h1);
+  for(l_int32 i = y1; i < (y1+h1); i++) {
+    for(l_int32 j = x1; j < (x1+w1); j++) {
+      // if the current pixel is inside of any of the groundtruth
+      // boxes then we ignore it (continue)
+      in_hypbox = false;
+      for(vector<BOX*>::iterator hypboxit = hypboxes.begin();
+          hypboxit != hypboxes.end(); hypboxit++) {
+        BOX* hypbox = *hypboxit;
+        l_int32 x2, y2, w2, h2;
+        boxGetGeometry(hypbox, &x2, &y2, &w2, &h2);
+        if(j >= x2 && i >= y2 && j < (x2+w2) && i < (y2+h2)) {
+          in_hypbox = true;
+          break;
+        }
+      }
+      if(in_hypbox)
+        continue;
+      // otherwise we've detected a false negative if there is
+      // a foreground pixel here!
+      l_uint32* cur_gt_pix = Lept_Utils::getPixelAtXY(gtimg, j, i);
+      if(Lept_Utils::getPixelColor(cur_gt_pix) == color ||
+          (!typemode
+           && Lept_Utils::isColorSignificant(Lept_Utils::getPixelColor(cur_gt_pix)))) {
+        l_uint32* cur_hyp_pix = Lept_Utils::getPixelAtXY(hypimg, j, i);
+        rgbtype hyppixelcolor[3];
+        Lept_Utils::getPixelRGB(cur_hyp_pix, hyppixelcolor);
+        assert(Lept_Utils::isNonWhite(hyppixelcolor));
+        countAndTrackPixel(j, i, falseneg, hyp_tracker,
+            LayoutEval::GREEN, duplicates);
+      }
+    }
+  }
+  return falseneg;
+}
+
+// TODO (someday...): Handle counting foreground pixels regardless
+//       of the background color
+int BipartiteGraph::countColorPixels(BOX* box, PIX* pix,
+    LayoutEval::Color color, PIX* tracker, bool countall_nonwhite,
+    int& duplicate_cnt) {
+  l_int32 x, y, w, h;
+  boxGetGeometry(box, &x, &y, &w, &h);
+  l_uint32* curpixel;
+  rgbtype rgb[3];
+  int foreground_count = 0;
+  assert(duplicate_cnt == 0);
+  for(l_int32 i = y; i < (y+h); i++) {
+    for(l_int32 j = x; j < (x+w); j++) {
+      curpixel = Lept_Utils::getPixelAtXY(pix, j, i);
+      if(!countall_nonwhite) {
+        if(Lept_Utils::getPixelColor(curpixel) == color)
+          countAndTrackPixel(j, i, foreground_count, tracker,
+              LayoutEval::WHITE, duplicate_cnt);
+      } else { // otherwise count any non-white color
+               // (here we assume the background to be white)
+        Lept_Utils::getPixelRGB(curpixel, rgb);
+        if(Lept_Utils::isNonWhite(rgb))
+          countAndTrackPixel(j, i, foreground_count, tracker,
+              LayoutEval::WHITE, duplicate_cnt);
+      }
+    }
+  }
+  return foreground_count;
+}
+
+void BipartiteGraph::countAndTrackPixel(l_int32 x, l_int32 y, int& count,
+    PIX* tracker, LayoutEval::Color colorcode, int& duplicate_cnt) {
+  l_uint32* curpixel = Lept_Utils::getPixelAtXY(tracker, x, y);
+  if(Lept_Utils::getPixelColor(curpixel) != colorcode) {
+    Lept_Utils::setPixelRGB(tracker, curpixel, x, y, colorcode);
+    ++count;
+  }
+  else
+    ++duplicate_cnt;
 }
 
 void BipartiteGraph::getGroundTruthMetrics() {
@@ -650,31 +964,38 @@ void BipartiteGraph::getGroundTruthMetrics() {
   gtmetrics.area_ratio = 0;
   // get all the metrics by iterating through the groundtruth
   // vertices. first need to get the totals
-  for(vector<Vertex>::iterator gt_it = GroundTruth.begin(); \
+  for(vector<Vertex>::iterator gt_it = GroundTruth.begin();
       gt_it != GroundTruth.end(); gt_it++) {
     BOX* gtbox = gt_it->rect;
-    gtmetrics.total_seg_fg_pixels += \
-        lu.countColorPixels(gtbox, gtimg, color);
+    int vertex_fg_pixels = 0;
+    int not_counted = countColorPixels(gtbox, gtimg, color, gt_tracker,
+        !typemode, vertex_fg_pixels);
+    assert(not_counted == 0); // should have already been counted while creating vertices
+    gtmetrics.total_seg_fg_pixels += vertex_fg_pixels;
     gtmetrics.total_seg_area += (int)gtbox->w * (int)gtbox->h;
     gtmetrics.segmentations++;
   }
   // get the ratio of the total segmented foreground pixels
   // to the total foreground pixels
   BOX* fullimgbox = boxCreate(0, 0, (l_int32)gtimg->w, (l_int32)gtimg->h);
-  gtmetrics.total_fg_pixels = lu.countColorPixels(fullimgbox, \
-      gtimg, color, true);
-  gtmetrics.total_nonseg_fg_pixels = gtmetrics.total_fg_pixels \
-      - gtmetrics.total_seg_fg_pixels;
-  gtmetrics.fg_pixel_ratio = (double)gtmetrics.total_seg_fg_pixels / \
+  int already_counted = 0;
+  gtmetrics.total_nonseg_fg_pixels = countColorPixels(fullimgbox, gtimg, color,
+      gt_tracker, true, already_counted);
+  boxDestroy(&fullimgbox);
+  assert(already_counted == gtmetrics.total_seg_fg_pixels);
+  gtmetrics.total_fg_pixels = gtmetrics.total_nonseg_fg_pixels
+      + gtmetrics.total_seg_fg_pixels;
+  gtmetrics.fg_pixel_ratio = (double)gtmetrics.total_seg_fg_pixels /
       (double)gtmetrics.total_fg_pixels;
   // get the ratio of the total segmented area to the
   // image's total area
-  gtmetrics.area_ratio = (double)gtmetrics.total_seg_area / \
+  gtmetrics.area_ratio = (double)gtmetrics.total_seg_area /
       (double)gtmetrics.total_area;
   // now get the ratios for the area and foreground pixels of each
   // individual box to that of the summation for all the regions
-  // that were segmented
-  for(vector<Vertex>::iterator gt_it = GroundTruth.begin(); \
+  // that were segmented.. TODO: incorporate this for weighting purposes
+  // right now it isn't even being used for anything..
+  for(vector<Vertex>::iterator gt_it = GroundTruth.begin();
       gt_it != GroundTruth.end(); gt_it++) {
     GTBoxDescription boxdesc;
     int area = gt_it->area;
@@ -683,6 +1004,7 @@ void BipartiteGraph::getGroundTruthMetrics() {
     int fgpixels = gt_it->pix_foreground;
     int total_seg_fg = gtmetrics.total_seg_fg_pixels;
     boxdesc.fg_pix_ratio = (double)fgpixels / (double)total_seg_fg;
+    gtmetrics.descriptions.push_back(boxdesc);
   }
 }
 
@@ -693,7 +1015,7 @@ void BipartiteGraph::printMetrics(FILE* stream){
   // *****This is how a normal, non-verbose metric file is formated:
   // -----region-wide statistics:
   // [# correctly segemented regions] / [total # regions]
-  fprintf(stream, "%d/%d\n", hypmetrics.correctsegmentations, \
+  fprintf(stream, "%d/%d\n", hypmetrics.correctsegmentations,
       gtmetrics.segmentations);
   // [# regions completely missed (fn)]
   fprintf(stream, "%d\n", hypmetrics.falsenegatives);
@@ -747,13 +1069,13 @@ void BipartiteGraph::printMetrics(FILE* stream){
     cout << "----\n" << filename << ":\n";
     cout << "False negatives found in overlapping groundtruth boxes:\n";
     vector<OverlappingGTRegion> ogt = hypmetrics.overlapgts;
-    for(vector<OverlappingGTRegion>::iterator ogt_it = ogt.begin(); \
+    for(vector<OverlappingGTRegion>::iterator ogt_it = ogt.begin();
         ogt_it != ogt.end(); ogt_it++) {
       Vertex* vertptr = ogt_it->vertptr;
       int idx = vertptr->setindex;
       int falseneg = ogt_it->falsenegativepix;
-      cout << "GroundTruth region at index " << idx << " has " \
-           << falseneg << "false negative pixels\n";
+      cout << "GroundTruth region at index " << idx << " has "
+           << falseneg << " false negative pixels\n";
     }
   }
 }
@@ -761,7 +1083,7 @@ void BipartiteGraph::printMetrics(FILE* stream){
 void BipartiteGraph::printMetricsVerbose(FILE* stream) {
   // ******Verbose metric files give pixel accurate metrics on each individual region:
   vector<RegionDescription> boxes = hypmetrics.boxes;
-  for(vector<RegionDescription>::iterator region = boxes.begin();\
+  for(vector<RegionDescription>::iterator region = boxes.begin();
       region != boxes.end(); region++) {
     Vertex* vertptr = region->vertptr;
     string whichset = vertptr->whichset;
@@ -805,11 +1127,11 @@ void BipartiteGraph::printMetricsVerbose(FILE* stream) {
 
     if(debug) {
       if(region->num_gt_overlap >= 1) {
-        cout << filename << ", region # " << setindex \
+        cout << filename << ", region # " << setindex
              << " of " << whichset << " set\n";
         cout << "\tOverlaps Groundtruth Boxes at index(es) ";
         vector<Edge> overlapping = vertptr->edges;
-        for(vector<Edge>::iterator edge = overlapping.begin(); \
+        for(vector<Edge>::iterator edge = overlapping.begin();
             edge != overlapping.end(); edge++) {
           Vertex* edgevert = edge->vertexptr;
           int setindex_ = edgevert->setindex;
@@ -842,39 +1164,39 @@ void BipartiteGraph::printSet(Bipartite::GraphChoice graph) {
     set = &Hypothesis;
 
   int i = 0, j = 0;
-  for(vector<Vertex>::iterator vert = set->begin(); \
+  for(vector<Vertex>::iterator vert = set->begin();
       vert != set->end(); vert++) {
     cout << "Vertex " << i << ":\n";
     l_int32 t,l,w,h;
     boxGetGeometry(vert->rect, &t, &l, &w, &h);
-    cout << "\tBox (t,l,w,h): " << "(" << t << ", " << l \
+    cout << "\tBox (t,l,w,h): " << "(" << t << ", " << l
          << ", " << w << ", " << h << ")\n";
     cout << "\tBox Area: " << w*h << endl;
-    cout << "\tNumber of Foreground Pixels: " \
+    cout << "\tNumber of Foreground Pixels: "
          << vert->pix_foreground << endl;
-    cout << "\tForeground Pixels Ratio: " \
-         << (double)(vert->pix_foreground) / \
+    cout << "\tForeground Pixels Ratio: "
+         << (double)(vert->pix_foreground) /
          (double(w) * double(h)) << endl;
     cout << "\tEdges:\n";
     vector<Edge> edges = vert->edges;
 
-    for(vector<Edge>::iterator edge = edges.begin(); \
+    for(vector<Edge>::iterator edge = edges.begin();
         edge != edges.end(); edge++) {
       cout << "\t\tEdge " << j << ":\n";
       Vertex* vptr = edge->vertexptr;
       boxGetGeometry(vptr->rect, &t, &l, &w, &h);
-      cout << "\t\t\tEdge points at vertex " << vptr->setindex \
+      cout << "\t\t\tEdge points at vertex " << vptr->setindex
            << " from other set\n";
-      cout << "\t\t\tArea of box edge points at: " \
+      cout << "\t\t\tArea of box edge points at: "
            << vptr->area << endl;
-      cout << "\t\t\tEdge points to box at (t,l,w,h): " \
-           << "(" << t << ", " << l << ", " << w \
+      cout << "\t\t\tEdge points to box at (t,l,w,h): "
+           << "(" << t << ", " << l << ", " << w
            << ", " << h << ")\n";
-      cout << "\t\t\tTotal foreground pixels edge points at: " \
+      cout << "\t\t\tTotal foreground pixels edge points at: "
            << vptr->pix_foreground << endl;
-      cout << "\t\t\tIntersecting pixels: " \
+      cout << "\t\t\tIntersecting pixels: "
            << edge->pixfg_intersecting << endl;
-      cout << "\t\t\tOverlap area: " \
+      cout << "\t\t\tOverlap area: "
            << edge->overlap_area << endl;
       j++;
     }
@@ -892,7 +1214,7 @@ void BipartiteGraph::clear() {
 }
 
 LayoutEval::Color BipartiteGraph::getColorFromType(const string& type) {
-  if(type == "displayed")
+  if(type == "displayed" || type == "all")
     return LayoutEval::RED;
   else if(type == "embedded")
     return LayoutEval::BLUE;

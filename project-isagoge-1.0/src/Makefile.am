@@ -23,6 +23,7 @@ isagoge_CPPFLAGS = -ITesseract/api \
 -IDetection/FeatureExtractor \
 -IDetection/FeatureExtractor/Implementations \
 -IDetection/FeatureExtractor/Implementations/F_Ext1 \
+-IDetection/FeatureExtractor/Implementations/F_Ext2 \
 -IDetection/FeatureExtractor/NGrams \
 -IDetection/Trainer -IDetection/Sample -ISegmentation \
 -IDetection/TessInterface -IDetection/FeatureExtractor/Sentence \
@@ -40,6 +41,7 @@ Evaluation/libevaluation.la \
 Segmentation/libSegmentation.la \
 dlib-18.4/dlib/libdlib.la \
 Detection/FeatureExtractor/Implementations/F_Ext1/libF_Ext1.la \
+Detection/FeatureExtractor/Implementations/F_Ext2/libF_Ext2.la \
 Detection/BinaryClassifier/libBinaryClassifier.la \
 Detection/libDetection.la \
 Detection/TessInterface/libTessInterface.la

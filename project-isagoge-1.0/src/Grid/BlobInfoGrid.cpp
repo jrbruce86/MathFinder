@@ -32,7 +32,8 @@
 //#define DBG_INFO_GRID_S
 //#define DBG_INFO_GRID_SHOW_SENTENCE_REGIONS
 #define SHOW_BLOB_WINDOW
-#define DBG_BASELINE
+//#define DBG_BASELINE
+
 
 #include "BlobInfoGrid.h"
 #include <ctype.h>
@@ -47,7 +48,7 @@ namespace tesseract {
 BlobInfoGrid::BlobInfoGrid(int gridsize, const ICOORD& bleft,
     const ICOORD& tright) :
             part_grid(NULL), best_col_divisions(NULL), bbgrid(NULL),
-            tess(NULL), img(NULL), newapi(NULL), part_win(NULL),
+            tess(NULL), img(NULL), api(NULL), part_win(NULL),
             blobnboxgridview(NULL), rec_col_parts_sv(NULL),
             insertrblobs_sv(NULL), line_sv(NULL), sentence_sv(NULL),
             dbgfeatures(false) {
@@ -61,14 +62,12 @@ BlobInfoGrid::~BlobInfoGrid() {
   // for my blobinfo destructor to be called, so I do that here.
   BlobInfoGridSearch bigs(this);
   bigs.StartFullSearch();
-  BLOBINFO* blob = NULL;
-  while((blob = bigs.NextFullSearch()) != NULL) {
+  BLOBINFO* blob = bigs.NextFullSearch();
+  while(blob != NULL) {
+    BLOBINFO* next = bigs.NextFullSearch();
     delete blob; // manually deleting all the elements in the grid
-    blob = NULL;
+    blob = next;
   }
-  deleteStringVector(recognized_lines);
-  deleteStringVector(recognized_text);
-  recognized_lines_numwrds.clear();
 
   for(int i = 0; i < recognized_sentences.length(); i++) {
     Sentence* cursentence = recognized_sentences[i];
@@ -85,14 +84,14 @@ BlobInfoGrid::~BlobInfoGrid() {
   }
   recognized_sentences.clear();
 
-  for(int i = 0; i < valid_rows.length(); ++i) {
-    ROW* cur_row = valid_rows[i];
+  for(int i = 0; i < rows.length(); ++i) {
+    ROW_INFO* cur_row = rows[i];
     if(cur_row != NULL) {
       delete cur_row;
       cur_row = NULL;
     }
   }
-  valid_rows.clear();
+  rows.clear();
 
   // just to be safe I'm going to go through and manually
   // delete each entry in the bbgrid as well
@@ -113,6 +112,11 @@ BlobInfoGrid::~BlobInfoGrid() {
   freeScrollView(insertrblobs_sv);
   freeScrollView(line_sv);
   freeScrollView(sentence_sv);
+
+  if(api != NULL) {
+    delete api;
+    api = NULL;
+  }
 }
 
 void BlobInfoGrid::partGridToBBGrid() {
@@ -120,7 +124,7 @@ void BlobInfoGrid::partGridToBBGrid() {
 #ifdef DBG_INFO_GRID
   part_win = part_grid->MakeWindow(100, 300, "Tesseract Column Partitions");
   part_grid->DisplayBoxes(part_win);
-  mutils.waitForInput();
+  M_Utils::waitForInput();
 #endif
 
   // Copy all the blobs in the partition grid to a blob grid
@@ -158,7 +162,7 @@ void BlobInfoGrid::partGridToBBGrid() {
   blobnboxgridview = bbgrid->MakeWindow(100, 100,
       "Deep copied BLOBNBOX Grid");
   bbgrid->DisplayBoxes(blobnboxgridview);
-  mutils.waitForInput();
+  M_Utils::waitForInput();
 #endif
 }
 
@@ -186,181 +190,106 @@ void BlobInfoGrid::partGridToBBGrid() {
 // recognize whatever is in these partitions I move all the information
 // that can be gleaned from the recognition into my grid so features may
 // be extracted from these results later.
-void BlobInfoGrid::recognizeColParts() {
-  // Now run Tesseract on each of the column partitions to obtain all of
-  // the information on blobs that can be recognized by the language OCR
-  // engine. I'll put all of the recognized blobs into my BlobInfoGrid.
-  // On a second pass I will come back and find all of the blobs in the
-  // BlobGrid and insert them where they need to be in the blob info grid
-  // so that I don't miss anything.
-  // TODO: See if there's any way to speed it up!! Maybe not shutting down on each iteration
-  ColPartitionGridSearch colsearch(part_grid);
-  ColPartition* curpart = NULL;
-  colsearch.StartFullSearch();
-#ifdef DBG_INFO_GRID
-  int dbgdispcol = -1;
-#endif
-  int total_recognized_blobs = 0;
+void BlobInfoGrid::recognizePage() {
   // Set up the new api so that it operates on the same image we are analyzing
   // and we assume it is in the same language we have been using as well.
-  int colpartnum = 1;
-  while ((curpart = colsearch.NextFullSearch()) != NULL) {
-    BOX* partbox;
-    if(curpart->boxes_count() > 0)
-      partbox = mutils.getColPartImCoords(curpart, img);
-    else {
-      TBOX b = curpart->bounding_box();
-      partbox = mutils.tessTBoxToImBox(&b, img);
-    }
-    // run the language-specific OCR on the column partition
-    newapi->Init(tess->datadir.string(), tess->lang.string());
-    // need to tell it to save the blob choices so I have access
-    newapi->SetVariable("save_blob_choices", "true");
-    newapi->SetImage(img);
-    newapi->SetRectangle(partbox->x, partbox->y, partbox->w, partbox->h);
-    char* colpart_result = newapi->GetUTF8Text();
-
-#ifdef DBG_INFO_GRID
-    if(colpartnum == dbgdispcol)
-      mutils.dispRegion(partbox, img);
-#endif
-
-    // Now to get all the info I need on the recognized blobs inside
-    // the partition
-    const PAGE_RES* pr = newapi->extGetPageResults();
-
-    // The Page_Res is sort of like a Russian doll. There are many layers:
-    // BLOCK_RES -> ROW_RES -> WERD_RES -> WERD_CHOICE -> BLOB_CHOICE
-    //                         WERD_RES -> WERD        -> C_BLOB
-    // Iterate through the block(s) of text inside the partition
-    const BLOCK_RES_LIST* block_results = &(pr->block_res_list);
-    BLOCK_RES_IT bres_it((BLOCK_RES_LIST*)block_results);
-    bres_it.move_to_first();
-    for (int i = 0; i < block_results->length(); i++) {
-      BLOCK_RES* block_res = bres_it.data();
-      // Iterate through the row(s) of text inside the text block
-      ROW_RES_LIST* rowreslist = &(block_res->row_res_list);
-      ROW_RES_IT rowresit(rowreslist);
-      rowresit.move_to_first();
-      for(int j = 0; j < rowreslist->length(); j++) {
-        ROW_RES* rowres = rowresit.data();
-        WERD_RES_LIST* wordreslist = &(rowres->word_res_list);
-        // Iterate through the words inside the row (within the block within the partition)
-        // first find out if the row has any valid words, also set the row height
-        WERD_RES_IT wordresit1(wordreslist);
-        wordresit1.move_to_first();
-        bool row_has_valid = false;
-        for(int k = 0; k < wordreslist->length(); k++) {
-          WERD_RES* wordres = wordresit1.data();
-          WERD_CHOICE* wordchoice = wordres->best_choice;
-          if(wordchoice != NULL) {
-            const char* wrd = wordchoice->unichar_string().string();
-            if(newapi->IsValidWord(wrd)) {
-              row_has_valid = true;
-              // if the row has at least one valid word then save it in the grid
-              ROW* row = rowres->row;
-              ICOORD vec(0, curpart->bounding_box().bottom()); // move from partition to image coords
-              row->move_baseline(vec);
-              ROW* rowcopy = new ROW;
-              *rowcopy = *row;
-              valid_rows.push_back(rowcopy);
-              break;
+  // The api is run on the entire page rather than the individual column partitions
+  // in order to get the best results. The api is thus utilized for the entire scope
+  // of the remainder of the BlobInfoGrid's lifetime. There is no need to make any deep
+  // copies of objects taken from the api, however it is necessary to NULLify pointers
+  // from the api before this class's destruction to avoid dangling pointer issues!
+  // run the language-specific OCR on the entire page
+  api->Init(tess->datadir.string(), tess->lang.string());
+  // need to tell it to save the blob choices so I have access
+  api->SetVariable("save_blob_choices", "true");
+  api->SetImage(img);
+  char* page_result_str = api->GetUTF8Text();
+  const PAGE_RES* pr = api->extGetPageResults();
+  // The Page_Res is sort of like a Russian doll. There are many layers:
+  // BLOCK_RES -> ROW_RES -> WERD_RES -> WERD_CHOICE -> BLOB_CHOICE
+  //                         WERD_RES -> WERD        -> C_BLOB
+  // Iterate through the block(s) of text inside the page
+  int cur_row_index = 0;
+  const BLOCK_RES_LIST* block_results = &(pr->block_res_list);
+  BLOCK_RES_IT bres_it((BLOCK_RES_LIST*)block_results);
+  bres_it.move_to_first();
+  for (int i = 0; i < block_results->length(); ++i) {
+    BLOCK_RES* block_res = bres_it.data();
+    // Iterate through the row(s) of text inside the text block
+    ROW_RES_LIST* rowreslist = &(block_res->row_res_list);
+    ROW_RES_IT rowresit(rowreslist);
+    rowresit.move_to_first();
+    for(int j = 0; j < rowreslist->length(); j++) {
+      ROW_RES* rowres = rowresit.data();
+      // find what colpartition this row is inside of (if any)
+      TBOX rowbox = rowres->row->bounding_box();
+      ColPartition* row_colpart = M_Utils::getTBoxColPart(part_grid, rowbox, img);
+      // now iterate through the words to create all the blobinfo objects
+      WERD_RES_LIST* wordreslist = &(rowres->word_res_list);
+      // initialize the ROW_INFO object for this row which stores a shallow copy of it
+      // and also contains various other useful information about the row
+      initRowInfo(rowres);
+      rows.back()->rowid = cur_row_index;
+      rows.back()->words = wordreslist;
+      bool row_has_valid = findValidWordOnRow(rows.back());
+      WERD_RES_IT wordresit(wordreslist);
+      wordresit.move_to_first();
+      for(int k = 0; k < wordreslist->length(); k++) {
+        WERD_RES* wordres = wordresit.data();
+        addWordToLastRowInfo(wordres);
+        const FontInfo* font = wordres->fontinfo;
+        bool is_italic = false;
+        if(font != NULL)
+          is_italic = wordres->fontinfo->is_italic();
+        WERD* word = wordres->word;
+        // Iterate through the blobs that are within the current word
+        C_BLOB_LIST* bloblist = word->cblob_list();
+        C_BLOB_IT blob_it(bloblist);
+        blob_it.move_to_first();
+        for(int l = 0; l < bloblist->length(); l++) {
+          C_BLOB* recblob = blob_it.data();
+          BLOBINFO* blobinfo = new BLOBINFO(recblob->bounding_box());
+          blobinfo->wordinfo = rows.back()->get_wordinfo_last();
+          blobinfo->werdres = wordres; // ptr to the wordres to which the blob belongs
+          blobinfo->original_part = row_colpart; // shallow copy, since this is owned outside
+                                                 // this class scope (could also be NULL though)
+          blobinfo->block_index = i; // the blob's block index on the entire page
+          blobinfo->row_index = cur_row_index; // the blob's row index within the entire page
+          blobinfo->word_index = k; // the blob's word index within its row
+          blobinfo->recognized_blob = recblob; // shallow copy, remember to NULLIFY on destruction
+          blobinfo->row_has_valid = row_has_valid;
+          blobinfo->is_italic = is_italic;
+          if(blobinfo->wordchoice() != NULL) {
+            blobinfo->certainty = blobinfo->wordchoice()->certainty();
+            if(strcmp(blobinfo->wordstr(), "=") == 0
+                || strcmp(blobinfo->wordstr(), "i") == 0) {
+              blobinfo->validword = true;
             }
+            else
+              blobinfo->validword = api->IsValidWord(blobinfo->wordstr());
           }
-          wordresit1.forward();
+          // Now to insert the blobinfo object into the BlobInfoGrid
+          InsertBBox(true, true, blobinfo);
+          // insert a pointer to the blob into the ROW_INFO_BLOBS object for this row
+          addBlobToLastRowWord(blobinfo);
+          blob_it.forward();
         }
-        // now iterate through the words to create all the blobinfo objects
-        WERD_RES_IT wordresit2(wordreslist);
-        wordresit2.move_to_first();
-        for(int k = 0; k < wordreslist->length(); k++) {
-          WERD_RES* wordres = wordresit2.data();
-          const FontInfo* font = wordres->fontinfo;
-          bool is_italic = false;
-          if(font != NULL)
-            is_italic = wordres->fontinfo->is_italic();
-          WERD* word = wordres->word;
-          WERD_CHOICE* wordchoice = wordres->best_choice;
-          // Iterate through the blobs that are within the current word (within the row within the
-          // block within the partition) <= russian doll..
-          C_BLOB_LIST* bloblist = word->cblob_list();
-          C_BLOB_IT blob_it(bloblist);
-          blob_it.move_to_first();
-          for(int l = 0; l < bloblist->length(); l++) {
-            // Find the bounding box for the blob, need to convert it to
-            // Grid coordinates which involve y=0 being the bottom of the image
-            C_BLOB* recblob = blob_it.data();
-            BOX* recbox = mutils.getCBlobImCoords(recblob,
-                newapi->GetThresholdedImage()); // remember the box is in the partition space
-            recbox->x += partbox->x; // convert to image space (from partition space)
-            recbox->y += partbox->y;
-
-            TBOX recbb = mutils.imToCBlobGridCoords(recbox, img); // convert to GridCoords
-            // Create the blob's BlobInfo object so it has the proper grid
-            // coorneed to split that
-            // BlobInfo element dinates and everything else. Making sure to do deep copies
-            // of everything that belongs to the language-specific api I'm using
-            // so that I can delete the api when I'm done with it.
-            BLOBINFO* blobinfo = new BLOBINFO(recbb);
-            blobinfo->blobindex_inword = l;
-            blobinfo->word_lastblob = bloblist->length() - 1;
-            blobinfo->original_part = curpart; // can shallow copy, since this is owned outside our scope
-            blobinfo->line_rel_colpart = j; // the blob's row index relative to this col partition
-            blobinfo->linewordindex = k; // the blob's word index within a row
-            //cout << recblob->area() << endl;
-            blobinfo->recognized_blob = recblob->deep_copy(recblob); // deep copy
-            blobinfo->row_has_valid = row_has_valid;
-            blobinfo->is_italic = is_italic;
-            if(row_has_valid)
-              blobinfo->row = valid_rows.back();
-            if(wordchoice == NULL) {
-              blobinfo->word = NULL;
-              blobinfo->wordstr = NULL;
-              blobinfo->validword = false;
-            }
-            else {
-              blobinfo->certainty = wordchoice->certainty();
-              blobinfo->word = new WERD_CHOICE(*wordchoice); // deep copy
-              const char* wrd = blobinfo->word->unichar_string().string();
-              blobinfo->wordstr = mutils.strDeepCpy(wrd);
-              if(strcmp(blobinfo->word->unichar_string().string(), "=") == 0
-                  || strcmp(blobinfo->word->unichar_string().string(), "i") == 0) {
-                blobinfo->validword = true;
-              }
-              else
-                blobinfo->validword = newapi->IsValidWord(blobinfo->wordstr);
-            }
-            // Now to insert the blobinfo object into the BlobInfoGrid
-            InsertBBox(true, true, blobinfo);
-            total_recognized_blobs++; // for debugging count how many blobs we have here
-            blob_it.forward();
-            boxDestroy(&recbox);
-          }
-          wordresit2.forward();
-        }
-        rowresit.forward();
+        wordresit.forward();
       }
-      bres_it.forward();
+      rowresit.forward();
+      ++cur_row_index;
     }
-    newapi->End();
-    boxDestroy(&partbox);
-    char* result_deepcopy;
-    result_deepcopy = mutils.strDeepCpy(colpart_result);
-    recognized_text.push_back((char*)result_deepcopy);
-    colpartnum++;
+    bres_it.forward();
   }
-#ifdef DBG_INFO_GRID
-  cout << "total blobs recognized: " << total_recognized_blobs << endl; // debug
-  rec_col_parts_sv = MakeWindow(100, 100,
-      "Original BlobInfoGrid (after recognizeColParts)");
-  DisplayBoxes(rec_col_parts_sv);
-  mutils.waitForInput();
-#endif
 }
+
 
 // Next step is to iterate through the BlobGrid, inserting all the BLOBNBOXEs
 // into their appropriate BLOBINFO object and/or creating a new BLOBINFO object
 // for blobs which may not have been recognized at all.
 void BlobInfoGrid::insertRemainingBlobs() {
+
+
 #ifdef DBG_INFO_GRID
   int dbgBLOBNBOXtop = -1;
   int dbgBLOBNBOXleft = -1;
@@ -391,7 +320,7 @@ void BlobInfoGrid::insertRemainingBlobs() {
   bbgridsearch->StartFullSearch();
   while((blob = bbgridsearch->NextFullSearch()) != NULL) {
 #ifdef DBG_INFO_GRID
-    BOX* b = mutils.getBlobBoxImCoords(blob, img);
+    BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
     if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft)
       cout << "FOUND BLOBNBOX!!!!!! first pass\n";
     boxDestroy(&b);
@@ -410,14 +339,14 @@ void BlobInfoGrid::insertRemainingBlobs() {
       blobinfosearch.StartRectSearch(box);
       blinfo = blobinfosearch.NextRectSearch();
 #ifdef DBG_INFO_GRID
-      BOX* b = mutils.getBlobBoxImCoords(blob, img);
+      BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
       if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
         cout << "BLOBNBOX at the following coordinates:\n";
-        mutils.dispBoxCoords(b);
+        M_Utils::dispBoxCoords(b);
         cout << "overlaps something in the blobinfogrid at the following coordinates:\n";
         TBOX t = blinfo->bounding_box();
-        BOX* blb = mutils.tessTBoxToImBox(&t, img);
-        mutils.dispBoxCoords(blb);
+        BOX* blb = M_Utils::tessTBoxToImBox(&t, img);
+        M_Utils::dispBoxCoords(blb);
         boxDestroy(&blb);
       }
       boxDestroy(&b);
@@ -425,31 +354,33 @@ void BlobInfoGrid::insertRemainingBlobs() {
     }
     else {
 #ifdef DBG_INFO_GRID
-      BOX* b = mutils.getBlobBoxImCoords(blob, img);
+      BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
       if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
         cout << "BLOBNBOX at the following coordinates:\n";
-        mutils.dispBoxCoords(b);
+        M_Utils::dispBoxCoords(b);
         cout << "doesn't overlap anything\n";
       }
       boxDestroy(&b);
 #endif
       blinfo = new BLOBINFO(box);
       blinfo->original_part = blob->owner();
+      blinfo->reinserted = true;
       InsertBBox(true, true, blinfo); // insert the new blobinfo object into the grid
     }
     if(blinfo->unrecognized_blobs == NULL)
       blinfo->unrecognized_blobs = new BLOBNBOX_LIST();
-    BLOBNBOX* blobcpy = new BLOBNBOX(*blob);
+    C_BLOB* newcblob = C_BLOB::deep_copy(blob->cblob());
+    BLOBNBOX* blobcpy = new BLOBNBOX(newcblob);
     blinfo->unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, blobcpy);
 #ifdef DBG_INFO_GRID
-    b = mutils.getBlobBoxImCoords(blobcpy, img);
+    b = M_Utils::getBlobBoxImCoords(blobcpy, img);
     if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
       cout << "BLOBNBOX at the following coordinates:\n";
-      mutils.dispBoxCoords(b);
+      M_Utils::dispBoxCoords(b);
       cout << "should be added to tbe BLOBNBOX list for the blobinfo element at the following coordinates:\n";
       TBOX t = blinfo->bounding_box();
-      BOX* blb = mutils.tessTBoxToImBox(&t, img);
-      mutils.dispBoxCoords(blb);
+      BOX* blb = M_Utils::tessTBoxToImBox(&t, img);
+      M_Utils::dispBoxCoords(blb);
       boxDestroy(&blb);
     }
     boxDestroy(&b);
@@ -469,7 +400,7 @@ void BlobInfoGrid::insertRemainingBlobs() {
   GenericVector<BLOBINFO*> todelete;
   while((blob = bbgridsearch->NextFullSearch()) != NULL) {
 #ifdef DBG_INFO_GRID
-    BOX* b = mutils.getBlobBoxImCoords(blob, img);
+    BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
     if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft)
       cout << "FOUND BLOBNBOX!!!!!! second pass\n";
     boxDestroy(&b);
@@ -481,12 +412,12 @@ void BlobInfoGrid::insertRemainingBlobs() {
       blobinfosearch->StartRectSearch(box);
       BLOBINFO* blinfo = blobinfosearch->NextRectSearch();
 #ifdef DBG_INFO_GRID
-      BOX* b = mutils.getBlobBoxImCoords(blob, img);
+      BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
       if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
         cout << "on second pass, blobnbox overlaps blobinfo element at: \n";
         TBOX t = blinfo->bounding_box();
-        BOX* blb = mutils.tessTBoxToImBox(&t, img);
-        mutils.dispBoxCoords(blb);
+        BOX* blb = M_Utils::tessTBoxToImBox(&t, img);
+        M_Utils::dispBoxCoords(blb);
         boxDestroy(&blb);
       }
       boxDestroy(&b);
@@ -500,7 +431,7 @@ void BlobInfoGrid::insertRemainingBlobs() {
           exit(EXIT_FAILURE);
         }
 #ifdef DBG_INFO_GRID
-        BOX* b = mutils.getBlobBoxImCoords(blob, img);
+        BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
         if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft)
           cout << "BLOBNBOX detected as overlapping a blobinfo elemetn that has a NULL list!\n";
         boxDestroy(&b);
@@ -518,11 +449,12 @@ void BlobInfoGrid::insertRemainingBlobs() {
 #ifdef DBG_INFO_GRID
               cout << "going to delete blob at image coordinates:\n";
               TBOX tbox = curblob->bounding_box();
-              BOX* b = mutils.tessTBoxToImBox(&tbox, img);
-              mutils.dispBoxCoords(b);
+              BOX* b = M_Utils::tessTBoxToImBox(&tbox, img);
+              M_Utils::dispBoxCoords(b);
               boxDestroy(&b);
 #endif
-              todelete.push_back(curblob);
+              if(curblob->bounding_box() == blinfo->bounding_box())
+                todelete.push_back(curblob);
             }
             count++;
           }
@@ -548,50 +480,58 @@ void BlobInfoGrid::insertRemainingBlobs() {
       if(!blinfo->validword && (bblist->length() >= 1)) {
         // To prevent any confusion, I first remove the blobinfo element from the grid
         // before adding it's BLOBNBOXes
-        BLOBINFO* cpyblinfo = new BLOBINFO(*blinfo); // deep copy
-        int line_rel_colpart = blinfo->line_rel_colpart; // the row to assign any new blobs created here
-        int linewordindex = blinfo->linewordindex;
+        WERD_RES* werdres = blinfo->werdres;
+        WORD_INFO* wordinfo = blinfo->wordinfo;
+        int block_index = blinfo->block_index;
+        int row_index = blinfo->row_index; // the row to assign any new blobs created here
+        int word_index = blinfo->word_index;
         float certainty = blinfo->certainty;
         bool row_has_valid = blinfo->row_has_valid;
         bool is_italic = blinfo->is_italic;
-        ROW* row = blinfo->row;
-        RemoveBBox(blinfo); // this both removes the blinfo object and deletes it!!
-        bblist = cpyblinfo->unrecognized_blobs;
+        int replace_index = -1;
+        BlobIndices replacement_indices = removeAllBlobOccurrences(blinfo);
+        RemoveBBox(blinfo); // this doesn't modify blinfo pointer, just removes it from the grid...
+        bblist = blinfo->copyBlobNBoxes();
+        delete blinfo;
+        blinfo = NULL;
+
         BLOBNBOX_IT bbit(bblist);
         bbit.move_to_first();
         for(int i = 0; i < bblist->length(); i++) {
           BLOBNBOX* bbox = bbit.data();
 #ifdef DBG_INFO_GRID
-        BOX* b = mutils.getBlobBoxImCoords(bbox, img);
-        if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
-          cout << "new blob info element being created for BLOBNBOX at\n";
-          mutils.dispBoxCoords(b);
-        }
-        boxDestroy(&b);
+          BOX* b = M_Utils::getBlobBoxImCoords(bbox, img);
+          if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
+            cout << "new blob info element being created for BLOBNBOX at\n";
+            M_Utils::dispBoxCoords(b);
+          }
+          boxDestroy(&b);
 #endif
           BLOBNBOX* newbbox = new BLOBNBOX(*bbox);
           BLOBINFO* newblinfo = new BLOBINFO(newbbox->bounding_box());
           newblinfo->original_part = bbox->owner();
-          newblinfo->line_rel_colpart = line_rel_colpart;
-          newblinfo->linewordindex = linewordindex;
+          newblinfo->werdres = werdres;
+          newblinfo->wordinfo = wordinfo;
+          newblinfo->block_index = block_index;
+          newblinfo->row_index = row_index;
+          newblinfo->word_index = word_index;
+          newblinfo->certainty = certainty;
+          newblinfo->reinserted = true;
           newblinfo->row_has_valid = row_has_valid;
           newblinfo->is_italic = is_italic;
-          newblinfo->row = row;
-          newblinfo->certainty = certainty;
           newblinfo->unrecognized_blobs = new BLOBNBOX_LIST();
           newblinfo->unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, newbbox);
           newblinfo->dbgjustadded = true;
+          // insert new shallow copy replacement back into each of the wordinfo
+          // objects from which the "parent" was removed
+          insertBlobReplacements(newblinfo, replacement_indices, i);
           InsertBBox(true, true, newblinfo); // insert into the grid
           bbit.forward();
         }
-        // delete the element after it's already been removed
-        if(blinfo != NULL) {
-          delete blinfo;
-          blinfo = NULL;
-        }
-        if(cpyblinfo != NULL) {
-          delete cpyblinfo;
-          cpyblinfo = NULL;
+        if(bblist != NULL) {
+          bblist->clear();
+          delete bblist;
+          bblist = NULL;
         }
       }
     }
@@ -613,271 +553,62 @@ void BlobInfoGrid::insertRemainingBlobs() {
   // now display it!
   insertrblobs_sv = MakeWindow(100, 100, "BlobInfoGrid after insertRemainingBlobs()");
   DisplayBoxes(insertrblobs_sv);
-  mutils.waitForInput();
+  M_Utils::waitForInput();
 #endif
 }
+
+
 
 // here a sentence is simply any group of one or more words starting with
 // a capital letter, valid first word, and ending with a period or question mark.
 void BlobInfoGrid::findSentences() {
-  // initialize the searches I'll be doing
-  ColPartitionGridSearch cpgs(part_grid);
   BlobInfoGridSearch bigs(this);
-  int colpartnum = 1; // each recognized_text entry corresponds to a colpartition
-  int lineindex = 0;
-
-#ifdef DBG_INFO_GRID
-  int dbgcolpart = -1; // debug
-  bool dbgallparts = false;
-#endif
-
-  // 1. split the recognized text into lines and figure out what line each blob belongs to!
-  for(int i = 0; i < recognized_text.length(); i++) {
-    // split the partition's recognized text into lines
-    // often a colpart just corresponds to one line but not always
-    char* text = recognized_text[i];
-    text = Basic_Utils::removeExtraNLs(text);
-    recognized_text[i] = text;
-
-#ifdef DBG_INFO_GRID
-    if(colpartnum == dbgcolpart || dbgallparts) {
-      cout << "debugging a partition with the following text:\n";
-      cout << text << endl;
-    }
-#endif
-
-    GenericVector<char*> cp_textlines = mutils.lineSplit(text);
-    // all the lines should have a trailing \n.. make sure
-    for(int j = 0; j < cp_textlines.length(); j++) {
-      char* cur = cp_textlines[j];
-      cp_textlines[j] = Basic_Utils::ensureTrailingNL(cur);
-    }
-    // find the colpartition we are on
-    ColPartition* cp = NULL;
-    cpgs.StartFullSearch();
-    for(int i = 0; i < colpartnum; i++)
-      cp = cpgs.NextFullSearch();
-    if(cp == NULL) {
-      cout << "a NULL colpartition in getSentences()!!!!!\n";
-      exit(EXIT_FAILURE);
-    }
-#ifdef DBG_INFO_GRID
-    //dbg make sure we are getting the right colpart
-    if(colpartnum == dbgcolpart || dbgallparts) {
-      BOX* partbox = mutils.getColPartImCoords(cp, img);
-      cout << "trying to display region:\n";
-      mutils.dispBoxCoords(partbox);
-      cout << "image dimensions are w=" << img->w << ", h=" << img->h << endl;
-      cout << "region has " << cp_textlines.length() << " lines.\n";
-      mutils.dispRegion(partbox, img);
-      mutils.waitForInput();
-      boxDestroy(&partbox);
-    }
-#endif
-
-    // make deep copies of and append each recognized line from this column partition
-    // to a vector owned by the grid
-    for(int j = 0; j < cp_textlines.length(); j++) {
-      const char* curline = cp_textlines[j];
-      char* cldeepcopy = mutils.strDeepCpy(curline);
-      recognized_lines.push_back(cldeepcopy);
-      recognized_lines_numwrds.push_back(-1);
-    }
-
-    // assign each blob to its line index based on the colpartition and the
-    // row it is on in relation to that colpartition (as found earlier from the
-    // page_results after recognition)
-    TBOX cprect = mutils.getColPartTBox(cp, img);
-    bigs.StartRectSearch(cprect);
-    int colpartlines = cp_textlines.length(); // the total number of rows in the current column partition
-    BLOBINFO* b = NULL;
-    // if a line is found to have all NULL recognition results, then don't assign any blob to it
-    // pass 1: find out which ones have NULL recognition results if any do
-    GenericVector<Line*> lines;
-    while((b = bigs.NextRectSearch()) != NULL) {
-      int line_rel_colpart = b->line_rel_colpart;
-      if(line_rel_colpart == -1) { // the blob wasn't recognized and thus not assigned a line
-        b->linestrindex = -1;
-        continue;
-      }
-      // see if the line is on the vector if not add it
-      bool found = false;
-      Line* l = NULL;
-      for(int j = 0; j < lines.length(); j++) {
-        l = lines[j];
-        if(l->originalindex == line_rel_colpart) {
-          found = true;
-          break;
-        }
-      }
-      if(!found) {
-        l = new Line;
-        lines.push_back(l);
-        l->originalindex = line_rel_colpart;
-        l->newindex = -1;
-        l->has_something = false;
-      }
-      if(b->wordstr != NULL)
-        l->has_something = true;
-    }
-
-    // assign the lines new numbers, while preserving the orignal number
-    // keeping a line's newindex to -1 discards the line. Thus if a blob has the
-    // same line as the original of a line set to -1 then that blob will
-    // not be assigned a line. a new line index needs to be decremented
-    // by however many lines below it that have been discarded
-    for(int j = 0; j < lines.length(); j++) {
-      Line* l = lines[j];
-      if(l->has_something) {
-        l->newindex = l->originalindex;
-        // count how many below it have nothing
-        int decrement = 0;
-        for(int k = 0; k < lines.length(); k++) {
-          Line* l_ = lines[k];
-          if(l_->originalindex < l->originalindex) {
-            if(!l_->has_something)
-              decrement++;
-          }
-        }
-        l->newindex -= decrement;
-      }
-    }
-    // pass 2: assign the blobs to the text lines that weren't previously discarded
-    //         for not having any contents (thus only assigning blobs to valid lines)
-    bigs.StartRectSearch(cprect);
-    b = NULL;
-    while((b = bigs.NextRectSearch()) != NULL) {
-      int line_rel_colpart = b->line_rel_colpart;
-      if(line_rel_colpart == -1) { // the blob wasn't recognized and thus not assigned a line
-        b->linestrindex = -1;
-        continue;
-      }
-      for(int j = 0; j < lines.length(); j++) {
-        Line* l = lines[j];
-        if(line_rel_colpart == l->originalindex) {
-          if(l->has_something) {
-            int curlineindex = l->newindex + lineindex;
-            b->linestrindex = curlineindex;
-            int numwrdsline = recognized_lines_numwrds[curlineindex];
-            if(b->linewordindex > numwrdsline)
-              recognized_lines_numwrds[curlineindex] = b->linewordindex;
-          }
-        }
-      }
-    }
-    for(int j = 0; j < lines.length(); j++) {
-      delete lines[j];
-      lines[j] = NULL;
-    }
-    lines.clear();
-    lineindex += colpartlines;
-    colpartnum++;
-  }
-#ifdef DBG_INFO_GRID
-  line_sv = MakeWindow(100, 100, "BlobInfoGrid after assigning blobs to lines");
-  DisplayBoxes(line_sv);
-  mutils.waitForInput();
-#endif
-  // finished getting the lines of text for all colpartitions
-
-  // 2: Now that the blobs have been separated into lines, the next step is to
-  //    determine where the sentences are relative to those lines
-  //    use the api to figure out if words are valid
-  newapi->Init(tess->datadir.string(), tess->lang.string());
-  int linenum = 0;
+  // Determine where the sentences are relative to each row
+  // use the api to figure out if words are valid
+  //dbgDisplayRowText();
+  // walk through the rows
   bool sentence_found = false;
-  for(int reclineindx = 0; reclineindx < recognized_lines.length();
-      reclineindx++) {
-    char* linetxt = recognized_lines[reclineindx];
-    char prevchar = '\0';
-    int curwrdindex = 0; // to track the word index on the current line
-    for(int i = 0; i < strlen(linetxt); i++) {
-      char curchar = linetxt[i];
-      if(prevchar == ' ')
-        curwrdindex++;
+  for(int i = 0; i < rows.length(); ++i) {
+    // walk through the words on each row
+    ROW_INFO* rowinfo = rows[i];
+    GenericVector<WORD_INFO*> words = rowinfo->wordinfovec;
+    for(int j = 0; j < words.length(); ++j) {
+      if(words[j] == NULL)
+        continue;
+      if(words[j]->wordstr() == NULL)
+        continue;
+      const char* wordstr = words[j]->wordstr();
       if(!sentence_found) { // looking for the start of a sentence
-        if((prevchar == '\0' || prevchar == ' ') && isupper(curchar)) {
-          // if the uppercase letter is part of a valid word then we have the start of a sentence
-          // grab the rest of the word
-          int j = i;
-          for(j = i; linetxt[j] != ' '; j++);
-          int wrdlen = j - i;
-          char* uppercaseword = new char[wrdlen+1];
-          for(int k = 0; k < wrdlen; k++)
-            uppercaseword[k] = linetxt[i+k];
-          uppercaseword[wrdlen] = '\0';
-          if(islower(uppercaseword[1])) { // uppercase should be followed by a lowercase letter
-            if(newapi->IsValidWord(uppercaseword)) { // make sure its a valid word
-              // found the start of a sentence!!
-              Sentence* sentence = new Sentence;
-              sentence->start_line_num = linenum;
-              sentence->startchar_index = i;
-              sentence->startwrd_index = curwrdindex;
-              recognized_sentences.push_back(sentence);
-              sentence_found = true;
-            }
+        if(isupper(wordstr[0]) && islower(wordstr[1])) {
+          // see if the uppercase word is valid or not based on the api
+          if(api->IsValidWord(wordstr)) {
+            // found the start of a sentence!!
+            Sentence* sentence = new Sentence;
+            sentence->start_line_num = i; // start row index
+            sentence->startwrd_index = j;
+            recognized_sentences.push_back(sentence);
+            sentence_found = true;
           }
-          delete [] uppercaseword;
-          uppercaseword = NULL;
         }
       }
-      else { // looking for the end of the current sentence
-             // for now I'll assume a '.' or '?' is the end of the sentence
-             // (also I'll count the last character on the page as the end
-             // of a sentence if the page ends while a sentence ending is
-             // still being looked for)
-        if((curchar == '.') || (curchar == '?') ||
-            ((recognized_lines.length() == (reclineindx+1))
-            && (strlen(linetxt) == (i+1)))) {
+      else {  // looking for the end of the current sentence
+        // for now I'll assume a '.' or '?' is the end of the sentence
+        // (also I'll count the last character on the page as the end
+        // of a sentence if the page ends while a sentence ending is
+        // still being looked for)
+        char lastchar = wordstr[strlen(wordstr) - 1];
+        if((lastchar == '.') || (lastchar == '?') ||
+            ((rows.length() == (i+1))
+                && (words.length() == (j+1)))) {
+          // found the end of a sentence!!
           Sentence* sentence = (Sentence*)recognized_sentences.back();
-          sentence->end_line_num = linenum;
-          sentence->endchar_index = i;
-          sentence->endwrd_index = curwrdindex;
-          // need to copy all the text found in the sentence over to the structure
-          const int startln = sentence->start_line_num;
-          const int startchr = sentence->startchar_index;
-          const int endln = sentence->end_line_num;
-          const int endchr = sentence->endchar_index;
-          int charcount = 0;
-          bool done = false;
-          // first need to count the characters
-          for(int i = startln; i <= endln; i++) {
-            char* ln = recognized_lines[i];
-            for(int j = (i == startln ? startchr : 0); j < strlen(ln); j++) {
-              charcount++;
-              if(i == endln && j == endchr) {
-                done = true;
-                break;
-              }
-            }
-            if(done)
-              break;
-          }
-          char* newsentence = new char[charcount+1]; // allocate the memory
-          int charindex = 0;
-          done = false;
-          // now copy everything over
-          for(int i = startln; i <= endln; i++) {
-            char* ln = recognized_lines[i];
-            for(int j = (i == startln ? startchr : 0); j < strlen(ln); j++) {
-              newsentence[charindex] = ln[j];
-              if(i == endln && j == endchr) {
-                done = true;
-                break;
-              }
-              charindex++;
-            }
-            if(done)
-              break;
-          }
-          newsentence[charcount] = '\0';
-          sentence->sentence_txt = newsentence; // finally set the datastructure
+          sentence->end_line_num = i;
+          sentence->endwrd_index = j;
+          copyRowTextIntoSentence(sentence);
           sentence_found = false;
         }
       }
-      prevchar = curchar;
     }
-    linenum++;
   }
 
   // Done finding the sentences, optional debugging below
@@ -891,302 +622,39 @@ void BlobInfoGrid::findSentences() {
          << endl << "------\n";
   }
   cout << "................................................\n";
-  mutils.waitForInput();
+  M_Utils::waitForInput();
 #endif
 
-  // 3. Now the next step is to assign each blob in the BlobInfoGrid to a sentence
-  //    if it belongs to a textline that's part of one
-#ifdef DBG_INFO_GRID
-  const int dbgline = -1;
-#endif
-  bigs.StartFullSearch();
-  BLOBINFO* bb = NULL;
-  char* prevwrdstr = NULL;
-  BLOBINFO* prevbb = NULL;
-  int prevwrdindex = 0;
-  int prevlineindex = -1;
-  while((bb = bigs.NextFullSearch()) != NULL) {
-    const int lineindex = bb->linestrindex; // the text line this blob belongs to
-    // first find all the candidate sentences, these are the sentences that
-    // are on the same line as this blob. If there is only one or none of
-    // these then the job is done. If there are more than one then there's
-    // more than one sentence on the line this blob belongs to and we need
-    // to figure out which one
-    if(lineindex == -1)
-      continue;
-    GenericVector<int> sentence_candidates;
-    int sentence_index = 0;
-    for(int i = 0; i < recognized_sentences.length(); i++) {
-      Sentence* cursentence = recognized_sentences[i];
-      int cs_startln = cursentence->start_line_num;
-      int cs_endln = cursentence->end_line_num;
-      if((cs_startln <= lineindex) && (lineindex <= cs_endln))
-        sentence_candidates.push_back(sentence_index);
-      sentence_index++;
+  // Now walk through the rows and words again, this time assigning all of the
+  // blobs to the sentence to which they belong.
+  int sentence_index = 0;
+  for(int i = 0; i < rows.length(); ++i) {
+    ROW_INFO* rowinfo = rows[i];
+    GenericVector<WORD_INFO*> words = rowinfo->wordinfovec;
+    for(int j = 0; j < words.length(); ++j) {
+      WORD_INFO* wordinfo = words[j];
+      // find which sentence this word belongs to if any based on the
+      // current row and word indices.
+      int sentence_index = findSentence(i, j);
+      if(sentence_index < 0) {
+        continue;
+      }
+      GenericVector<BLOBINFO*> blobs = wordinfo->blobs;
+      for(int k = 0; k < blobs.length(); ++k)
+        blobs[k]->sentenceindex = sentence_index;
     }
-
-#ifdef DBG_INFO_GRID
-    if(lineindex == dbgline) {
-      cout << "displaying a bounding box that was set to line " << lineindex << endl;
-      mutils.dispHlBlobInfoRegion(bb, img);
-      mutils.waitForInput();
-    }
-#endif
-    char* curwrdstr = bb->wordstr;
-#ifdef DBG_INFO_GRID
-    if(lineindex == dbgline) {
-      cout << "--------------------------\nthe candidates for the following line:\n"
-           << recognized_lines[lineindex] << endl;
-      for(int i = 0; i < sentence_candidates.length(); i++) {
-        int candidate = sentence_candidates[i];
-        cout << i << ": " << recognized_sentences[candidate]->sentence_txt << endl;
-      }
-      cout << "-----\n";
-      cout << "displaying the blob at coordinates:\n";
-      BOX* bbbox = mutils.getBlobInfoBox(bb, img);
-      mutils.dispBoxCoords(bbbox);
-      mutils.dispBlobInfoRegion(bb, img);
-      mutils.dispHlBlobInfoRegion(bb, img);
-      mutils.waitForInput();
-      boxDestroy(&bbbox);
-    }
-#endif
-    sentence_index = 0;
-    if(sentence_candidates.empty())
-      goto moveon; // the blob has no sentence, move on
-    if(sentence_candidates.size() == 1) {
-      // make sure the word index is within the sentence's bounds
-      int wordindex = bb->linewordindex; // this gives an estimate but may be wrong
-#ifdef DBG_INFO_GRID
-      if(lineindex == dbgline)
-        cout << "there's only one sentence candidate for the word, "
-             << ((bb->wordstr == NULL) ? "NULL" : bb->wordstr) << ", with wordindex: "
-             << wordindex << endl;
-#endif
-      Sentence* candidate = recognized_sentences[sentence_candidates[0]];
-#ifdef DBG_INFO_GRID
-      if(lineindex == dbgline) {
-        cout << " a blob with the following line is a candidate for the following sentence::\n";
-        cout << "line index: " << lineindex << endl;
-        cout << "line:\n" << recognized_lines[lineindex] << endl;
-        cout << "sentence:\n" << recognized_sentences[sentence_candidates[0]]->sentence_txt << endl;
-        cout << "the sentence's start line index is "
-             << recognized_sentences[sentence_candidates[0]]->start_line_num
-             << " and the end line is "
-             << recognized_sentences[sentence_candidates[0]]->end_line_num << endl;
-        cout << "the sentence is sentence number " << sentence_candidates[0] << endl;
-        mutils.waitForInput();
-      }
-#endif
-      if(candidate->start_line_num == candidate->end_line_num) {
-#ifdef DBG_INFO_GRID
-        if(lineindex == dbgline)
-          cout << "the sentence starts and ends on the same line!\n";
-#endif
-        if(wordindex >= candidate->startwrd_index && wordindex <= candidate->endwrd_index) {
-#ifdef DBG_INFO_GRID
-          if(lineindex == dbgline)
-            cout << "blob's word is within the sentence's bounds! so found it!\n";
-#endif
-          bb->sentenceindex = sentence_candidates[0]; // found it!
-        }
-      }
-      else {
-#ifdef DBG_INFO_GRID
-        if(lineindex == dbgline)
-#endif
-        if(lineindex > candidate->start_line_num && lineindex < candidate->end_line_num) {
-#ifdef DBG_INFO_GRID
-          if(lineindex == dbgline)
-            cout << "the blob is in between the start and end line! Got it!\n";
-#endif
-          bb->sentenceindex = sentence_candidates[0]; // found it!
-        }
-        if(lineindex == candidate->start_line_num) {
-#ifdef DBG_INFO_GRID
-          if(lineindex == dbgline)
-            cout << "the blob is on the start line!\n";
-#endif
-          if(wordindex >= candidate->startwrd_index) {
-#ifdef DBG_INFO_GRID
-            if(lineindex == dbgline)
-              cout << "the blob is after the start word so got it!\n";
-#endif
-            bb->sentenceindex = sentence_candidates[0]; // found it!
-          }
-        }
-        if(lineindex == candidate->end_line_num) {
-#ifdef DBG_INFO_GRID
-          if(lineindex == dbgline)
-            cout << "the blob is on the end line!\n";
-#endif
-          if(wordindex <= candidate->endwrd_index) {
-#ifdef DBG_INFO_GRID
-            if(lineindex == dbgline)
-              cout << "the blob is before the end of the sentence so got it!\n";
-#endif
-            bb->sentenceindex = sentence_candidates[0]; // found it!
-          }
-        }
-      }
-    }
-    else { // more than one sentence candidate for this blob
-      if(bb->wordstr == NULL) { // if we get to this point we'll need the string of the
-                                // recognized word belonging to the blob in order to move forward
-        // without it we just move on
-        goto moveon;
-      }
-#ifdef DBG_INFO_GRID
-      if(lineindex == dbgline) {
-        cout << "sentence candidates:\n";
-        cout << "the candidates for the following line:\n" << recognized_lines[lineindex] << endl;
-        cout << "and the following word on that line: " << bb->wordstr << endl;
-        int canindex = 0;
-        for(int i = 0; i < sentence_candidates.length(); i++) {
-          int candidate = sentence_candidates[i];
-          cout << canindex << ": " << recognized_sentences[candidate]->sentence_txt << endl;
-          canindex++;
-        }
-      }
-#endif
-      // theres more than one candidate, figure out where on its text
-      // line the blob is
-      int wordindex = bb->linewordindex; // this gives an estimate but may be wrong
-#ifdef DBG_INFO_GRID
-      if(lineindex == dbgline)
-        cout << "with wordindex: " << wordindex << endl;
-#endif
-      if(wordindex == -1)
-        goto moveon;
-
-      // find the word this wordindex corresponds to on the blob's line
-      char* linetxt = recognized_lines[lineindex];
-      int wordcount = recognized_lines_numwrds[lineindex];
-      if(wordindex > wordcount) {
-#ifdef DBG_INFO_GRID
-        cout << "the blob corresponding to the word " << bb->wordstr
-             << " one line # " << lineindex
-             << " has a word index outside the bounds of its line!\n";
-        cout << "here is the line:\n";
-        cout << linetxt << endl;
-        cout << "here is the word index: " << wordindex << endl;
-        cout << "here is the number of words expected on teh line: " << wordcount << endl;
-        cout << "updating for now...\n";
-        mutils.waitForInput();
-#endif
-        recognized_lines_numwrds[lineindex] = wordindex + 1;
-      }
-      // found the blob's word on the line, now figure out which
-      // candidate sentence contains the word at this word index
-      const int linewordindex = wordindex;
-      int can_index = 0;
-      for(int i = 0; i < sentence_candidates.length(); i++) {
-        int candidate = sentence_candidates[i];
-        Sentence* c_sentence = recognized_sentences[candidate];
-#ifdef DBG_INFO_GRID
-        if(lineindex == dbgline)
-          cout << "checking candidate " << can_index << endl;
-#endif
-        // if its on a line in between the start and end line of this setence we know
-        // this is the one
-        if(lineindex != c_sentence->start_line_num
-            && lineindex != c_sentence->end_line_num) {
-          // found the sentence!! set it and break
-#ifdef DBG_INFO_GRID
-          if(lineindex == dbgline)
-            cout << "detected as on a line in between the start and end line of sentence # "
-                 << candidate << ", sentence found!!\n";
-#endif
-          bb->sentenceindex = candidate;
-          break;
-        }
-        // if the sentence starts and ends on the same line
-        if(c_sentence->start_line_num == c_sentence->end_line_num) {
-          // and we're at an index before it ends and after it starts we've got it
-#ifdef DBG_INFO_GRID
-          if(lineindex == dbgline)
-            cout << "the sentence starts and ends on the same line!\n";
-#endif
-          if(lineindex == c_sentence->start_line_num
-              && linewordindex <= c_sentence->endwrd_index
-              && linewordindex >= c_sentence->startwrd_index) {
-#ifdef DBG_INFO_GRID
-            if(lineindex == dbgline)
-              cout << "at an index before sentence # " << candidate
-                   << " ends but after it starts! found it!!\n";
-#endif
-            // found the sentence!!
-            bb->sentenceindex = candidate;
-            break;
-          }
-        }
-        // if the sentence doesn't start and end on the same line
-        else {
-          // if we're on the sentence's start line just need to make sure that
-          // we're at an index after the sentence starts
-#ifdef DBG_INFO_GRID
-          if(lineindex == dbgline)
-            cout << "the sentence starts and ends on different lines\n";
-#endif
-          if(lineindex == c_sentence->start_line_num) {
-#ifdef DBG_INFO_GRID
-            if(lineindex == dbgline)
-              cout << "on the sentence's start line!\n";
-#endif
-            if(linewordindex >= c_sentence->startwrd_index) {
-#ifdef DBG_INFO_GRID
-              if(lineindex == dbgline)
-                cout << " the character is after the start of sentence # "
-                     << candidate << ". found it!!!\n";
-#endif
-              // found it!!
-              bb->sentenceindex = candidate;
-              break;
-            }
-          }
-          // if we're on the sentence's end line just make sure that we're at
-          // an index before the sentence ends
-          if(lineindex == c_sentence->end_line_num) {
-#ifdef DBG_INFO_GRID
-            if(lineindex == dbgline) {
-              cout << "on the sentence's end line!!\n";
-              cout << "the word index is " << linewordindex << " and the sentence ends on index " << c_sentence->endwrd_index << endl;
-            }
-#endif
-            if(linewordindex <= c_sentence->endwrd_index) {
-#ifdef DBG_INFO_GRID
-              if(lineindex == dbgline)
-                cout << "the character is before the end of sentence # "
-                     << candidate << ". found it!!!\n";
-#endif
-              // found it!!
-              bb->sentenceindex = candidate;
-              break;
-            }
-          }
-        }
-        can_index++;
-      }
-    }
-    moveon:
-    prevbb = bb;
-    prevwrdstr = curwrdstr;
-    prevlineindex = lineindex;
-    prevwrdindex = bb->linewordindex;
-    sentence_candidates.clear();
   }
 #ifdef DBG_INFO_GRID
   sentence_sv = MakeWindow(100, 100, "BlobInfoGrid after getting the sentences");
   DisplayBoxes(sentence_sv);
-  mutils.waitForInput();
+  M_Utils::waitForInput();
 #endif
-  newapi->End();
   getSentenceRegions();
 }
 
 
 void BlobInfoGrid::getSentenceRegions() {
-  M_Utils mutils;
+
 #ifdef DBG_INFO_GRID_S
   int dbgsentence = -1;
 #endif
@@ -1195,15 +663,15 @@ void BlobInfoGrid::getSentenceRegions() {
   //    that sentence)
   for(int j = 0; j < recognized_sentences.length(); j++) {
     Sentence* cursentence = recognized_sentences[j];
-    int startline = cursentence->start_line_num;
-    int endline = cursentence->end_line_num;
-    int numlines = endline - startline + 1;
+    const int startline = cursentence->start_line_num;
+    const int endline = cursentence->end_line_num;
+    const int numlines = endline - startline + 1;
 #ifdef DBG_INFO_GRID_S
     if(j == dbgsentence) {
       cout << "about to find line boxes for sentence " << j << ":\n";
       cout << recognized_sentences[j]->sentence_txt << endl;
       cout << "the lines of this sentence are " << startline << "-" << endline << endl;
-      mutils.waitForInput();
+      M_Utils::waitForInput();
     }
 #endif
     // holds separate box for each line of the sentence
@@ -1224,8 +692,8 @@ void BlobInfoGrid::getSentenceRegions() {
     // find the bounding boxes for each line of the sentence
     while((blob = bigs.NextFullSearch()) != NULL) {
       if(blob->sentenceindex == j) {
-        BOX* blobbox = mutils.getBlobInfoBox(blob, img);
-        int blobline = blob->linestrindex;
+        BOX* blobbox = M_Utils::getBlobInfoBox(blob, img);
+        int blobline = blob->row_index;
         if(blobline < startline || blobline > endline) {
           // blob was incorrectly assigned to a sentence
           cout << "ERROR: A blob was incorrectly assigned to a sentence (ignoring for now)\n";
@@ -1235,13 +703,13 @@ void BlobInfoGrid::getSentenceRegions() {
 #ifdef DBG_INFO_GRID_S
         if(j == dbgsentence) {
           cout << "the displayed blob belongs to the sentence\n";
-          mutils.dispHlBlobInfoRegion(blob, img);
-          if(blob->wordstr != NULL)
-            cout << "it belongs to the following word: " << blob->wordstr << endl;
+          M_Utils::dispHlBlobInfoRegion(blob, img);
+          if(blob->wordstr() != NULL)
+            cout << "it belongs to the following word: " << blob->wordstr() << endl;
           cout << "it belongs to following line #: " << blobline << endl;
           cout << "the blob's coords are:\n";
-          mutils.dispBoxCoords(blobbox);
-          mutils.waitForInput();
+          M_Utils::dispBoxCoords(blobbox);
+          M_Utils::waitForInput();
         }
 #endif
         int s_line = blobline - startline; // line relative to sentence
@@ -1272,21 +740,22 @@ void BlobInfoGrid::getSentenceRegions() {
     bottoms.clear();
   }
 
+  // TODO: Decide whether or not to keep this... Likely is no longer applicable...
   // Reiterate through the grid to make sure each blob is assigned
   // to the sentence to which it belongs. If a blob's bounding box
   // intersects with a line of a sentence then it should belong to
   // that sentence (some blobs may have been missed during initial
   // assignment).
-  BLOBINFO* curblob = NULL;
+/*  BLOBINFO* curblob = NULL;
   BlobInfoGridSearch bigs(this);
   bigs.StartFullSearch();
   while((curblob = bigs.NextFullSearch()) != NULL) {
     // if it's already been assigned a sentence then move on
     if(curblob->sentenceindex != -1)
       continue;
-    Box* bbox = mutils.getBlobInfoBox(curblob, img);
+    Box* bbox = M_Utils::getBlobInfoBox(curblob, img);
     bool found = false;
-    for(int j = 0; j < recognized_sentences.length(); j++) {
+    for(int j = 0; j < recognized_sentences.length(); ++j) {
       Boxa* cursentenceboxes = recognized_sentences[j]->lineboxes;
       for(int k = 0; k < cursentenceboxes->n; k++) {
         Box* linebox = boxaGetBox(cursentenceboxes, k, L_CLONE);
@@ -1303,15 +772,14 @@ void BlobInfoGrid::getSentenceRegions() {
         break;
     }
     boxDestroy(&bbox);
-  }
+  }*/
 
 #ifdef DBG_INFO_GRID_S
 #ifdef DBG_INFO_GRID_SHOW_SENTENCE_REGIONS
   // for debugging, color the blobs for each sentence region and display the results
   // while showing the contents of the sentence on the terminal. do one at
   // a time requiring user input to continue in between displaying each sentence
-  Lept_Utils lu;
-  bool displayon = false;
+  bool displayon = true;
   bool showlines = false; // if showlines is false then highlights the blobs
                           // belonging to each sentence, otherwise highlights
                           // the lines belonging to each sentence
@@ -1320,16 +788,15 @@ void BlobInfoGrid::getSentenceRegions() {
   dbgim = pixConvertTo32(dbgim);
   static int sentencedbgimnum = 1;
   string sentencedbgname = (string)"SentenceDBG"
-      + Basic_Utils::intToString(sentencedbgimnum);
-  sentencedbgimnum++;
+      + Basic_Utils::intToString(sentencedbgimnum++);
   string sentencefilename = sentencedbgname + ".txt";
   ofstream sentencedbgfile(sentencefilename.c_str());
   if(!sentencedbgfile.is_open()) {
-    cout << "ERROR: Could not open debug file for writing in " \
+    cout << "ERROR: Could not open debug file for writing in "
          << sentencefilename << endl;
     exit(EXIT_FAILURE);
   }
-  for(int j = 0; j < recognized_sentences.length(); j++) {
+  for(int j = 0; j < recognized_sentences.length(); ++j) {
     Sentence* cursentence = recognized_sentences[j];
     sentencedbgfile << j << ": " << cursentence->sentence_txt
                     << "\n\n----------------------------------\n\n";
@@ -1343,21 +810,21 @@ void BlobInfoGrid::getSentenceRegions() {
         cout << "about to display each individual blob for the following sentence:\n"\
              << cursentence->sentence_txt << endl;
       }
-      mutils.waitForInput();
+      M_Utils::waitForInput();
     }
     if(showlines) {
       for(int k = 0; k < cursentencelines->n; k++) {
         BOX* sentenceline = boxaGetBox(cursentencelines, k, L_CLONE);
-        mutils.dispBoxCoords(sentenceline);
-        lu.fillBoxForeground(dbgim, sentenceline, color);
+        M_Utils::dispBoxCoords(sentenceline);
+        Lept_Utils::fillBoxForeground(dbgim, sentenceline, color);
         if(j == dbgsentence) {
           cout << "highlighting blobs in line " << k + cursentence->start_line_num
                << " of sentence " << j << endl;
           cout << "here is the line's text:\n";
-          cout << recognized_lines[k+cursentence->start_line_num] << endl;
+          cout << rows[k+cursentence->start_line_num]->getRowText() << endl;
           if(displayon) {
             pixDisplay(dbgim, 100, 100);
-            mutils.waitForInput();
+            M_Utils::waitForInput();
           }
         }
         boxDestroy(&sentenceline); // destroy the clone (reduce reference count back to 1)
@@ -1369,8 +836,8 @@ void BlobInfoGrid::getSentenceRegions() {
       bigs.StartFullSearch();
       while((curblob = bigs.NextFullSearch()) != NULL) {
         if(curblob->sentenceindex == j) {
-          BOX* curbox = mutils.getBlobInfoBox(curblob, img);
-          lu.fillBoxForeground(dbgim, curbox, color);
+          BOX* curbox = M_Utils::getBlobInfoBox(curblob, img);
+          Lept_Utils::fillBoxForeground(dbgim, curbox, color);
           boxDestroy(&curbox);
         }
       }
@@ -1385,7 +852,7 @@ void BlobInfoGrid::getSentenceRegions() {
     cout << "lines: " << cursentence->start_line_num << "-" << cursentence->end_line_num << endl;
     if(displayon) {
       pixDisplay(dbgim, 100, 100);
-      mutils.waitForInput();
+      M_Utils::waitForInput();
     }
     color = (color == LayoutEval::GREEN) ? LayoutEval::RED
         : (LayoutEval::Color)(color + 1);
@@ -1393,6 +860,199 @@ void BlobInfoGrid::getSentenceRegions() {
   pixDestroy(&dbgim);
 #endif
 #endif
+}
+
+void BlobInfoGrid::initRowInfo(ROW_RES* rowres) {
+  ROW_INFO* row = new ROW_INFO;
+  row->rowres = rowres;
+  rows.push_back(row);
+}
+
+bool BlobInfoGrid::findValidWordOnRow(ROW_INFO* rowinfo) {
+  WERD_RES_LIST* wordreslist = rowinfo->words;
+  WERD_RES_IT wordresit1(wordreslist);
+  wordresit1.move_to_first();
+  bool row_has_valid = false;
+  for(int k = 0; k < wordreslist->length(); k++) {
+    WERD_RES* wordres = wordresit1.data();
+    WERD_CHOICE* wordchoice = wordres->best_choice;
+    if(wordchoice != NULL) {
+      const char* wrd = wordchoice->unichar_string().string();
+      if(api->IsValidWord(wrd)) {
+        rowinfo->has_valid_word = true;
+        return true;
+      }
+    }
+    wordresit1.forward();
+  }
+  return false;
+}
+
+void BlobInfoGrid::addWordToLastRowInfo(WERD_RES* word) {
+  ROW_INFO* rowinfo = rows.back();
+  WORD_INFO* wordinfo = new WORD_INFO;
+  wordinfo->wordres = word;
+  wordinfo->rowinfo = rowinfo; // pointer to parent
+  rowinfo->push_back_wordinfo(wordinfo);
+}
+
+void BlobInfoGrid::addBlobToLastRowWord(BLOBINFO* blob) {
+  ROW_INFO* rowinfo = rows.back();
+  WORD_INFO* wordinfo = rowinfo->get_wordinfo_last();
+  wordinfo->blobs.push_back(blob);
+}
+
+BlobIndices BlobInfoGrid::removeAllBlobOccurrences(BLOBINFO* blob) {
+  // walk through the page removing all occurrences of the given blob
+  // and storing the index of each occurrence.
+  BlobIndices indices;
+  // for now I'll assume that the blob can only possibly appear on the
+  // current row and the ones above and below it. if there's still segmentation
+  // faults then I will need to expand the search window or take some other
+  // precaution.
+  const int blobrowindex = blob->row_index;
+  const int startrowindex = (blobrowindex > 0) ? (blobrowindex-1) : 0;
+  const int endrowindex = (blobrowindex < (rows.length()-1))
+      ? (blobrowindex+1) : blobrowindex;
+  for(int i = startrowindex; i <= endrowindex; ++i) {
+    ROW_INFO* cur_row = rows[i];
+    GenericVector<WORD_INFO*> words = cur_row->wordinfovec;
+    for(int j = 0; j < words.length(); ++j) {
+      WORD_INFO* word = words[j];
+      int blob_removed_index = word->removeBlob(blob);
+      if(blob_removed_index != -1) {
+        BlobIndex blbidx;
+        blbidx.blobindex = blob_removed_index;
+        blbidx.wordindex = j;
+        blbidx.rowindex = i;
+        indices.push_back(blbidx);
+        --j; // this is the worst kind of bug.. took > 3 hours to realize I needed this...
+             // needed because a duplicate blob often occurs more than once in the same
+             // word. Thus need to stay on the same word until all duplicates removed. could
+             // have used a separate while loop instead but this works fine.
+      }
+    }
+  }
+  return indices;
+}
+
+void BlobInfoGrid::insertBlobReplacements(BLOBINFO* blob,
+    const BlobIndices& replacement_indices, const int& replacement_num) {
+  for(int i = 0; i < replacement_indices.length(); ++i) {
+    BlobIndex r_index = replacement_indices[i];
+    const int rowindex = r_index.rowindex;
+    const int wordindex = r_index.wordindex;
+    const int blobindex = r_index.blobindex;
+    ROW_INFO* rowinfo = rows[rowindex];
+    WORD_INFO* wordinfo = rowinfo->wordinfovec[wordindex];
+    int wordsize = wordinfo->blobs.length();
+    int newindex = blobindex + replacement_num;
+    if(newindex < wordsize)
+      wordinfo->blobs.insert(blob, newindex);
+    else
+      wordinfo->blobs.push_back(blob);
+  }
+}
+
+void BlobInfoGrid::dbgDisplayRowText() {
+  for(int i = 0; i < rows.length(); ++i) {
+    ROW_INFO* rowinfo = rows[i];
+    GenericVector<WORD_INFO*> words = rowinfo->wordinfovec;
+    for(int j = 0; j < words.length(); ++j) {
+      if(words[j] == NULL)
+        continue;
+      const char* wordstr = words[j]->wordstr();
+      if(wordstr == NULL)
+        continue;
+      cout << wordstr << " ";
+    }
+    cout << endl;
+  }
+  cout << "\n------------------------------\n\n";
+}
+
+void BlobInfoGrid::copyRowTextIntoSentence(Sentence* sentence) {
+  const int startln = sentence->start_line_num;
+  const int endln = sentence->end_line_num;
+  const int startwrd = sentence->startwrd_index;
+  const int endwrd = sentence->endwrd_index;
+  assert(startln > -1 && endln > -1 && startwrd > -1 && endwrd > -1);
+  int charcount = 0;
+  // first need to count the characters
+  for(int i = startln; i <= endln; ++i) {
+    ROW_INFO* rowinfo = rows[i];
+    GenericVector<WORD_INFO*> words = rowinfo->wordinfovec;
+    int start = 0, end = words.length() - 1;
+    if(i == startln)
+      start = startwrd;
+    if(i == endln)
+      end = endwrd;
+    for(int j = start; j <= end; ++j) {
+      if(words[j] == NULL)
+        continue;
+      const char* wordstr = words[j]->wordstr();
+      if(wordstr == NULL)
+        continue;
+      charcount += strlen(wordstr);
+      // add room for space and new line
+      ++charcount;
+    }
+  }
+  char* newsentence = new char[charcount+1]; // allocate the memory
+  int charindex = 0;
+  // now copy everything over
+  for(int i = startln; i <= endln; ++i) {
+    ROW_INFO* rowinfo = rows[i];
+    GenericVector<WORD_INFO*> words = rowinfo->wordinfovec;
+    int start = 0, end = words.length() - 1;
+    if(i == startln)
+      start = startwrd;
+    if(i == endln)
+      end = endwrd;
+    for(int j = start; j <= end; ++j) {
+      if(words[j] == NULL)
+        continue;
+      const char* wordstr = words[j]->wordstr();
+      if(wordstr == NULL)
+        continue;
+      for(int k = 0; k < strlen(wordstr); ++k) {
+        newsentence[charindex++] = wordstr[k];
+      }
+      if(j != end)
+        newsentence[charindex++] = ' ';
+      else
+        newsentence[charindex++] = '\n';
+    }
+  }
+  newsentence[charcount] = '\0';
+  sentence->sentence_txt = newsentence; // finally set the datastructure
+}
+
+int BlobInfoGrid::findSentence(const int& rowindex, const int& wordindex) {
+  for(int i = 0; i < recognized_sentences.length(); ++i) {
+    Sentence* cursentence = recognized_sentences[i];
+    const int s_start_row = cursentence->start_line_num;
+    const int s_end_row = cursentence->end_line_num;
+    const int s_start_word = cursentence->startwrd_index;
+    const int s_end_word = cursentence->endwrd_index;
+    if(rowindex < s_start_row || rowindex > s_end_row)
+      continue;
+    else if(rowindex == s_start_row && rowindex != s_end_row) {
+      if(wordindex >= s_start_word)
+        return i;
+    }
+    else if(rowindex == s_end_row && rowindex != s_start_row) {
+      if(wordindex <= s_end_word)
+        return i;
+    }
+    else if(rowindex == s_end_row && rowindex == s_start_row) {
+      if(wordindex >= s_start_word && wordindex <= s_end_word)
+        return i;
+    }
+    else if(rowindex > s_start_row && rowindex < s_end_row)
+      return i;
+  }
+  return -1;
 }
 
 void BlobInfoGrid::HandleClick(int x, int y) {
@@ -1404,8 +1064,8 @@ void BlobInfoGrid::HandleClick(int x, int y) {
   if(bb == NULL)
     return;
   cout << "the word corresponding to the blob you clicked:\n";
-  if(bb->wordstr != NULL) {
-    cout << bb->wordstr << endl;
+  if(bb->wordstr() != NULL) {
+    cout << bb->wordstr() << endl;
     if(bb->validword)
       cout << "the blob is in a valid word!\n";
   }
@@ -1413,10 +1073,10 @@ void BlobInfoGrid::HandleClick(int x, int y) {
     cout << "(NULL)\n";
   cout << "The tesseract boundingbox: \n";
   TBOX t = bb->bounding_box();
-  mutils.dispTBoxCoords(&t);
+  M_Utils::dispTBoxCoords(&t);
   if(bb->row_has_valid) {
     cout << "The blob is on a row with atleast one valid word!\n";
-    cout << "The baseline for the blob is at y = " << bb->row->base_line(bb->left()) << endl;
+    cout << "The baseline for the blob is at y = " << bb->row()->base_line(bb->left()) << endl;
     cout << "The blob's bottom y is at " << bb->bottom() << endl;
     //ScrollView* baselineview = new ScrollView("baseline", 300, 100,
     //                        img->w, img->h, img->w, img->h, false);
@@ -1435,27 +1095,26 @@ void BlobInfoGrid::HandleClick(int x, int y) {
     cp = cpgs.NextFullSearch();
   }
   cout << "on partition number " << partnum << endl; // here ^*/
-  if(bb->linestrindex != -1) {
-    if(recognized_lines[bb->linestrindex] != NULL) {
-      cout << "the blob you clicked on belongs to the following text line at line index " << bb->linestrindex << ":\n"
-          << recognized_lines[bb->linestrindex] << endl;
-    }
+  if(bb->row() != NULL) {
+    string rowstr = bb->rowinfo()->getRowText();
+    if(rowstr.empty())
+      cout << "blob belongs to a row that didn't have any recognized text\n";
     else
-      cout << "the blob you clicked on belongs to text line " << bb->linestrindex << ", which is NULL\n";
+      cout << "blob belongs to row recognized wtih the follwing text:\n" << rowstr << endl;
   }
   else
-    cout << "the blob you clicked on was not assigned a text line\n";
+    cout << "\nthe blob you clicked on was not assigned a text line\n";
   if(bb->sentenceindex == -1)
-    cout << "the blob you clicked on was not assigned a sentence\n......\n";
+    cout << "\nthe blob you clicked on was not assigned a sentence\n......\n";
   else if(recognized_sentences[bb->sentenceindex] != NULL) {
-    cout << "the blob you clicked on belongs to the following sentence:\n"
+    cout << "\nthe blob you clicked on belongs to the following sentence:\n"
          << recognized_sentences[bb->sentenceindex]->sentence_txt << endl << "......\n";
   }
   else
     cout << "the blob you clicked belongs to sentence number " << bb->sentenceindex << ", which is NULL\n......\n";
 #ifdef SHOW_BLOB_WINDOW
-    mutils.dispHlBlobInfoRegion(bb, img);
-    mutils.dispBlobInfoRegion(bb, img);
+    M_Utils::dispHlBlobInfoRegion(bb, img);
+    M_Utils::dispBlobInfoRegion(bb, img);
 #endif
     if(dbgfeatures)
       dbgDisplayBlobFeatures(bb);
@@ -1467,28 +1126,27 @@ void BlobInfoGrid::dbgDisplayBlobFeatures(BLOBINFO* blob) {
     exit(EXIT_FAILURE);
   }
   vector<double> features = blob->features;
+  if(features.size() != featformat.length())
+    cout << "features.size(): " << features.size() << ". featformat.length(): "
+         << featformat.length() << endl;
   assert(features.size() == featformat.length());
   cout << "Displaying extracted blob features\n------------------\n";
   for(int i = 0; i < featformat.length(); i++)
     cout << featformat[i] << ": " << features[i] << endl;
 #ifdef DBG_BASELINE
-  assert(valid_rows_avg_baselinedist.length() == valid_rows.length());
   if(!blob->row_has_valid) {
     cout << "blob doesn't belong to a valid row\n";
     return;
   }
-  int rowindex = -1;
-  for(int i = 0; i < valid_rows_avg_baselinedist.length(); i++) {
-    if(blob->row == valid_rows[i])
-      rowindex = i;
-  }
+  int rowindex = blob->row_index;
   cout << "rowindex: " << rowindex << endl;
   assert(rowindex != -1);
-  cout << "\n\nrow's average baseline distance: " << valid_rows_avg_baselinedist[rowindex] << endl;
+  assert(rows[rowindex]->rowid == blob->rowinfo()->rowid);
+  cout << "\n\nrow's average baseline distance: " << rows[rowindex]->avg_baselinedist << endl;
   cout << "blob's distance from baseline: " << blob->dist_above_baseline << endl;
   cout << "blob's bottom: " << blob->bottom() << endl;
-  cout << "row's baseline at blob location: " << valid_rows[rowindex]->base_line(blob->centerx()) << endl;
-  cout << "row's height: " << valid_rows[rowindex]->bounding_box().height() << endl;
+  cout << "row's baseline at blob location: " << rows[rowindex]->row()->base_line(blob->centerx()) << endl;
+  cout << "row's height: " << rows[rowindex]->row()->bounding_box().height() << endl;
 #endif
   cout << "------------------------------------------------------\n";
 }

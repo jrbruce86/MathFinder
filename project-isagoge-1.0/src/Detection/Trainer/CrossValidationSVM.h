@@ -10,7 +10,7 @@
  *              allow for more separation between the classification and
  *              training tasks. In DLib they are more paired together so it
  *              is easier to just implement all the training within the
- *              classifier itself. This is essentially just a placeholder...
+ *              classifier itself. This class is just a placeholder...
  * ------------------------------------------------------------------------
  * This file is part of Project Isagoge.
  *
@@ -40,21 +40,24 @@ class CrossValidatorSVM {
   typedef IBinaryClassifier<BinClassType> IClassifier;
 
  public:
-  CrossValidatorSVM<BinClassType>() {}
+  CrossValidatorSVM<BinClassType>() : classifier(NULL) {}
 
-  inline void initTraining(IClassifier& classifier_) {
+  // memory management of the classifier is handled by the interface
+  // for this class (ITrainer)
+  ~CrossValidatorSVM<BinClassType>() {}
+
+  inline void initTraining(IClassifier* classifier_) {
     classifier = classifier_;
   }
 
-  inline IClassifier train_(const vector<vector<BLSample*> >& samples) {
-    classifier.doTraining(samples);
+  inline IClassifier* train_(const vector<vector<BLSample*> >& samples) {
+    classifier->doTraining(samples);
     return classifier;
   }
 
-  inline void reset() {
-  }
+  inline void reset() {}
 
-  IClassifier classifier;
+  IClassifier* classifier;
 };
 
 #endif

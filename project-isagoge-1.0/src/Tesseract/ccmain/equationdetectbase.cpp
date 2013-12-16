@@ -23,11 +23,9 @@
 
 namespace tesseract {
 
-EquationDetectBase::EquationDetectBase() {
-}
+EquationDetectBase::EquationDetectBase() {}
 
-EquationDetectBase::~EquationDetectBase() {
-}
+EquationDetectBase::~EquationDetectBase() {}
 
 void EquationDetectBase::SetLangTesseract(Tesseract* lang_tesseract){}
 

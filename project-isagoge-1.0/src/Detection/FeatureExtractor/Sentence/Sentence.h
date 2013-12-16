@@ -31,8 +31,8 @@
 struct Sentence {
   typedef GenericVector<NGramFrequency*> RankedNGramVec;
   typedef GenericVector<RankedNGramVec> RankedNGramVecs;
-  Sentence() : start_line_num(-1), startchar_index(-1), startwrd_index(-1),
-      end_line_num(-1), endchar_index(-1), endwrd_index(-1), ismath(false),
+  Sentence() : start_line_num(-1), startwrd_index(-1),
+      end_line_num(-1), endwrd_index(-1), ismath(false),
       sentence_txt(NULL), ngram_features(NULL), lineboxes(NULL), ngrams(NULL) {}
 
   ~Sentence() {
@@ -57,10 +57,8 @@ struct Sentence {
   }
 
   int start_line_num; // which line does the sentence start on
-  int startchar_index; // where on the start line does the sentence start
   int startwrd_index; // on what word on the start line does the sentence start
   int end_line_num; // which line does the sentence end on
-  int endchar_index; // where on the end line does the sentence end
   int endwrd_index; // on what word on the end line does the sentence end
   bool ismath; // true if, during training, a blob exists within the sentence that is
                // within the bounds of a mathematical expression based on the groundtruth.

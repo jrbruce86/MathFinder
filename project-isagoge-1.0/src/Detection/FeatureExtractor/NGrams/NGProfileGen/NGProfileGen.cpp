@@ -338,7 +338,7 @@ bool NGramProfileGenerator::isSentenceMath(Sentence* sentence, int imgnum) {
 // colors the foreground of all blobs belonging to a sentence
 // (for debugging)
 void NGramProfileGenerator::colorSentenceBlobs(Pix* im, int sentencenum,
-    BlobInfoGrid* grid, SimpleColor color) {
+    BlobInfoGrid* grid, LayoutEval::Color color) {
   Lept_Utils lu;
   M_Utils mu;
   BLOBINFO* b = NULL;
@@ -347,7 +347,7 @@ void NGramProfileGenerator::colorSentenceBlobs(Pix* im, int sentencenum,
   while((b = bigs.NextFullSearch()) != NULL) {
     if(b->sentenceindex == sentencenum) {
       Box* bbox = mu.getBlobInfoBox(b, im);
-      lu.fillBoxForeground(im, bbox, (LayoutEval::Color)color);
+      lu.fillBoxForeground(im, bbox, color);
       boxDestroy(&bbox);
     }
   }
@@ -381,9 +381,9 @@ void NGramProfileGenerator::dbgShowSentenceLabels(string path, Pix* curimg,
            << (s->ismath ? "math" : "nonmath") << endl;
       dbgfile << s->sentence_txt << "\n----------\n";
       if(s->ismath)
-        colorSentenceBlobs(dbgimg, j, grid, RED);
+        colorSentenceBlobs(dbgimg, j, grid, LayoutEval::RED);
       else
-        colorSentenceBlobs(dbgimg, j, grid, BLUE);
+        colorSentenceBlobs(dbgimg, j, grid, LayoutEval::BLUE);
       if(turnondisplay) {
         pixDisplay(dbgimg, 100, 100);
         mu.waitForInput();
