@@ -39,7 +39,7 @@
 #define DATASET_SIZE 1 // the expected number of files in a dataset
                        // specifying how to save results for debugging and evaluation
 
-#define SHOW_GRID
+//#define SHOW_GRID
 
 namespace tesseract {
 
