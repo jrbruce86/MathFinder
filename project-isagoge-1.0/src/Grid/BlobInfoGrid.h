@@ -78,8 +78,9 @@ struct WORD_INFO {
 
   // removes the blob from the word and returns the index
   // at which the blob resided. if the blob wasn't in the word
-  // in the first place then returns -1
-  inline int removeBlob(BLOBINFO* blob) {
+  // in the first place then returns -1. if remove is false
+  // just returns in the index which can also be helpful
+  inline int removeBlob(BLOBINFO* blob, bool remove) {
     TBOX rmbox = getBlobTBox(blob);
     int index = -1;
     for(int i = 0; i < blobs.length(); ++i) {
@@ -90,15 +91,16 @@ struct WORD_INFO {
       }
     }
     if(index >= 0) {
-      blobs.remove(index);
+      if(remove)
+        blobs.remove(index);
     }
     return index;
   }
   ROW_INFO* rowinfo;
   WERD_RES* wordres;
   GenericVector<BLOBINFO*> blobs;
-  bool sentence_start;
-  bool sentence_end;
+  bool sentence_start; // true if this word is at the start of a sentence
+  bool sentence_end; // true if this word is at the end of a sentence
 };
 
 //enum ROW_TYPE {NORMAL, ABNORMAL};
@@ -119,8 +121,10 @@ struct ROW_INFO {
 
   string getRowText() {
     string str;
-    for(int i = 0; i < wordinfovec.length(); ++i)
-      str += (string)((wordinfovec[i]->wordstr()) + (string)" ");
+    for(int i = 0; i < wordinfovec.length(); ++i) {
+      if(wordinfovec[i]->wordstr() != NULL)
+        str += (string)((wordinfovec[i]->wordstr()) + (string)" ");
+    }
     return str;
   }
 
@@ -449,6 +453,10 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   // the MEDS module isn't so cluttered by it.
   inline void prepare(ColPartitionGrid* partgrid_,
       ColPartitionSet** bcd, Tesseract* tess_) {
+    assert(api != NULL); // A freshly allocated api is needed to have been
+                         // provided by the owner of this class by calling
+                         // the setTessApi() method defined below. This api
+                         // is entirely owned by this class.
     setColPart(partgrid_, bcd);
     setTessAndPix(tess_);
     // deep copy all the blobs in the partsgrid to a blobgrid
@@ -502,13 +510,10 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   // it belongs based upon which column partition it belongs to.
   void findSentences();
 
-  // Called by findsentences. Does three things:
+  // Called by findsentences. Does two things:
   // 1. Assigns an array of boxes to each sentences, where each box corresponds
   //    to a line of that sentence
-  // 2. Reiterates through the grid, assigning each previously unassigned blob
-  //    to a sentence if it overlaps any box (found in 1.) that is part of
-  //    that sentence.
-  // 3. (Optionally depending on whether or not debug define is commented out)
+  // 2. (Optionally depending on whether or not debug define is commented out)
   //    Display which blobs are assigned to which sentence for debugging or
   //    display the regions by highlighting foreground pixels.
   void getSentenceRegions();
@@ -566,7 +571,7 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   // for all indices at which a shallow copy of the blob resides. The BlobIndices
   // at which the shallow copy/copies were found in returned so that the children
   // blobs can be inserted back into the appropriate positions on the page.
-  BlobIndices removeAllBlobOccurrences(BLOBINFO* blob);
+  BlobIndices removeAllBlobOccurrences(BLOBINFO* blob, bool remove);
   // inserts shallow copies of given blob into the ROW_INFO vector for all of the
   // provided replacement indices. this complements the removeAllBlobOccurrences
   // method in that it is used to reinsert the "children" of the "parent" blob
@@ -620,7 +625,8 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   ScrollView* part_win;
   ScrollView* blobnboxgridview;
   ScrollView* rec_col_parts_sv;
-  ScrollView* insertrblobs_sv;
+  ScrollView* insertrblobs1_sv;
+  ScrollView* insertrblobs2_sv;
   ScrollView* line_sv;
   ScrollView* sentence_sv;
 };

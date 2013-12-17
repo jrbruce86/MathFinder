@@ -28,7 +28,7 @@
 namespace tesseract {
 
 TessInterface::TessInterface() : tess(NULL), blobinfogrid(NULL), img(NULL),
-    newapi(NULL) {}
+    api(NULL) {}
 
 TessInterface::~TessInterface() {
   reset();
@@ -37,7 +37,7 @@ TessInterface::~TessInterface() {
 
 void TessInterface::reset() {
   if(blobinfogrid != NULL) {
-    delete blobinfogrid;
+    delete blobinfogrid; // tesseract api owned by and thus deleted with the grid
     blobinfogrid = NULL;
   }
   // TODO: Delete any other heap allocated datastructures
@@ -53,13 +53,8 @@ int TessInterface::FindEquationParts(ColPartitionGrid* part_grid,
   // it belongs to as well)
   blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
       part_grid->tright());
-  TessBaseAPI a;
-  if(newapi == NULL)
-    newapi = &a; // can allocate this one on the stack if necessary
-                 // (uninitialized it isn't expensive at all)
-  blobinfogrid->setTessAPI(newapi);
+  blobinfogrid->setTessAPI(api);
   blobinfogrid->prepare(part_grid, best_columns, tess);
-
   return 0;
 }
 

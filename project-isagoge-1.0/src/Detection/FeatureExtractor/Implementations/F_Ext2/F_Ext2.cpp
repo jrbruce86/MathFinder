@@ -37,7 +37,7 @@ void F_Ext2::initFeatExtSinglePage() {
   BlobInfoGridSearch bigs(grid);
   BLOBINFO* blob = NULL;
 
-  grid->setFeatExtFormat(training_set_path, "F_Ext1", (int)NUM_FEATURES);
+  grid->setFeatExtFormat(training_set_path, "F_Ext2", (int)NUM_FEATURES);
 
   // Determine the average height and width/height ratio of normal text on the page
   bigs.StartFullSearch();
@@ -98,6 +98,14 @@ void F_Ext2::initFeatExtSinglePage() {
       GenericVector<BLOBINFO*> blobs = words[j]->blobs;
       for(int k = 0; k < blobs.length(); ++k) {
         BLOBINFO* curblob = blobs[k];
+        if(curblob->row_index != i) {
+          cout << "expected row index: " << i << ", actual: " << curblob->row_index << endl;
+          cout << "blob coords:\n";
+          BOX* b = M_Utils::getBlobInfoBox(curblob, dbgim);
+          M_Utils::dispBoxCoords(b);
+          M_Utils::dispHlBlobInfoRegion(curblob, dbgim);
+          boxDestroy(&b);
+        }
         assert(curblob->row_index == i);
         assert(curblob->row() != NULL);
         assert(curblob->row()->bounding_box() == row->row()->bounding_box());

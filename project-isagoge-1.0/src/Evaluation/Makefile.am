@@ -1,4 +1,5 @@
 lib_LTLIBRARIES = libevaluation.la
+SUBDIRS = ../MEDS
 libevaluation_la_SOURCES = DocumentLayoutTest.h \
 BipartiteGraph.h \
 BipartiteGraph.cpp

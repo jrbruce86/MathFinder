@@ -43,9 +43,11 @@ class IFeatureExtractor {
   IFeatureExtractor<FeatureExtType>() {}
 
   // Required initialization of the feature extractor for both training and prediction
-  inline void initFeatExtFull(TessBaseAPI* api, const string& groundtruth_path,
-      const string& training_set_path, const string& ext, bool makenew) {
-    feat_ext.initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
+  inline void initFeatExtFull(TessBaseAPI* api, vector<string> tess_api_params,
+      const string& groundtruth_path, const string& training_set_path,
+      const string& ext, bool makenew) {
+    feat_ext.initFeatExtFull(api, tess_api_params, groundtruth_path, training_set_path,
+        ext, makenew);
   }
 
   // do feature extraction initializations

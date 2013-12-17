@@ -62,8 +62,14 @@ int main() {
   // if it hasn't been trained yet.
   bool train_always = false;
 
+  // specify how the tesseract api should always be initialized
+  // i.e. what language and the path to the training files necessary
+  vector<string> api_init_params;
+  api_init_params.push_back((string)"/usr/local/share/"); // tesseract training file path
+  api_init_params.push_back((string)"eng"); // tesseract language
+
   // Pick a detector/segmentor combo and train if necessary
-  MEDS_Trainer<DetectorType> trainer(train_always, trainpath, false);
+  MEDS_Trainer<DetectorType> trainer(train_always, trainpath, false, api_init_params);
 
   trainer.trainDetector();
 

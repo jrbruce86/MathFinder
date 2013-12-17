@@ -59,11 +59,11 @@ F_Ext1::~F_Ext1() {
 
 void F_Ext1::reset() {}
 
-void F_Ext1::initFeatExtFull(TessBaseAPI* api, const string& groundtruth_path_,
-    const string& training_set_path_, const string& ext, bool makenew) {
+void F_Ext1::initFeatExtFull(TessBaseAPI* api, vector<string> tess_api_params,
+    const string& groundtruth_path_, const string& training_set_path_,
+    const string& ext, bool makenew) {
   NGramProfileGenerator ng_gen(training_set_path_);
-  cout << "initFeatExtFull, training_set_path_ = " << training_set_path_ << endl;
-  math_ngrams = ng_gen.generateMathNGrams(*api, groundtruth_path_,
+  math_ngrams = ng_gen.generateMathNGrams(api, tess_api_params, groundtruth_path_,
       training_set_path_, ext, makenew);
   training_set_path = training_set_path_;
   string mathwordsfile = training_set_path_ + (string)"../../mathwords";

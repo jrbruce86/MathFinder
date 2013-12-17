@@ -62,8 +62,9 @@ class NGramProfileGenerator {
   // which sentences in the training set are math and non-math. The non-math N-Grams are
   // weighted based on the ratio of math to non-math unigrams in the training set and
   // matching non-math n-gram counts are subtracted from the math n-gram ones.
-  RankedNGramVecs generateMathNGrams(TessBaseAPI& api, const string& groundtruth_path_,
-      const string& training_set_path, const string& ext, bool make_new);
+  RankedNGramVecs generateMathNGrams(TessBaseAPI* api_, vector<string> tess_api_params,
+      const string& groundtruth_path_, const string& training_set_path,
+      const string& ext, bool make_new);
 
 
  private:
@@ -75,7 +76,7 @@ class NGramProfileGenerator {
   RankedNGramVecs readInOldNGrams(const string& ngramdir);
 
   // create the n-gram profile from scratch using the training data
-  RankedNGramVecs generateNewNGrams(TessBaseAPI& api,
+  RankedNGramVecs generateNewNGrams(TessBaseAPI* api_, vector<string> tess_api_params,
       const string& groundtruth_path_, const string& training_set_path,
       const string& ngramdir, const string& ext);
 
@@ -89,7 +90,7 @@ class NGramProfileGenerator {
   double findMathNonMathRatio(const string& mathdir, const string& nonmathdir);
 
   NGramRanker r;
-  TessBaseAPI api_;
+  TessBaseAPI* api;
   string groundtruth_path;
   RankedNGramVecs ranked_math;
   string training_set_path;

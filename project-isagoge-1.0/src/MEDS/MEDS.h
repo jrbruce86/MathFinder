@@ -90,30 +90,30 @@ class MEDS : public EquationDetectBase {
     // I'll extract features from my own custom grid which holds both
     // information that can be gleaned from language recognition as
     // well as everything which couldn't (will hold all of the blobs
-     // and if they were recognized then holds the word and sentence
-     // it belongs to as well)
-     blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
-         part_grid->tright());
-     TessBaseAPI* api = new TessBaseAPI; // this is owned by the grid but is also used by
+    // and if they were recognized then holds the word and sentence
+    // it belongs to as well)
+    blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
+        part_grid->tright());
+    TessBaseAPI* api = new TessBaseAPI; // this is owned by the grid but is also used by
                                        // the feature extractor
-     blobinfogrid->setTessAPI(api);
-     blobinfogrid->prepare(part_grid, best_columns, tess);
+    blobinfogrid->setTessAPI(api);
+    blobinfogrid->prepare(part_grid, best_columns, tess);
 
-     // Once the blobinfo grid has been established, it becomes possible to then run
-     // each individual blobinfo element through feature detection and classification.
-     // After the feature detection/classification step, merging will be carried out
-     // in order to ensure proper segmentation.
-     detector->setFeatExtPage(blobinfogrid, api, img);
-     detector->initFeatExtSinglePage();
-     BLOBINFO* blob;
-     BlobInfoGridSearch bigs(blobinfogrid);
-     bigs.StartFullSearch();
-     while((blob = bigs.NextFullSearch()) != NULL) {
-       blob->predicted_math = detector->predict(blob);
-     }
+    // Once the blobinfo grid has been established, it becomes possible to then run
+    // each individual blobinfo element through feature detection and classification.
+    // After the feature detection/classification step, merging will be carried out
+    // in order to ensure proper segmentation.
+    detector->setFeatExtPage(blobinfogrid, api, img);
+    detector->initFeatExtSinglePage();
+    BLOBINFO* blob;
+    BlobInfoGridSearch bigs(blobinfogrid);
+    bigs.StartFullSearch();
+    while((blob = bigs.NextFullSearch()) != NULL) {
+      blob->predicted_math = detector->predict(blob);
+    }
 
-     // Print the results of this module to user-specified directory
-     dbgPrintDetectionResults(dbg_img_index);
+    // Print the results of this module to user-specified directory
+    dbgPrintDetectionResults(dbg_img_index);
 
 #ifdef SHOW_GRID
      string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(dbg_img_index);

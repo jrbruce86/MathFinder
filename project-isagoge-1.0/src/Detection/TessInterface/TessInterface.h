@@ -62,8 +62,8 @@ class TessInterface : public EquationDetectBase {
     return blobinfogrid;
   }
 
-  inline void setTessAPI(TessBaseAPI& api) {
-    newapi = &api;
+  inline void setTessAPI(TessBaseAPI* api_) {
+    api = api_;
   }
 
   // Clear all heap memory that is specific to just one image
@@ -82,7 +82,7 @@ class TessInterface : public EquationDetectBase {
   M_Utils mutils; // static class with assorted useful functions
   Tesseract* tess; // language-specific ocr engine
   PIX* img; // the binary image that is being operated on
-  TessBaseAPI* newapi;
+  TessBaseAPI* api;
 };
 
 

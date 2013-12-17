@@ -42,8 +42,9 @@ class F_Ext1 {
 
   virtual ~F_Ext1();
 
-  void initFeatExtFull(TessBaseAPI* api, const string& groundtruth_path,
-      const string& training_set_path, const string& ext, bool makenew);
+  void initFeatExtFull(TessBaseAPI* api, vector<string> tess_api_params,
+      const string& groundtruth_path, const string& training_set_path,
+      const string& ext, bool makenew);
 
   virtual void initFeatExtSinglePage();
 

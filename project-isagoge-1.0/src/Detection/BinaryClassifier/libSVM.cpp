@@ -39,16 +39,18 @@ libSVM::libSVM() : trained(false), C_optimal(-1),
 libSVM::~libSVM() {}
 
 void libSVM::initClassifier(const string& predictor_path_,
-    const string& featextname) {
+    const string& sample_path_, const string& featextname) {
   feat_ext_name = featextname;
-  predictor_path = predictor_path_ +
+  string classifier_name =
 #ifdef RBF_KERNEL
       (string)"RBFSVM_" +
 #endif
 #ifdef LINEAR_KERNEL
       (string)"LinearSVM_" +
 #endif
-      feat_ext_name + (string)"_" + (string)"predictor";
+      feat_ext_name + (string)"_";
+  predictor_path = predictor_path_ + classifier_name + (string)"predictor";
+  sample_path = sample_path_ + classifier_name + (string)"samples";
 #ifdef RBF_KERNEL
 #ifdef LINEAR_KERNEL
     cout << "ERROR: Can only train SVM with RBF or Linear kernel exclusively. "

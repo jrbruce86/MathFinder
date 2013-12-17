@@ -1,5 +1,6 @@
 fundamental
 formulas
+differential
 calculus
 derived
 directly
@@ -59,7 +60,6 @@ problem
 known
 initial
 conditions
-area
 fact
 area
 curve
@@ -69,9 +69,12 @@ constant
 needed
 allow
 integral
-fit
+t
 initial
 condition
+fundamental
+integration
+follows
 wide
 variety
 integrable
@@ -96,8 +99,16 @@ inverse
 trigonometric
 hyperbolic
 functions
-example
 applied
+way
+lead
+given
+integral
+afford
+equation
+integral
+obtained
+solution
 method
 introduced
 desired
@@ -113,6 +124,7 @@ prove
 sundry
 formulas
 table
+use
 integrals
 great
 importance
@@ -142,12 +154,6 @@ sum
 portions
 smaller
 smaller
-area
-problem
-treated
-methods
-total
-pressure
 theorem
 mean
 integrals
@@ -175,9 +181,9 @@ important
 needs
 thoroughly
 mastered
-integral
-regarded
 consideration
+formula
+application
 theorem
 mean
 derivatives
@@ -187,7 +193,6 @@ fraction
 does
 differ
 formula
-mass
 term
 function
 restricted
@@ -218,4 +223,3 @@ division
 zero
 called
 noted
-o

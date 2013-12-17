@@ -45,7 +45,7 @@ typedef GenericVector<RankedNGramVec> RankedNGramVecs;
 
 NGramProfileGenerator::NGramProfileGenerator(const string& training_set_path_) :
     dbgfile_open(false), mathfile(NULL),
-    nonmathfile(NULL) {
+    nonmathfile(NULL), api(NULL) {
   stopwords = r.readInStopWords(training_set_path_);
   training_set_path = training_set_path_;
 }
@@ -53,9 +53,9 @@ NGramProfileGenerator::NGramProfileGenerator(const string& training_set_path_) :
 NGramProfileGenerator::~NGramProfileGenerator() {
 }
 
-RankedNGramVecs NGramProfileGenerator::generateMathNGrams(TessBaseAPI& api,
-    const string& groundtruth_path_, const string& training_set_path,
-    const string& ext, bool make_new) {
+RankedNGramVecs NGramProfileGenerator::generateMathNGrams(TessBaseAPI* api_,
+    vector<string> tess_api_params, const string& groundtruth_path_,
+    const string& training_set_path, const string& ext, bool make_new) {
 
   // Are the n-gram rankings already done? Is so they will be in files
   // called uni-grams-sub-ranked, bi-grams-sub-ranked, and tri-grams-sub-ranked.
@@ -78,7 +78,7 @@ RankedNGramVecs NGramProfileGenerator::generateMathNGrams(TessBaseAPI& api,
 
   RankedNGramVecs math_ngrams;
   if(!files_exist || make_new)
-    math_ngrams = generateNewNGrams(api, groundtruth_path_,
+    math_ngrams = generateNewNGrams(api_, tess_api_params, groundtruth_path_,
         training_set_path, ngramdir, ext);
   else
     math_ngrams = readInOldNGrams(ngramdir);
@@ -135,12 +135,12 @@ RankedNGramVecs NGramProfileGenerator::readInOldNGrams(const string& ngramdir) {
   return math_ngrams;
 }
 
-RankedNGramVecs NGramProfileGenerator::generateNewNGrams(TessBaseAPI& api,
-    const string& groundtruth_path_, const string& training_set_path,
-    const string& ngramdir, const string& ext) {
+RankedNGramVecs NGramProfileGenerator::generateNewNGrams(TessBaseAPI* api_,
+    vector<string> tess_api_params, const string& groundtruth_path_,
+    const string& training_set_path, const string& ngramdir, const string& ext) {
   cout << "Generating Math N-Gram Profile.\n";
-  api_ = api;
-  r.setTessAPI(&api_);
+  api = api_;
+  r.setTessAPI(api);
   groundtruth_path = groundtruth_path_;
 
   // initialize the filestreams used to write ngrams to files
@@ -170,21 +170,51 @@ RankedNGramVecs NGramProfileGenerator::generateNewNGrams(TessBaseAPI& api,
   // count the number of training images in the training_set_path
   int img_num = Basic_Utils::fileCount(training_set_path);
 
-  // grab the equationdetectbase module being used by the api
-  TessInterface* tess_interface = (TessInterface*)(api.getEquationDetector());
+  // need to initialize the API
+  api->Init(tess_api_params[0].c_str(), tess_api_params[1].c_str());
+  char* page_seg_mode = (char*)"tessedit_pageseg_mode";
+   if (!api->SetVariable(page_seg_mode, "3")) {
+     cout << "ERROR: Could not set tesseract's api corectly during N-Gram Profile Generation!\n";
+     exit(EXIT_FAILURE);
+   }
+   // make sure that we're in the right document layout analysis mode
+   int psm = 0;
+   api->GetIntVariable(page_seg_mode, &psm);
+   assert(psm == tesseract::PSM_AUTO);
+   // turn on equation detection
+   if (!api->SetVariable("textord_equation_detect", "true")) {
+     cout << "Could not turn on Tesseract's equation detection during N-Gram Profile Generation!\n";
+     exit(EXIT_FAILURE);
+   }
 
-  // read in and process each image
+   // set up an interface to Tesseract (interface is through the findEquationParts method
+   // of Tesseract's equation detector which is overridden by the interface. The interface
+   // is where the BlobInfoGrid used for N-Gram Profile generation is created from within
+   // Tesseract as layout analysis is being done on a page. The resulting BlobInfoGrid
+   // is owned by the TessInterface so it is important that the reset() method be called
+   // on TessInterface whenever all processing is completed for a given document image.
+   EquationDetectBase* tess_interface = new TessInterface;
+
+   // The BlobInfoGrid belonging to the interface needs to have a feshly allocated api
+   // provided to it by the TessInterface which owns it. Here I provide the TessInterface
+   // with a freshly allocated api which will be owned by the BlobInfoGrid.
+   TessBaseAPI* newapi = new TessBaseAPI;
+
+   // Assign the interface (i.e., equation detector) to the primary API
+   api->setEquationDetector(tess_interface);
+
+  // read in and process each image (using half of the training set currently)
   int mathsentence_cnt = 0;
   int nonmathsentence_cnt = 0;
   for(int i = 1; i <= img_num/2; i++) {
+    ((TessInterface*)tess_interface)->setTessAPI(newapi);
     string img_name = Basic_Utils::intToString(i) + ext;
     string img_filepath = training_set_path + img_name;
     Pix* curimg = Basic_Utils::leptReadImg(img_filepath);
-    api.SetImage(curimg); // SetImage SHOULD deallocate everything from the last page
+    api->SetImage(curimg); // SetImage SHOULD deallocate everything from the last page
     // including my MEDS module, the BlobInfoGrid, etc!!!!
-    api.AnalyseLayout(); // Run Tesseract's layout analysis
-    BlobInfoGrid* grid = tess_interface->getGrid();
-
+    api->AnalyseLayout(); // Run Tesseract's layout analysis
+    BlobInfoGrid* grid = ((TessInterface*)tess_interface)->getGrid();
 #ifdef DBG_NGRAM_INIT
     bool showgrid = false;
     if(showgrid) {
@@ -243,10 +273,13 @@ RankedNGramVecs NGramProfileGenerator::generateNewNGrams(TessBaseAPI& api,
 
     pixDestroy(&curimg); // destroy finished image
     // clear the memory used by the current MEDS module (deletes the grid)
-    tess_interface->reset();
+    ((TessInterface*)tess_interface)->reset();
+    newapi = new TessBaseAPI; // interface will need a new api for next iteration
     cout << "Finished processing image " << i << endl;
-
   }
+
+  delete newapi;
+  newapi = NULL;
 
   cout << "Total math sentences: " << mathsentence_cnt << endl;
   cout << "Total non-math sentences: " << nonmathsentence_cnt << endl;
@@ -263,7 +296,7 @@ RankedNGramVecs NGramProfileGenerator::generateNewNGrams(TessBaseAPI& api,
       math_ngramdir, nonmath_weight);
 
   r.destroyNGramVecs(ranked_nonmath); // done with non-math vectors
-
+  api->End(); // this api is owned
   return ranked_math;
 }
 

@@ -31,7 +31,7 @@
 //#define DBG_INFO_GRID
 //#define DBG_INFO_GRID_S
 //#define DBG_INFO_GRID_SHOW_SENTENCE_REGIONS
-#define SHOW_BLOB_WINDOW
+//#define SHOW_BLOB_WINDOW
 //#define DBG_BASELINE
 
 
@@ -50,8 +50,8 @@ BlobInfoGrid::BlobInfoGrid(int gridsize, const ICOORD& bleft,
             part_grid(NULL), best_col_divisions(NULL), bbgrid(NULL),
             tess(NULL), img(NULL), api(NULL), part_win(NULL),
             blobnboxgridview(NULL), rec_col_parts_sv(NULL),
-            insertrblobs_sv(NULL), line_sv(NULL), sentence_sv(NULL),
-            dbgfeatures(false) {
+            insertrblobs1_sv(NULL), insertrblobs2_sv(NULL), line_sv(NULL),
+            sentence_sv(NULL), dbgfeatures(false) {
   Init(gridsize, bleft, tright);
 }
 
@@ -109,7 +109,8 @@ BlobInfoGrid::~BlobInfoGrid() {
   freeScrollView(part_win);
   freeScrollView(blobnboxgridview);
   freeScrollView(rec_col_parts_sv);
-  freeScrollView(insertrblobs_sv);
+  freeScrollView(insertrblobs1_sv);
+  freeScrollView(insertrblobs2_sv);
   freeScrollView(line_sv);
   freeScrollView(sentence_sv);
 
@@ -281,6 +282,12 @@ void BlobInfoGrid::recognizePage() {
     }
     bres_it.forward();
   }
+#ifdef DBG_INFO_GRID
+  rec_col_parts_sv = MakeWindow(100, 100,
+      "Original BlobInfoGrid (after recognizeColParts)");
+  DisplayBoxes(rec_col_parts_sv);
+  M_Utils::waitForInput();
+#endif
 }
 
 
@@ -291,8 +298,8 @@ void BlobInfoGrid::insertRemainingBlobs() {
 
 
 #ifdef DBG_INFO_GRID
-  int dbgBLOBNBOXtop = -1;
   int dbgBLOBNBOXleft = -1;
+  int dbgBLOBNBOXtop = -1;
   int dbgBLOBINFOtop = -1;
   int dbgBLOBINFOleft = -1;
 #endif
@@ -310,19 +317,23 @@ void BlobInfoGrid::insertRemainingBlobs() {
   delete bbgrid; // just need to delete the old grid.. new grid points to the same blobs though
   bbgrid = newbbgrid; // bbgrid is now in normal coordinates
 
-  // First pass: Here I simply add all of the BLOBNBOXes in the
+  // First pass: Here I add all of the BLOBNBOXes in the
   //             BBGrid to the BlobInfoGrid (either creating a
   //             new BlobInfo element with the BLOBNBOX and inserting
   //             it, or adding the BLOBNBOX to an existing element depending
   //             upon whether or not the BLOBNBOX overlaps any previously
-  //             recognized element
+  //             recognized element). If the bbgrid element only partially
+  //             overlaps the blobinfo one, then a new blobinfo object is created
+  //             for the partially overlapping bbgrid element.
   bbgridsearch = new BlobGridSearch(bbgrid); // start new search
   bbgridsearch->StartFullSearch();
   while((blob = bbgridsearch->NextFullSearch()) != NULL) {
 #ifdef DBG_INFO_GRID
     BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
-    if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft)
+    if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
       cout << "FOUND BLOBNBOX!!!!!! first pass\n";
+      M_Utils::waitForInput();
+    }
     boxDestroy(&b);
 #endif
     // See if there is a BlobInfo object in the BlobInfoGrid that is
@@ -333,24 +344,40 @@ void BlobInfoGrid::insertRemainingBlobs() {
     TBOX box = blob->bounding_box();
     BLOBINFO* blinfo = NULL;
 
+    l_float32 overlapfraction = 0;
+
     if(!RectangleEmpty(box)) {
       // Find what it overlaps
       BlobInfoGridSearch blobinfosearch(this);
       blobinfosearch.StartRectSearch(box);
       blinfo = blobinfosearch.NextRectSearch();
+      BOX* blobbox = M_Utils::getBlobBoxImCoords(blob, img);
+      TBOX t = blinfo->bounding_box();
+      BOX* blinfobox = M_Utils::tessTBoxToImBox(&t, img);
 #ifdef DBG_INFO_GRID
-      BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
-      if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
+      if(blobbox->y == dbgBLOBNBOXtop && blobbox->x == dbgBLOBNBOXleft) {
         cout << "BLOBNBOX at the following coordinates:\n";
-        M_Utils::dispBoxCoords(b);
+        M_Utils::dispBoxCoords(blobbox);
         cout << "overlaps something in the blobinfogrid at the following coordinates:\n";
-        TBOX t = blinfo->bounding_box();
-        BOX* blb = M_Utils::tessTBoxToImBox(&t, img);
-        M_Utils::dispBoxCoords(blb);
-        boxDestroy(&blb);
+        M_Utils::dispBoxCoords(blinfobox);
+        M_Utils::waitForInput();
       }
-      boxDestroy(&b);
 #endif
+      // find out if the bbgrid element only partially overlaps the blobinfo element
+      // if so, create new blobinfo element for the overlapping bbgrid element
+      int overlap_check_ok = boxOverlapFraction(blinfobox, blobbox, &overlapfraction);
+      assert(overlap_check_ok == 0);
+      if(overlapfraction != (l_float32)1) {
+        // the bbgrid element is not entirely inside the blobinfogrid one, thus
+        // it is necessary to make a new blobinfo element for it and insert it into
+        // the grid.
+        BLOBINFO* newblinfo = new BLOBINFO(box);
+        newblinfo->original_part = blob->owner();
+        newblinfo->reinserted = true;
+        InsertBBox(true, true, newblinfo);
+      }
+      boxDestroy(&blobbox);
+      boxDestroy(&blinfobox);
     }
     else {
 #ifdef DBG_INFO_GRID
@@ -359,6 +386,7 @@ void BlobInfoGrid::insertRemainingBlobs() {
         cout << "BLOBNBOX at the following coordinates:\n";
         M_Utils::dispBoxCoords(b);
         cout << "doesn't overlap anything\n";
+        M_Utils::waitForInput();
       }
       boxDestroy(&b);
 #endif
@@ -369,190 +397,123 @@ void BlobInfoGrid::insertRemainingBlobs() {
     }
     if(blinfo->unrecognized_blobs == NULL)
       blinfo->unrecognized_blobs = new BLOBNBOX_LIST();
-    C_BLOB* newcblob = C_BLOB::deep_copy(blob->cblob());
-    BLOBNBOX* blobcpy = new BLOBNBOX(newcblob);
-    blinfo->unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, blobcpy);
+    // if the bbgrid element entirely overlaps then it is essentially treated
+    // as a child to the existing blobinfo element otherwise it should have
+    // been added as a separate entity to the grid already
+    if(overlapfraction == (l_float32)1) {
+      C_BLOB* newcblob = C_BLOB::deep_copy(blob->cblob());
+      BLOBNBOX* blobcpy = new BLOBNBOX(newcblob);
+      blinfo->unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, blobcpy);
 #ifdef DBG_INFO_GRID
-    b = M_Utils::getBlobBoxImCoords(blobcpy, img);
-    if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
-      cout << "BLOBNBOX at the following coordinates:\n";
-      M_Utils::dispBoxCoords(b);
-      cout << "should be added to tbe BLOBNBOX list for the blobinfo element at the following coordinates:\n";
-      TBOX t = blinfo->bounding_box();
-      BOX* blb = M_Utils::tessTBoxToImBox(&t, img);
-      M_Utils::dispBoxCoords(blb);
-      boxDestroy(&blb);
-    }
-    boxDestroy(&b);
-#endif
-  }
-
-  // Second pass: Here I look for BLOBNBOXes in the bbgrid that overlap elements
-  //              in the BlobInfoGrid. If the overlapping BlobInfo element
-  //              is not part of a valid word and contains more than just the
-  //              current BLOBNBOX then I create a new BlobInfo element for each
-  //              BLOBNBOX inside the current one, delete the current one, then
-  //              insert the new ones. This way, only the word segmentation of
-  //              language-specific text is preserved. The rest is split back up
-  //              so it can be processed more thoroughly.
-  bbgridsearch->StartFullSearch();
-  BlobInfoGridSearch* blobinfosearch = NULL;
-  GenericVector<BLOBINFO*> todelete;
-  while((blob = bbgridsearch->NextFullSearch()) != NULL) {
-#ifdef DBG_INFO_GRID
-    BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
-    if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft)
-      cout << "FOUND BLOBNBOX!!!!!! second pass\n";
-    boxDestroy(&b);
-#endif
-    TBOX box = blob->bounding_box();
-    if(!RectangleEmpty(box)) {
-      if(blobinfosearch == NULL) // the search is either new or has been invalidated
-        blobinfosearch = new BlobInfoGridSearch(this);
-      blobinfosearch->StartRectSearch(box);
-      BLOBINFO* blinfo = blobinfosearch->NextRectSearch();
-#ifdef DBG_INFO_GRID
-      BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
+      b = M_Utils::getBlobBoxImCoords(blobcpy, img);
       if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
-        cout << "on second pass, blobnbox overlaps blobinfo element at: \n";
+        cout << "BLOBNBOX at the following coordinates:\n";
+        M_Utils::dispBoxCoords(b);
+        cout << "should be added to tbe BLOBNBOX list for the blobinfo element at the following coordinates:\n";
         TBOX t = blinfo->bounding_box();
         BOX* blb = M_Utils::tessTBoxToImBox(&t, img);
         M_Utils::dispBoxCoords(blb);
         boxDestroy(&blb);
+        M_Utils::waitForInput();
       }
       boxDestroy(&b);
 #endif
-      BLOBNBOX_LIST* bblist = blinfo->unrecognized_blobs;
-      if(bblist == NULL) { // if there's a NULL bblist this likely means that the
-                           // current blobinfo object is deprecated and should be
-                           // deleted
-        if(blinfo->dbgjustadded) {
-          cout << "ERROR: A blobinfo object just added into the grid has a null blob list!\n";
-          exit(EXIT_FAILURE);
-        }
+    }
+  }
+
+  AssertNoDuplicates();
+
 #ifdef DBG_INFO_GRID
-        BOX* b = M_Utils::getBlobBoxImCoords(blob, img);
-        if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft)
-          cout << "BLOBNBOX detected as overlapping a blobinfo elemetn that has a NULL list!\n";
-        boxDestroy(&b);
+  insertrblobs1_sv = MakeWindow(100, 100, "after insertRemainingBlobs() Pass #1");
+  DisplayBoxes(insertrblobs1_sv);
+  M_Utils::waitForInput();
 #endif
-        // check for duplicate
-        BlobInfoGridSearch bigs(this);
-        bigs.StartRectSearch(box);
-        BLOBINFO* curblob = NULL;
-        int nullcount = 0;
-        int count = 0;
-        while((curblob = bigs.NextRectSearch()) != NULL) {
-          if(!RectangleEmpty(box)) {
-            if(curblob->unrecognized_blobs == NULL) {
-              nullcount++;
-#ifdef DBG_INFO_GRID
-              cout << "going to delete blob at image coordinates:\n";
-              TBOX tbox = curblob->bounding_box();
-              BOX* b = M_Utils::tessTBoxToImBox(&tbox, img);
-              M_Utils::dispBoxCoords(b);
-              boxDestroy(&b);
-#endif
-              if(curblob->bounding_box() == blinfo->bounding_box())
-                todelete.push_back(curblob);
-            }
-            count++;
-          }
-        }
-        if(count > 1) {
-          if(count > 2) {
-#ifdef DBG_INFO_GRID
-            cout << count << " duplicates detected, " << nullcount << " of which have null lists\n";
-#endif
-            continue;
-          }
-#ifdef DBG_INFO_GRID
-          cout << "amount that had null blob lists (and were added to a list to be deleted later): " << nullcount << endl;
-#endif
-          continue;
-        }
-        else {
-          cout << "ERROR: Second pass of insertRemainingBlobs(): A null blobnbox list found, "
-               << "but there were no duplicates!\n";
-          exit(EXIT_FAILURE);
-        }
-      }
-      if(!blinfo->validword && (bblist->length() >= 1)) {
-        // To prevent any confusion, I first remove the blobinfo element from the grid
-        // before adding it's BLOBNBOXes
-        WERD_RES* werdres = blinfo->werdres;
-        WORD_INFO* wordinfo = blinfo->wordinfo;
-        int block_index = blinfo->block_index;
-        int row_index = blinfo->row_index; // the row to assign any new blobs created here
-        int word_index = blinfo->word_index;
-        float certainty = blinfo->certainty;
-        bool row_has_valid = blinfo->row_has_valid;
-        bool is_italic = blinfo->is_italic;
-        int replace_index = -1;
-        BlobIndices replacement_indices = removeAllBlobOccurrences(blinfo);
-        RemoveBBox(blinfo); // this doesn't modify blinfo pointer, just removes it from the grid...
-        bblist = blinfo->copyBlobNBoxes();
+
+  // Second pass: Here I split up blobinfo elements that were'nt properly
+  //              recognized during page recognition, into seperate "child"
+  //              blobinfo elements to facilitate more thorough analysis of
+  //              misrecognized regions.
+  BlobInfoGridSearch bigs(this);
+  bigs.StartFullSearch();
+  BLOBINFO* blinfo = NULL;
+  while((blinfo = bigs.NextFullSearch()) != NULL) {
+    BLOBNBOX_LIST* bblist = blinfo->unrecognized_blobs;
+    if(!bblist)
+      continue;
+    if(!blinfo->validword && (bblist->length() >= 1)) {
+      // To prevent any confusion, I first remove the blobinfo element from the grid
+      // before adding it's BLOBNBOXes
+      WERD_RES* werdres = blinfo->werdres;
+      WORD_INFO* wordinfo = blinfo->wordinfo;
+      int block_index = blinfo->block_index;
+      int row_index = blinfo->row_index; // the row to assign any new blobs created here
+      int word_index = blinfo->word_index;
+      float certainty = blinfo->certainty;
+      bool row_has_valid = blinfo->row_has_valid;
+      bool is_italic = blinfo->is_italic;
+      int replace_index = -1;
+      BlobIndices replacement_indices = removeAllBlobOccurrences(blinfo, !blinfo->reinserted);
+      bblist = blinfo->copyBlobNBoxes();
+      if(!blinfo->reinserted) {
+        bigs.RemoveBBox(); // this doesn't modify blinfo pointer, just removes it from the grid...
         delete blinfo;
         blinfo = NULL;
-
-        BLOBNBOX_IT bbit(bblist);
-        bbit.move_to_first();
-        for(int i = 0; i < bblist->length(); i++) {
-          BLOBNBOX* bbox = bbit.data();
+      }
+      BLOBNBOX_IT bbit(bblist);
+      bbit.move_to_first();
+      for(int i = 0; i < bblist->length(); i++) {
+        BLOBNBOX* bbox = bbit.data();
 #ifdef DBG_INFO_GRID
-          BOX* b = M_Utils::getBlobBoxImCoords(bbox, img);
-          if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
-            cout << "new blob info element being created for BLOBNBOX at\n";
-            M_Utils::dispBoxCoords(b);
-          }
-          boxDestroy(&b);
+        BOX* b = M_Utils::getBlobBoxImCoords(bbox, img);
+        if(b->y == dbgBLOBNBOXtop && b->x == dbgBLOBNBOXleft) {
+          cout << "new blob info element being created for BLOBNBOX at\n";
+          M_Utils::dispBoxCoords(b);
+          M_Utils::waitForInput();
+        }
+        boxDestroy(&b);
 #endif
-          BLOBNBOX* newbbox = new BLOBNBOX(*bbox);
-          BLOBINFO* newblinfo = new BLOBINFO(newbbox->bounding_box());
-          newblinfo->original_part = bbox->owner();
-          newblinfo->werdres = werdres;
-          newblinfo->wordinfo = wordinfo;
-          newblinfo->block_index = block_index;
-          newblinfo->row_index = row_index;
-          newblinfo->word_index = word_index;
-          newblinfo->certainty = certainty;
-          newblinfo->reinserted = true;
-          newblinfo->row_has_valid = row_has_valid;
-          newblinfo->is_italic = is_italic;
-          newblinfo->unrecognized_blobs = new BLOBNBOX_LIST();
-          newblinfo->unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, newbbox);
-          newblinfo->dbgjustadded = true;
-          // insert new shallow copy replacement back into each of the wordinfo
-          // objects from which the "parent" was removed
-          insertBlobReplacements(newblinfo, replacement_indices, i);
-          InsertBBox(true, true, newblinfo); // insert into the grid
-          bbit.forward();
+        BLOBNBOX* newbbox = new BLOBNBOX(*bbox);
+        BLOBINFO* newblinfo = new BLOBINFO(newbbox->bounding_box());
+        newblinfo->original_part = bbox->owner();
+        newblinfo->werdres = werdres;
+        newblinfo->wordinfo = wordinfo;
+        newblinfo->block_index = block_index;
+        newblinfo->row_index = row_index;
+        newblinfo->word_index = word_index;
+        newblinfo->certainty = certainty;
+        newblinfo->reinserted = true;
+        newblinfo->row_has_valid = row_has_valid;
+        newblinfo->is_italic = is_italic;
+        newblinfo->unrecognized_blobs = new BLOBNBOX_LIST();
+        newblinfo->unrecognized_blobs->add_sorted(SortByBoxLeft<BLOBNBOX>, true, newbbox);
+        newblinfo->dbgjustadded = true;
+        // insert new shallow copy replacement back into each of the wordinfo
+        // objects from which the "parent" was removed
+        insertBlobReplacements(newblinfo, replacement_indices, i);
+        InsertBBox(true, true, newblinfo); // insert into the grid
+        bigs.RepositionIterator();
+        blinfo = bigs.NextFullSearch(); // skip over this
+        if(blinfo == NULL) {
+          cout << "Either something was inserted at the end of the grid or something is terribly wrong\n";
+          M_Utils::waitForInput();
+          break;
         }
-        if(bblist != NULL) {
-          bblist->clear();
-          delete bblist;
-          bblist = NULL;
-        }
+        bbit.forward();
+      }
+      if(bblist != NULL) {
+        bblist->clear();
+        delete bblist;
+        bblist = NULL;
       }
     }
   }
-  if(blobinfosearch != NULL) {
-    delete blobinfosearch; // search invalidated need to start a new one
-    blobinfosearch = NULL;
-  }
-  delete bbgridsearch;
-  bbgridsearch = NULL;
 
-  // delete all the duplicate entries with null lists
-  for(int i = 0; i < todelete.length(); i++) {
-    BLOBINFO* bx = todelete[i];
-    RemoveBBox(bx);
-  }
+  AssertNoDuplicates();
 
 #ifdef DBG_INFO_GRID
   // now display it!
-  insertrblobs_sv = MakeWindow(100, 100, "BlobInfoGrid after insertRemainingBlobs()");
-  DisplayBoxes(insertrblobs_sv);
+  insertrblobs2_sv = MakeWindow(100, 100, "BlobInfoGrid after insertRemainingBlobs()");
+  DisplayBoxes(insertrblobs2_sv);
   M_Utils::waitForInput();
 #endif
 }
@@ -740,13 +701,14 @@ void BlobInfoGrid::getSentenceRegions() {
     bottoms.clear();
   }
 
-  // TODO: Decide whether or not to keep this... Likely is no longer applicable...
   // Reiterate through the grid to make sure each blob is assigned
   // to the sentence to which it belongs. If a blob's bounding box
   // intersects with a line of a sentence then it should belong to
   // that sentence (some blobs may have been missed during initial
-  // assignment).
-/*  BLOBINFO* curblob = NULL;
+  // assignment). If a blob needs to be assigned a sentence here it
+  // must also likely need to be assigned a row as well. Assign it
+  // to the row corresponding to the bounding box in which it resides.
+  BLOBINFO* curblob = NULL;
   BlobInfoGridSearch bigs(this);
   bigs.StartFullSearch();
   while((curblob = bigs.NextFullSearch()) != NULL) {
@@ -757,13 +719,33 @@ void BlobInfoGrid::getSentenceRegions() {
     bool found = false;
     for(int j = 0; j < recognized_sentences.length(); ++j) {
       Boxa* cursentenceboxes = recognized_sentences[j]->lineboxes;
-      for(int k = 0; k < cursentenceboxes->n; k++) {
+      for(int k = 0; k < cursentenceboxes->n; ++k) {
         Box* linebox = boxaGetBox(cursentenceboxes, k, L_CLONE);
         int is_box_in_line = 0;
         boxIntersects(linebox, bbox, &is_box_in_line);
         boxDestroy(&linebox); // destroying the clone to decrement the reference count
         if(is_box_in_line) {
-          curblob->sentenceindex = j;
+          curblob->sentenceindex = j; // give the blob a sentence
+          // if the blob isn't already assigned a row then assign it to one
+          if(curblob->row_index == -1)
+            assert(curblob->wordinfo == NULL && curblob->rowinfo() == NULL);
+          else
+            assert(curblob->wordinfo != NULL && curblob->rowinfo() != NULL);
+          if(curblob->wordinfo == NULL && curblob->rowinfo() == NULL
+              && curblob->row_index == -1) {
+            Sentence* blobsentence = recognized_sentences[j]; // grab the sentence
+            const int rowindex = blobsentence->start_line_num + k; // determine the row index
+            curblob->row_index = rowindex; // assign the blob to that index
+            ROW_INFO* blobrow = rows[rowindex]; // grab the row
+            // set up a word for this blob so it can be included in the row
+            WORD_INFO* blobwordinfo = new WORD_INFO;
+            blobwordinfo->rowinfo = blobrow;
+            blobwordinfo->blobs.push_back(curblob);
+            // assign the wordinfo to the blob
+            curblob->wordinfo = blobwordinfo;
+            // add the blob's word (which just contains the blob) to the row
+            blobrow->wordinfovec.push_back(blobwordinfo);
+          }
           found = true;
           break;
         }
@@ -772,7 +754,9 @@ void BlobInfoGrid::getSentenceRegions() {
         break;
     }
     boxDestroy(&bbox);
-  }*/
+  }
+
+
 
 #ifdef DBG_INFO_GRID_S
 #ifdef DBG_INFO_GRID_SHOW_SENTENCE_REGIONS
@@ -902,7 +886,7 @@ void BlobInfoGrid::addBlobToLastRowWord(BLOBINFO* blob) {
   wordinfo->blobs.push_back(blob);
 }
 
-BlobIndices BlobInfoGrid::removeAllBlobOccurrences(BLOBINFO* blob) {
+BlobIndices BlobInfoGrid::removeAllBlobOccurrences(BLOBINFO* blob, bool remove) {
   // walk through the page removing all occurrences of the given blob
   // and storing the index of each occurrence.
   BlobIndices indices;
@@ -919,14 +903,15 @@ BlobIndices BlobInfoGrid::removeAllBlobOccurrences(BLOBINFO* blob) {
     GenericVector<WORD_INFO*> words = cur_row->wordinfovec;
     for(int j = 0; j < words.length(); ++j) {
       WORD_INFO* word = words[j];
-      int blob_removed_index = word->removeBlob(blob);
+      int blob_removed_index = word->removeBlob(blob, remove);
       if(blob_removed_index != -1) {
         BlobIndex blbidx;
         blbidx.blobindex = blob_removed_index;
         blbidx.wordindex = j;
         blbidx.rowindex = i;
         indices.push_back(blbidx);
-        --j; // this is the worst kind of bug.. took > 3 hours to realize I needed this...
+        if(remove)
+          --j; // this is the worst kind of bug.. took > 3 hours to realize I needed this...
              // needed because a duplicate blob often occurs more than once in the same
              // word. Thus need to stay on the same word until all duplicates removed. could
              // have used a separate while loop instead but this works fine.
@@ -1068,6 +1053,8 @@ void BlobInfoGrid::HandleClick(int x, int y) {
     cout << bb->wordstr() << endl;
     if(bb->validword)
       cout << "the blob is in a valid word!\n";
+    else
+      cout << "the blob is in an invalid word!\n";
   }
   else
     cout << "(NULL)\n";

@@ -116,8 +116,8 @@ class libSVM {
  public:
   libSVM();
   ~libSVM();
-  void initClassifier(const string& predictor_path,
-      const string& featext_name);
+  void initClassifier(const string& predictor_path_,
+      const string& sample_path_, const string& featext_name);
   void initPredictor();
   void doTraining(const vector<vector<BLSample*> >& samples);
   bool predict(const std::vector<double>& sample);
@@ -125,6 +125,9 @@ class libSVM {
   void reset();
   inline string getFullPredictorPath() {
     return predictor_path;
+  }
+  inline string getFullSamplePath() {
+    return sample_path;
   }
   inline string getFeatExtName() {
     return feat_ext_name;
@@ -168,6 +171,8 @@ class libSVM {
 
 
   string predictor_path; // path to save the final predictor in
+  string sample_path; // path to save the samples for training (so feature extraction
+                      // doesn't need to be re-run every time training occurs)
 
   string feat_ext_name;
 

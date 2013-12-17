@@ -61,7 +61,8 @@ class MEDS_Trainer {
   // 4. ext (optional) - The extension expected for all images
   //                     (png by default)
   MEDS_Trainer(bool always_train_, const string& detector_path,
-      bool get_new_samples_, const string& ext_=".png") :
+      bool get_new_samples_, vector<string> api_init_params_,
+      const string& ext_=".png") :
         tess_interface(NULL) {
     get_new_samples = get_new_samples_;
     top_path = Basic_Utils::checkTrailingSlash(detector_path);
@@ -78,10 +79,12 @@ class MEDS_Trainer {
     // the classifier during its initialization during trainDetector()
     // function which must be called in order to fully initialize the detector.
     predictor_path = detector_path + (string)"predictor/";
+    sample_path = detector_path + (string)"samples/";
     training_set_path = detector_path + (string)"training_set/";
     always_train = always_train_;
+    api_init_params = api_init_params_;
     ext = ext_;
-    api.Init("/usr/local/share/", "eng");
+    api.Init(api_init_params[0].c_str(), api_init_params[1].c_str());
     char* page_seg_mode = (char*)"tessedit_pageseg_mode";
     if (!api.SetVariable(page_seg_mode, "3")) {
       cout << "ERROR: Could not set tesseract's api corectly during training!\n";
@@ -157,8 +160,11 @@ class MEDS_Trainer {
     // do training only if necessary (i.e. if always_train is turned on
     // or it's not turned on and there is no trained predictor available
     // in the predictor_path)
-    detector.initClassifier(predictor_path); // this should determine the full predictor path
+    //   this should determine the full predictor path as well as where the samples
+    //   are stored for the given classifier
+    detector.initClassifier(predictor_path, sample_path);
     predictor_path = detector.getPredictorPath(); // change it to the full path
+    sample_path = detector.getSamplePath();
     // tell the detector where it can find the groundtruth.dat file
     // so it can determine the label of each sample
     detector.initTrainingPaths(groundtruth_path, training_set_path, ext);
@@ -173,7 +179,7 @@ class MEDS_Trainer {
     }
     cout << "Initializing the Detector to use the predictor at the "
          << "following location: " << detector.getPredictorPath() << endl;
-    detector.initPrediction();
+    detector.initPrediction(api_init_params);
   }
 
   // Its much harder to do supervised training on this part. Much of the computations
@@ -221,7 +227,7 @@ class MEDS_Trainer {
   // vector holds the samples extracted from one image).
   vector<vector<BLSample*> >* getSamples() {
     // get the samples
-    string sample_path = top_path + (string)"samples";
+    string sample_path = detector.getSamplePath();
     bool newsamples = false;
     if(get_new_samples || !Basic_Utils::existsFile(sample_path)) {
       getNewSamples(true);
@@ -244,11 +250,16 @@ class MEDS_Trainer {
     api.setEquationDetector(tess_interface);
     // count the number of training images in the training_set_path
     int img_num = Basic_Utils::fileCount(training_set_path);
-    // api that will be used for recognition
-    // i'm putting it on the stack here, in hopes that
-    // this may help avoid memory allocation conflicts
-    tesseract::TessBaseAPI newapi;
-    ((TessInterface*)tess_interface)->setTessAPI(newapi);
+    // the newapi is owned by BlobInfoGrid which is instantiated from findEquationParts
+    // of the tess_interface. findEquationParts is called from within the "api"
+    // (i.e. the stack-allocated TessBaseAPI instantiated as part of this class).
+    // This newapi is initialized during the preparation of the BlobInfoGrid owned
+    // by tess_interface. The newapi is also used by the feature extractor.
+    // when reset is called on tess_interface, the BlobInfoGrid is deleted and the
+    // newapi deleted along with it after each iteration of sample extraction (each
+    // iteration corresponds to a single image from which samples are extracted).
+    tesseract::TessBaseAPI* newapi = new tesseract::TessBaseAPI;
+
     // assumes all n files in the training dir are images
     // named 1.png, 2.png, 3.png, .... n.png
     // iterate the images in the dataset, getting the features
@@ -258,8 +269,12 @@ class MEDS_Trainer {
     // precomputations on the entire training set prior to any feature
     // extraction. this may or may not be applicable depending on the
     // feature extraction implementation being used by the detector
-    detector.initFeatExtFull(&api, false);
+    // the tesseract api initialization params are passed in incase the
+    // feature extractor initialization requires the api. It is expected
+    // that the api is ended if it is used upon completion of this method
+    detector.initFeatExtFull(newapi, false, api_init_params);
     for(int i = 1; i <= img_num; i++) {
+      ((TessInterface*)tess_interface)->setTessAPI(newapi);
       string img_name = Basic_Utils::intToString(i) + ext;
       string img_filepath = training_set_path + img_name;
       Pix* curimg = Basic_Utils::leptReadImg(img_filepath);
@@ -268,7 +283,7 @@ class MEDS_Trainer {
       api.AnalyseLayout(); // Run Tesseract's layout analysis
       tesseract::BlobInfoGrid* grid = ((TessInterface*)tess_interface)->getGrid();
       detector.setImage(curimg);
-      detector.setAPI(&api);
+      detector.setAPI(newapi);
       // now to get the features from the grid and append them to the
       // samples vector.
       vector<BLSample*> img_samples = detector.getAllSamples(grid, i);
@@ -277,23 +292,20 @@ class MEDS_Trainer {
       // red and all the other ones as blue
       Pix* colorimg = Basic_Utils::leptReadImg(img_filepath);
       colorimg = pixConvertTo32(colorimg);
-      Lept_Utils lu;
       for(int j = 0; j < img_samples.size(); j++) {
         BLSample* sample = img_samples[j];
         GroundTruthEntry* entry = sample->entry;
         if(sample->label)
-          lu.fillBoxForeground(colorimg, sample->blobbox, LayoutEval::RED);
+          Lept_Utils::fillBoxForeground(colorimg, sample->blobbox, LayoutEval::RED);
         else
-          lu.fillBoxForeground(colorimg, sample->blobbox, LayoutEval::BLUE);
+          Lept_Utils::fillBoxForeground(colorimg, sample->blobbox, LayoutEval::BLUE);
       }
       pixDisplay(colorimg, 100, 100);
       string dbgname = "dbg_training_im" + Basic_Utils::intToString(i) + ".png";
       pixWrite(dbgname.c_str(), colorimg, IFF_PNG);
       M_Utils mutils;
       mutils.waitForInput();
-      pixDeswrites them to a filetroy(&colorimg);
-      delete gridviewer;
-      gridviewer = NULL;
+      pixDestroy(&colorimg);
 #endif
 #ifdef DBG_MEDS_TRAINER
       // debug: make sure it worked!!!! and we got the grid out of it...
@@ -301,6 +313,8 @@ class MEDS_Trainer {
       ScrollView* gridviewer = grid->MakeWindow(100, 100, winname.c_str());
       grid->DisplayBoxes(gridviewer);
       Basic_Utils::waitForInput();
+      delete gridviewer;
+      gridviewer = NULL;
 #endif
       // now append the samples found for the current image to the
       // the vector which holds all of them. For now I have this organized
@@ -309,6 +323,7 @@ class MEDS_Trainer {
       pixDestroy(&curimg); // destroy finished image
       // clear the memory used by the current MEDS module and the feature extractor
       ((TessInterface*)tess_interface)->reset();
+      newapi = new tesseract::TessBaseAPI;
       detector.reset();
 #ifdef DBG_MEDS_TRAINER
       delete gridviewer;
@@ -317,8 +332,10 @@ class MEDS_Trainer {
       cout << "Finished acquiring " << samples_extracted[i-1].size()
            << " samples for image " << i << endl;
     }
+    delete newapi;
+    newapi = NULL;
     if(write_to_file)
-      writeSamples(top_path + (string)"samples");
+      writeSamples(sample_path);
   }
 
   void readOldSamples(const string& sample_path) {
@@ -526,9 +543,11 @@ class MEDS_Trainer {
   // some paths and such
   string top_path; // this is the root of the detector directory
   string predictor_path;  // top_path/predictor
+  string sample_path; // top_path/samples
   string training_set_path; // top_path/training_set
   string groundtruth_path; // top_path/[groundtruthname].dat
   string ext; // image extension (i.e. png, jpg, etc.)
+  vector<string> api_init_params;
   bool always_train; // if false only train if no trained predictor
                      // is available in top_path/predictor
   bool get_new_samples; // if false reads in samples from a file if they've

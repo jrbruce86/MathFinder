@@ -84,8 +84,10 @@ class Detector {
   }
 
   // Initialization required by both training and prediction
-  inline void initFeatExtFull(TessBaseAPI* api, bool makenew) {
-    featext->initFeatExtFull(api, groundtruth_path, training_set_path, ext, makenew);
+  inline void initFeatExtFull(TessBaseAPI* api, bool makenew,
+      vector<string> api_init_params) {
+    featext->initFeatExtFull(api, api_init_params, groundtruth_path,
+        training_set_path, ext, makenew);
   }
 
   inline void initFeatExtSinglePage() {
@@ -140,7 +142,7 @@ class Detector {
       samples.push_back(lsample);
       blobnum++;
     }
-    //cout << "num blobs (samples) for image " << image_index << ": " << blobnum << endl;
+    cout << "num blobs (samples) for image " << image_index << ": " << blobnum << endl;
     return samples;
   }
 
@@ -193,15 +195,22 @@ class Detector {
     return entry;
   }
 
-  inline void initClassifier(const string& predictor_path_) {
+  inline void initClassifier(const string& predictor_path_,
+      const string& sample_path_) {
     string feat_ext_name = featext->getFeatExtName();
-    classifier->initClassifier(predictor_path_, feat_ext_name);
+    classifier->initClassifier(predictor_path_, sample_path_, feat_ext_name);
     predictor_path = classifier->getFullPredictorPath();
+    sample_path = classifier->getFullSamplePath();
   }
 
   inline string getPredictorPath() {
     assert(predictor_path == classifier->getFullPredictorPath());
     return classifier->getFullPredictorPath();
+  }
+
+  inline string getSamplePath() {
+    assert(sample_path == classifier->getFullSamplePath());
+    return classifier->getFullSamplePath();
   }
 
   inline void initTraining(const vector<vector<BLSample*> >& samples_) {
@@ -216,8 +225,8 @@ class Detector {
   // prediction is just done on one page and will be using some
   // binary classifier which has already been trained with the
   // features specified for this type of trainer_predictor
-  inline void initPrediction() {
-    initFeatExtFull(api, false); // initializes the feature extractor
+  inline void initPrediction(vector<string> api_init_params) {
+    initFeatExtFull(api, false, api_init_params); // initializes the feature extractor
     classifier->initPredictor(); // loads up the predictor, halts with an error if there is none.
   }
 
@@ -268,6 +277,8 @@ class Detector {
   string ext; // image extension
   string predictor_path; // the path where the trained classifier will be
                          // or is stored for later use in prediction
+  string sample_path; // path where the samples used in training the classifier are stored
+
   I_Trainer* trainer;
   IFeatExt* featext;
   IClassifier* classifier;
