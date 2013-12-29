@@ -55,6 +55,10 @@ class CrossValidatorSVM {
     return classifier;
   }
 
+  inline void setAlwaysTrain() {
+    classifier->setAlwaysTrain();
+  }
+
   inline void reset() {}
 
   IClassifier* classifier;

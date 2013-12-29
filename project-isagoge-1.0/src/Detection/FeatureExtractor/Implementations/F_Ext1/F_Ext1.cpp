@@ -27,8 +27,13 @@
 
 #define NUM_FEATURES 21
 
-#define DBG_F_EXT1 // uncomment to enable debugging
+// TODO: Consider adding OnNormalRow feature for blobs
+
+/* uncomment any of the following to enable debugging */
+//#define DBG_AVG
+//#define SHOW_ABNORMAL_ROWS
 //#define DBG_COVER_FEATURE
+//#define DBG_COVER_FEATURE_ALOT // need DBG_COVER_FEATURE enabled for this to go into effect
 //#define DBG_NESTED_FEATURE
 //#define DBG_SHOW_NESTED
 //#define DBG_SUB_SUPER
@@ -36,7 +41,6 @@
 //#define DBG_FEAT1
 //#define DBG_FEAT2
 //#define DBG_FEAT3
-//#define DBG_AVG
 //#define DBG_DRAW_BASELINES
 //#define DBG_SHOW_STACKED_FEATURE
 //#define DBG_STACKED_FEATURE_ALOT
@@ -45,6 +49,8 @@
 //#define DBG_CERTAINTY
 //#define DBG_SHOW_NGRAMS
 //#define DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
+
+//#define DBG_DISPLAY // turn this on to display dbg images as they are saved
 
 typedef GenericVector<NGramFrequency*> RankedNGramVec;
 typedef GenericVector<RankedNGramVec> RankedNGramVecs;
@@ -86,6 +92,8 @@ void F_Ext1::initFeatExtFull(TessBaseAPI* api, vector<string> tess_api_params,
 // All features or calculations which require evaluating the entire
 // page rather than just one blob at a time are found here
 void F_Ext1::initFeatExtSinglePage() {
+  static int imdbgnum = 1;
+  string num = Basic_Utils::intToString(imdbgnum);
   dbgim = pixCopy(NULL, curimg);
   dbgim = pixConvertTo32(dbgim);
   // search initialization
@@ -100,7 +108,7 @@ void F_Ext1::initFeatExtSinglePage() {
   double avgwhr = 0;
   double count = 0;
   while((blob = bigs.NextFullSearch()) != NULL) {
-    if(blob->validword) {
+    if(blob->validword && blob->onRowNormal()) {
       avgheight += (double)blob->height();
       avgwhr += ((double)blob->width() / (double)blob->height());
       ++count;
@@ -121,6 +129,36 @@ void F_Ext1::initFeatExtSinglePage() {
   }
 #endif
 
+#ifdef SHOW_ABNORMAL_ROWS
+  bigs.StartFullSearch();
+  blob = NULL;
+  PIX* pixdbg_r = pixCopy(NULL, curimg);
+  pixdbg_r = pixConvertTo32(pixdbg_r);
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    if(blob->rowinfo() == NULL)
+      continue;
+    if(blob->rowinfo()->is_normal)
+      M_Utils::drawHlBlobInfoRegion(blob, pixdbg_r, LayoutEval::RED);
+    else
+      M_Utils::drawHlBlobInfoRegion(blob, pixdbg_r, LayoutEval::BLUE);
+  }
+  cout << "displaying the abnormal rows for image " << imdbgnum << endl;
+  pixDisplay(pixdbg_r, 100, 100);
+  pixWrite((dbgdir + (string)"Rows_Abnormal"
+      + Basic_Utils::intToString(imdbgnum) + (string)".png").c_str(),
+      pixdbg_r, IFF_PNG);
+#endif
+
+  // Determine the adjacent covered neighbors in the rightward, downward,
+  // and upward directions for each blob
+  bigs.StartFullSearch();
+  blob = NULL;
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    blob->rhabc = countCoveredBlobs(blob, RIGHT);
+    blob->uvabc = countCoveredBlobs(blob, UP);
+    blob->dvabc = countCoveredBlobs(blob, DOWN);
+  }
+
   // Determine the sub/super-script feature for each blob in the grid
   bigs.StartFullSearch();
   while((blob = bigs.NextFullSearch()) != NULL) {
@@ -133,16 +171,19 @@ void F_Ext1::initFeatExtSinglePage() {
   bigs.StartFullSearch();
   while((blob = bigs.NextFullSearch()) != NULL) {
     if(blob->has_sup || blob->has_sub)
-      m.drawHlBlobInfoRegion(blob, dbgss_im, RED);
+      M_Utils::drawHlBlobInfoRegion(blob, dbgss_im, LayoutEval::RED);
     else if(blob->is_sup)
-      m.drawHlBlobInfoRegion(blob, dbgss_im, GREEN);
+      M_Utils::drawHlBlobInfoRegion(blob, dbgss_im, LayoutEval::GREEN);
     else if(blob->is_sub)
-      m.drawHlBlobInfoRegion(blob, dbgss_im, BLUE);
+      M_Utils::drawHlBlobInfoRegion(blob, dbgss_im, LayoutEval::BLUE);
   }
+  pixWrite((dbgdir + (string)"subsuper" + num + (string)".png").c_str(), dbgss_im, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(dbgss_im, 100, 100);
-  pixWrite((dbgdir + (string)"subsuper.png").c_str(), dbgss_im, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&dbgss_im);
-  m.waitForInput();
+
 #endif
   // --- Baseline distance feature ---
   // for each row, compute the average vertical distance from the baseline for all
@@ -180,7 +221,7 @@ void F_Ext1::initFeatExtSinglePage() {
   PIX* dbgim = pixCopy(NULL, curimg);
   dbgim = pixConvertTo32(dbgim);
   for(int i = 0; i < rows.length(); i++) {
-    ROW* row = rows[i];
+    ROW_INFO* row = rows[i];
     // find left-most and rightmost blobs on that row
     BlobInfoGridSearch bigs(grid);
     bigs.StartFullSearch();
@@ -188,7 +229,9 @@ void F_Ext1::initFeatExtSinglePage() {
     int left = INT_MAX;
     int right = INT_MIN;
     while((b = bigs.NextFullSearch()) != NULL) {
-      if(b->row == row) {
+      if(b->wordinfo == NULL)
+        continue;
+      if(b->row()->bounding_box() == row->row()->bounding_box()) {
         if(b->left() < left)
           left = b->left();
         if(b->right() > right)
@@ -199,15 +242,18 @@ void F_Ext1::initFeatExtSinglePage() {
       cout << "WARNING::ROW EMPTY!!\n";
       continue;
     }
-    Lept_Utils lu;
     for(int j = left; j < right; j++) {
-      inT32 y = curimg->h - (inT32)row->base_line((float)j);
-      lu.drawAtXY(dbgim, j, y, GREEN);
+      inT32 y = curimg->h - (inT32)row->row()->base_line((float)j);
+      Lept_Utils::drawAtXY(dbgim, j, y, LayoutEval::GREEN);
     }
   }
+  pixWrite((dbgdir + "baselines" + num + ".png").c_str(), dbgim, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(dbgim, 100, 100);
-  pixWrite((dbgdir + "baselines.png").c_str(), dbgim, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&dbgim);
+
 #endif
   // count of stacked characters at character position (coscacp)
   bigs.StartFullSearch();
@@ -231,19 +277,22 @@ void F_Ext1::initFeatExtSinglePage() {
       cout << "ERROR: stacked character count < 0 >:-[\n";
       exit(EXIT_FAILURE);
     }
-    SimpleColor color;
+    LayoutEval::Color color;
     if(blob->cosbabp == 1)
-      color = RED;
+      color = LayoutEval::RED;
     if(blob->cosbabp == 2)
-      color = GREEN;
+      color = LayoutEval::GREEN;
     if(blob->cosbabp > 2)
-      color = BLUE;
-    m.drawHlBlobInfoRegion(blob, dbgim2, color);
+      color = LayoutEval::BLUE;
+    M_Utils::drawHlBlobInfoRegion(blob, dbgim2, color);
   }
+  pixWrite((dbgdir + "stacked_blobs" + num + ".png").c_str(), dbgim2, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(dbgim2, 100, 100);
-  pixWrite((dbgdir + "stacked_blobs.png").c_str(), dbgim2, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&dbgim2);
-  m.waitForInput();
+
 #endif
 
   // determine whether or not each blob belongs to a "math word"
@@ -265,13 +314,16 @@ void F_Ext1::initFeatExtSinglePage() {
   mathwordim = pixConvertTo32(mathwordim);
   while((blob = bigs.NextFullSearch()) != NULL) {
     if(blob->ismathword) {
-      m.drawHlBlobInfoRegion(blob, mathwordim, RED);
+      M_Utils::drawHlBlobInfoRegion(blob, mathwordim, LayoutEval::RED);
     }
   }
+  pixWrite((dbgdir + (string)"mathwords" + num + ".png").c_str(), mathwordim, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(mathwordim, 100, 100);
-  pixWrite((dbgdir + (string)"mathwords.png").c_str(), mathwordim, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&mathwordim);
-  m.waitForInput();
+
 #endif
 #ifdef DBG_SHOW_ITALIC
   bigs.StartFullSearch();
@@ -279,12 +331,14 @@ void F_Ext1::initFeatExtSinglePage() {
   boldital_img = pixConvertTo32(boldital_img);
   while((blob = bigs.NextFullSearch()) != NULL) {
     if(blob->is_italic)
-      m.drawHlBlobInfoRegion(blob, boldital_img, RED);
+      M_Utils::drawHlBlobInfoRegion(blob, boldital_img, LayoutEval::RED);
   }
+  pixWrite((dbgdir + "bolditalics" + num + ".png").c_str(), boldital_img, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(boldital_img, 100, 100);
-  pixWrite((dbgdir + (string)"bolditalics.png").c_str(), boldital_img, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&boldital_img);
-  m.waitForInput();
 #endif
 
   // determine the average ocr confidence for valid words on the page,
@@ -308,7 +362,7 @@ void F_Ext1::initFeatExtSinglePage() {
   GenericVector<Sentence*> page_sentences = grid->getSentences();
   NGramRanker ng(training_set_path);
   ng.setTessAPI(api);
-  for(int i = 0; i < page_sentences.length(); i++) {
+  for(int i = 0; i < page_sentences.length(); ++i) {
     Sentence* cursentence = page_sentences[i];
     RankedNGramVecs* sentence_ngrams = new RankedNGramVecs;
     *sentence_ngrams = ng.generateSentenceNGrams(cursentence);
@@ -330,6 +384,7 @@ void F_Ext1::initFeatExtSinglePage() {
       ng_features->push_back(getNGFeature(cursentence, j+1));
     cursentence->ngram_features = ng_features;
   }
+  ++imdbgnum;
 }
 
 /* Carries out feature extraction on the given blob returning the
@@ -388,10 +443,9 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   vector<double> fv;
 
   /******** Features I.1 ********/
-  double rhabc = (double)0, uvabc = (double)0, dvabc = (double)0;
-  rhabc = countCoveredBlobs(blob, RIGHT);
-  uvabc = countCoveredBlobs(blob, UP);
-  dvabc = countCoveredBlobs(blob, DOWN);
+  double rhabc = blob->rhabc;
+  double uvabc = blob->uvabc;
+  double dvabc = blob->dvabc;
 
 #ifdef DBG_FEAT1
   if(rhabc > 1)
@@ -403,7 +457,6 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   if(rhabc > 1 || uvabc > 1 || dvabc > 1)
     dbgDisplayBlob(blob);
 #endif
-
   rhabc = expNormalize(rhabc);
   uvabc = expNormalize(uvabc);
   dvabc = expNormalize(dvabc);
@@ -412,8 +465,8 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   fv.push_back(dvabc);
 
   /******** Features I.2 ********/
-  double cn = (double)0;
-  cn = countNestedBlobs(blob);
+  double cn = countNestedBlobs(blob);
+  blob->nestedcount = cn;
 
 #ifdef DBG_FEAT2
   if(cn > 0) {
@@ -429,13 +482,13 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   double has_sup = (double)0, has_sub = (double)0,
       is_sup = (double)0, is_sub = (double)0;
   if(blob->has_sup)
-    has_sup = 1;
+    has_sup = (double)1;
   if(blob->has_sub)
-    has_sub = 1;
+    has_sub = (double)1;
   if(blob->is_sup)
-    is_sup = 1;
+    is_sup = (double)1;
   if(blob->is_sub)
-    is_sub = 1;
+    is_sub = (double)1;
 #ifdef DBG_FEAT3
   if(has_sup || has_sub || is_sup || is_sub) {
     cout << "The displayed blob has/is a sub/superscript!\n";
@@ -555,16 +608,22 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
 int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
   BlobInfoGridSearch bigs(grid);
   GenericVector<BLOBINFO*> covered_blobs;
+  GenericVector<BLOBINFO*> noncovered_blobs;
   int count = 0;
-#ifdef DBG_COVER_FEATURE
-  inT16 dbgleft = -1;
-  inT16 dbgbottom = -1;
-  inT16 dbgright = -1;
-  inT16 dbgtop = -1;
-  TBOX dbgbox(dbgleft, dbgbottom, dbgright, dbgtop);
-  TBOX blobbox = blob->bounding_box();
   bool indbg = false;
-  if(blobbox == dbgbox) {
+#ifdef DBG_COVER_FEATURE
+  bool single_mode = true; // if this is true thne only debugging one blob and its neighbors
+                            // otherwise then debug all of them
+  inT16 dbgleft = -1;
+  inT16 dbgtop = -1;
+  if(dbgleft < 0 || dbgtop < 0) // if i'm not debugging anything in particular debug everything
+    single_mode = false;
+
+  inT16 neighborleft = -1;
+  inT16 neighbortop = -1;
+
+  TBOX blobbox = blob->bounding_box();
+  if(blobbox.left() == dbgleft && blobbox.top() == dbgtop) {
     cout << "found it!\n";
     M_Utils m;
     m.dispBlobInfoRegion(blob, curimg);
@@ -574,8 +633,11 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
   }
 #endif
   // if the blob in question belongs to a valid word then
-  // I discard it immediately, assigning the feature value to zero
-  if(blob->validword)
+  // I discard it immediately, unless it belongs to an "abnormal row"
+  // in which case the feature is still found. see findAllRowCharacteristics() method
+  // of the BlobInfoGrid for what factors that are used to determine this. This feature
+  // really isn't too effective for normal
+  if(blob->validword && blob->onRowNormal())
     return 0;
   int range;
   if(dir == RIGHT) {
@@ -589,11 +651,9 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
          << "supports upward, downward, and rightward searches\n";
     exit(EXIT_FAILURE);
   }
-#ifdef DBG_COVER_FEATURE
-  BLOBINFO* pn = NULL;
-#endif
+
   // do beam searches to look for covered blobs
-  // TODO: For increased efficiency do fewer searches (come up with reasonable empirical
+  // TO consider: For increased efficiency do fewer searches (come up with reasonable empirical
   //       way of dividing the current blob so enough searches are done but it isn't excessive
   for(int i = 0; i < range; i++) {
     BLOBINFO* n = NULL;
@@ -609,10 +669,12 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
     if(n == NULL)
       continue;
     bool nothing = false;
+    BLOBINFO* previous_neighbor_ptr = NULL;
     while(n->bounding_box() == blob->bounding_box()
-        || ((dir == RIGHT) ? (n->right() <= blob->left())
-            : ((dir == UP) ? n->top() <= blob->bottom()
-                : n->bottom() >= blob->top()))) {
+        || ((dir == RIGHT) ? (n->left() <= blob->right())
+            : ((dir == UP) ? n->bottom() <= blob->top()
+                : n->top() >= blob->bottom()))
+                  || noncovered_blobs.bool_binary_search(n)) {
       if(dir == RIGHT)
         n = bigs.NextSideSearch(false);
       else
@@ -625,67 +687,97 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
     if(nothing)
       continue;
 #ifdef DBG_COVER_FEATURE
-    if(indbg && n != pn) {
-      cout << "displaying element found to the right\n";
-      M_Utils m;
-      m.dispHlBlobInfoRegion(n, curimg);
-      m.dispBlobInfoRegion(n, curimg);
+    bool was_added = false;
+    if(indbg) {
+      cout << "displaying element found " << ((dir == RIGHT) ? "to the right of "
+          : (dir == UP) ? "above " : "below ") << "the blob of interest\n";
+      M_Utils::dispHlBlobInfoRegion(n, curimg);
+      M_Utils::dispBlobInfoRegion(n, curimg);
       cout << "at i: " << i << endl;
-      cout << "point: " << blob->bottom() + i << endl;
-      m.waitForInput();
+      cout << "point: " <<  ((dir == RIGHT) ? (blob->bottom() + i) :
+          (blob->left() + i)) << endl;
     }
-    pn = n;
 #endif
     // if the neighbor is covered and isn't already on the list
     // then add it to the list (in ascending order)
+    bool dbgdontcare = false;
     if(!covered_blobs.bool_binary_search(n) && n != blob) {
-      if(isNeighborCovered(n, blob, dir)) {
+      if(isNeighborCovered(n, blob, dir, indbg, dbgdontcare)) {
+#ifdef DBG_COVER_FEATURE
+        if(indbg)
+          was_added = true;
+#endif
         covered_blobs.push_back(n);
         covered_blobs.sort();
-        count++;
+        ++count;
       }
     }
-  }
-
+    if(!noncovered_blobs.bool_binary_search(n) && n != blob) {
+      // if it's already been found to not be covered by the blob
+      // then put it on this list so it won't get tested again
+      noncovered_blobs.push_back(n);
+      noncovered_blobs.sort();
+    }
 #ifdef DBG_COVER_FEATURE
-  if(count > 1) {
-    M_Utils m;
+    if(indbg) {
+      if(was_added) {
+        cout << "the displayed element is being added to the covered list\n";
+        M_Utils::waitForInput();
+      }
+      else {
+        cout << "the displayed element was not added to the covered list\n";
+        if(!dbgdontcare)
+          M_Utils::waitForInput();
+      }
+    }
+#endif
+  }
+#ifdef DBG_COVER_FEATURE
+  if(count > 1 && !single_mode) {
     cout << "the highlighted blob is the one being evaluated and has " << count
          << " covered blobs " << "in the " << ((dir == RIGHT) ? " rightward "
              : ((dir == UP) ? " upward " : " downward ")) << "direction\n";
-    m.dispHlBlobInfoRegion(blob, curimg);
-    m.dispBlobInfoRegion(blob, curimg);
-    m.waitForInput();
-    for(int j = 0; j < covered_blobs.length(); j++) {
+    M_Utils::dispHlBlobInfoRegion(blob, curimg);
+    M_Utils::dispBlobInfoRegion(blob, curimg);
+    M_Utils::waitForInput();
+#ifdef DBG_COVER_FEATURE_ALOT
+    for(int j = 0; j < covered_blobs.length(); ++j) {
       cout << "the highlighted blob is covered by the blob previously shown\n";
-      m.dispHlBlobInfoRegion(covered_blobs[j], curimg);
-      m.dispBlobInfoRegion(covered_blobs[j], curimg);
-      m.waitForInput();
+      M_Utils::dispHlBlobInfoRegion(covered_blobs[j], curimg);
+      M_Utils::dispBlobInfoRegion(covered_blobs[j], curimg);
+      M_Utils::waitForInput();
     }
+#endif
   }
 #endif
-
-  covered_blobs.clear();
   return count;
 }
 
-bool F_Ext1::isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir) {
+// TODO: Tried filtering out neighbors that are on "normal rows", try the other way
+bool F_Ext1::isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir,
+    bool indbg, bool& dbgdontcare) {
+  if(neighbor->onRowNormal())
+    return false;
   inT16 neighbor_dist;
-  inT16 dist_threshold;
   inT16 blob_upper;
   inT16 blob_lower;
   inT16 neighbor_center;
+  double dist_threshold;
+  double area_thresh;
+  double dist_to_size_thresh = (double)2;
   if(dir == RIGHT) {
     blob_lower = blob->bottom();
     blob_upper = blob->top();
     dist_threshold = blob->height() / 2;
     neighbor_center = neighbor->centery();
     neighbor_dist = neighbor->left() - blob->right();
+    area_thresh = (double)(blob->height()) / (double)32;
   }
   else if(dir == UP || dir == DOWN) {
     blob_lower = blob->left();
     blob_upper = blob->right();
-    dist_threshold = blob->width() / 2;
+    dist_threshold = (double)(blob->width()) / (double)2;
+    area_thresh = (double)(blob->width()) / (double)32;
     neighbor_center = neighbor->centerx();
     if(dir == UP)
       neighbor_dist = neighbor->bottom() - blob->top();
@@ -699,22 +791,64 @@ bool F_Ext1::isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir
   // it the neighbor covered?
   if(neighbor_center >= blob_lower && neighbor_center <= blob_upper) {
     // is the neighbor adjacent?
-    if(neighbor_dist <= dist_threshold)
-      return true;
+    if(neighbor_dist <= dist_threshold) {
+      double area = (double)(neighbor->bounding_box().area());
+      if(area > area_thresh) {
+        TBOX neighbor_tb = neighbor->bounding_box();
+        double blobsize = (neighbor_tb.height() >= neighbor_tb.width())
+            ? neighbor_tb.height() : neighbor_tb.width();
+        double dist_to_size_ratio = (double)neighbor_dist /
+            blobsize;
+        if(dist_to_size_ratio < dist_to_size_thresh) {
+          return true;
+        }
+#ifdef DBG_COVER_FEATURE
+        else {
+          if(indbg)
+            cout << "The neighbor is not covered because it's distance from the "
+                 << "blob of interest is too great in relation to it's size.\n";
+        }
+#endif
+      }
+#ifdef DBG_COVER_FEATURE
+      else {
+      if(indbg)
+        cout << "The neighbor is not covered because it is too small\n";
+      }
+#endif
+    }
+#ifdef DBG_COVER_FEATURE
+    else {
+      if(indbg) {
+        cout << "The neighbor is not covered because its distance is above the threshold of "
+           << "half of the blob's width\n";
+        dbgdontcare = true;
+      }
+    }
+#endif
   }
+#ifdef DBG_COVER_FEATURE
+  else {
+    if(indbg)
+      cout << "The neighbor is not covered because its center is outside the boundary\n";
+  }
+#endif
   return false;
 }
 
 int F_Ext1::countNestedBlobs(BLOBINFO* blob) {
   int nested = 0;
-  if(blob->validword)
+  if(blob->validword || blob->onRowNormal()) {
     return 0;
+  }
   BlobInfoGridSearch bigs(grid);
   bigs.StartRectSearch(blob->bounding_box());
   BLOBINFO* nestblob;
+  GenericVector<BLOBINFO*> nestedbloblist;
   while((nestblob = bigs.NextRectSearch()) != NULL) {
     if(nestblob == blob ||
-        (nestblob->bounding_box() == blob->bounding_box()))
+        (nestblob->bounding_box() == blob->bounding_box()) ||
+        nestedbloblist.bool_binary_search(nestblob))
       continue;
     else {
       // make sure the nestblob is entirely contained within
@@ -723,16 +857,35 @@ int F_Ext1::countNestedBlobs(BLOBINFO* blob) {
       TBOX blobbox = blob->bounding_box();
       if(!blobbox.contains(nestbox))
         continue;
-#ifdef DBG_NESTED_FEATURE
-      cout << "showing the blob which has a nested element!\n";
-      dbgDisplayBlob(blob);
-      cout << "displaying the nested element\n";
-      dbgDisplayBlob(nestblob);
-#endif
+      // make sure it passes an area threshold
+      double area_thresh = (double)1/(double)64;
+      if(nestbox.area() < ((double)(blobbox.area())*area_thresh))
+        continue;
+      nestedbloblist.push_back(nestblob); // avoid duplicates
+      nestedbloblist.sort();
       blob->has_nested = true;
-      nested++;
+      ++nested;
     }
   }
+#ifdef DBG_NESTED_FEATURE
+  //int left=1458, top=1983, right=1759, bottom=1899;
+  //TBOX tb(left, bottom, right, top);
+  //if(blob->bounding_box() == tb) {
+    if(nested > 0) {
+      cout << "displaying blob which has " << nested << " nested element(s)\n";
+      cout << "blob has area " << blob->bounding_box().area() << endl;
+      dbgDisplayBlob(blob);
+      for(int i = 0; i < nestedbloblist.length(); ++i) {
+        cout << "displaying nested element # " << i << endl;
+        cout << "nested element has area of " << nestedbloblist[i]->bounding_box().area() << endl;
+        cout << "nested element coordinates:\n";
+        nestedbloblist[i]->bounding_box().print();
+        M_Utils::dispBlobInfoRegion(nestedbloblist[i], dbgim);
+        M_Utils::waitForInput();
+      }
+    }
+  //}
+#endif
   return nested;
 }
 
@@ -763,7 +916,7 @@ void F_Ext1::setBlobSubSuperScript(BLOBINFO* blob, SubSuperScript subsuper) {
   inT16 blob_right = blob->right() + 1;
   // do repeated beam searches starting from the vertical center
   // of the current blob, going downward for subscripts and upward for superscripts
-  // TODO: Make this more efficient (do fewer beam searches)
+  // TODO (someday): Make this more efficient (do fewer beam searches)
   BlobInfoGridSearch beamsearch(grid);
   for(int i = 0; i < blob->height() / 2; i++) {
     int j = (subsuper == SUPER) ? i : -i;
@@ -795,7 +948,19 @@ void F_Ext1::setBlobSubSuperScript(BLOBINFO* blob, SubSuperScript subsuper) {
         continue; // if the super/subscript is in a valid word, it has to be at the first letter
     }
     if(subsuper == SUPER) {
-      if(neighbor->bottom() > (blob_center_y - ((blob_center_y - blob->bottom())/2))) {
+      if(neighbor->bottom() > (blob_center_y - ((blob_center_y - blob->bottom())/8))) {
+        if(blob->wordinfo) {
+          if(blob->wordinfo == neighbor->wordinfo) {
+            if(blob->wordstr() != NULL) {
+              const char* wrd = blob->wordstr();
+              if(wrd[0] == '(' && blob->isLeftmostInWord())
+                continue; // discard beginning parenthesis like (x), which are often mistaken
+              if((wrd[strlen(wrd)-1] == 's') && ((wrd[strlen(wrd)-2] == 39)
+                  || Basic_Utils::checkForPrimeGlyph(wrd)))
+                continue; // discard possessives like "Simpson's", "Taylor's" etc..
+            }
+          }
+        }
 #ifdef DBG_SUB_SUPER
         dbgSubSuper(blob, neighbor, subsuper);
 #endif
@@ -842,10 +1007,10 @@ int F_Ext1::countStacked(BLOBINFO* blob, Direction dir) {
   int left=1773, top=1243, right=1810, bottom=1210;
   TBOX box(left, bottom, right, top);
 #endif
-  if(blob->validword) {
+  if(blob->validword || blob->onRowNormal()) {
 #ifdef DBG_STACKED_FEATURE_ALOT
       if(blob->bounding_box() == box) {
-        cout << "showing a blob which is part of a valid word and thus can't have stacked elements\n";
+        cout << "showing a blob which is part of a valid word or 'normal' row and thus can't have stacked elements\n";
         dbgDisplayBlob(blob);
       }
 #endif
@@ -880,10 +1045,10 @@ int F_Ext1::countStacked(BLOBINFO* blob, Direction dir) {
     }
     // found the element above/below the prev_stacked_blob.
     // is it adjacent based on the prev_stacked blob's location and central blob's height?
-    if(stacked_blob->validword) { // if its part of a valid word then it's discarded here
+    if(stacked_blob->validword || stacked_blob->onRowNormal()) { // if its part of a valid word then it's discarded here
 #ifdef DBG_STACKED_FEATURE_ALOT
       if(blob->bounding_box() == box) {
-        cout << "showing a blob whose stacked element belongs to a valid word and thus can't be stacked\n";
+        cout << "showing a blob whose stacked element belongs to a valid word or normal row and thus can't be stacked\n";
         dbgDisplayBlob(blob);
         cout << "showing the candidate which can't be stacked\n";
         dbgDisplayBlob(stacked_blob);
@@ -1011,7 +1176,7 @@ double F_Ext1::scaleNGramFeature(double ng_feat, RankedNGramVec profile) {
 }
 
 double F_Ext1::expNormalize(double f) {
-  return 1 - exp(-f);
+  return (1 - exp(-f));
 }
 
 void F_Ext1::dbgDisplayBlob(BLOBINFO* blob) {
@@ -1024,13 +1189,17 @@ void F_Ext1::dbgDisplayBlob(BLOBINFO* blob) {
 void F_Ext1::dbgSubSuper(BLOBINFO* blob, BLOBINFO* neighbor, SubSuperScript subsuper) {
   cout << "found a " << ((subsuper == SUPER) ? "super" : "sub")
        << "-script for the displayed blob\n";
-  cout << "heres the recognition result for that blob's word: "
+  cout << "here's the recognition result for that blob's word: "
        << ((blob->wordstr() == NULL) ? "NULL" : blob->wordstr()) << endl;
   if(blob->word() == NULL)
     cout << "no blobs were recognized in the blob's word!\n";
   dbgDisplayBlob(blob);
   cout << "displayed is the previous blob's "
        << ((subsuper == SUPER) ? "super" : "sub") << "-script\n";
+  cout << "here's the recognition result for that neighbor's word: "
+       << ((neighbor->wordstr() == NULL) ? "NULL" : neighbor->wordstr()) << endl;
+  if(neighbor->word() == NULL)
+    cout << "no blobs were recognized in the neighbor's word!\n";
   dbgDisplayBlob(neighbor);
 }
 
@@ -1045,21 +1214,25 @@ void F_Ext1::dbgDisplayNGrams(const RankedNGramVecs& ngrams) {
 }
 
 void F_Ext1::dbgAfterExtraction() {
+#ifdef DBG_SHOW_NESTED
+  static int nesteddbgnum = 1;
   BlobInfoGridSearch bigs(grid);
   bigs.StartFullSearch();
   BLOBINFO* blob;
-  M_Utils m;
-#ifdef DBG_SHOW_NESTED
   PIX* dbgnested_im = pixCopy(NULL, curimg);
   dbgnested_im = pixConvertTo32(dbgnested_im);
   while((blob = bigs.NextFullSearch()) != NULL) {
     if(blob->has_nested)
-      m.drawHlBlobInfoRegion(blob, dbgnested_im, RED);
+      M_Utils::drawHlBlobInfoRegion(blob, dbgnested_im, LayoutEval::RED);
   }
+  string num = Basic_Utils::intToString(nesteddbgnum);
+  pixWrite((dbgdir + (string)"nested" + num + ".png").c_str(), dbgnested_im, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(dbgnested_im, 100, 100);
-  pixWrite((dbgdir + (string)"nested.png").c_str(), dbgnested_im, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
+  ++nesteddbgnum;
   pixDestroy(&dbgnested_im);
-  m.waitForInput();
 #endif
 }
 

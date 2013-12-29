@@ -72,6 +72,13 @@ namespace Basic_Utils {
   // (TAKEN OUT BECAUSE IT'S BUGGY... SEE M_UTILS.H FOR REPLACEMENT!!!)
   //vector<char*> lineSplit(const char* txt);
 
+  // sometimes the apostrophe is mistakenly written in unicode as the
+  // prime glyph which ends up being represented by the following sequence
+  // of signed characters: -30 -128 -103. Checks to see if that sequence
+  // ends at the given position. By default this function assumes the
+  // position is strlen(str)-2, which would represent a possessive noun.
+  bool checkForPrimeGlyph(const char* str, int position=-1);
+
   // sometimes there are extra trailing new lines that need
   // to be removed. this does just that.
   char* removeExtraNLs(char* str);

@@ -63,6 +63,10 @@ class ITrainer {
     return classifier;
   }
 
+  inline void setAlwaysTrain() {
+    trainer.setAlwaysTrain();
+  }
+
   inline void reset() {
     trainer.reset();
   }

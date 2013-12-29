@@ -26,8 +26,13 @@ else
     while (( $i<=$num ))
     do
         file=$(ls $inputdir/*.$ext | head -n $i | tail -n 1 | tr -d '\n');
-        #get the number!
-        number=$(echo $file | sed -e 's/\([0-9][/]\)//' | sed -e s/[^0-9]*// | sed -e s/[^0-9].*// | tr -d '\n')
+        # get the number! the last number in the image name is assumed to be
+        # the file number. only expects the number to be 1 or 2 digits
+        number=$(echo $file | sed -e 's/.*\(.[0-9]\).*/\1/' | tr -d '\n')
+        number=$(echo $number | sed -e 's/[^0-9]//')
+        echo "num: " $number
+
+        
 
         echo -e "\n=================filename:"$( printf '%d.%s' $(($number)) $ext )" --- originalname:"$file"=================\n" >> $outputdir"/files_info";
         #identify -verbose -ping $file >> $outputdir"/files_info";

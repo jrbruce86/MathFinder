@@ -31,9 +31,16 @@
 //#define DBG_INFO_GRID
 //#define DBG_INFO_GRID_S
 //#define DBG_INFO_GRID_SHOW_SENTENCE_REGIONS
-//#define SHOW_BLOB_WINDOW
+#define SHOW_BLOB_WINDOW
 //#define DBG_BASELINE
 
+//#define DBG_ROW_CHARACTERISTICS
+
+#define SHOW_BLOB_ROWS // colors all blobs which belong to rows and displays
+#define SHOW_BLOB_WORDS // colors all blobs belonging to words and displays
+//#define DBG_DISPLAY // display what is being saved for debugging otherwise just save
+
+#define dbgmode 1
 
 #include "BlobInfoGrid.h"
 #include <ctype.h>
@@ -117,6 +124,11 @@ BlobInfoGrid::~BlobInfoGrid() {
   if(api != NULL) {
     delete api;
     api = NULL;
+  }
+  else {
+    cout << "ERROR: TessBaseAPI used by the grid is owned by it and should only be "
+         << "destroyed in its constructor. It was destroyed somewhere else.\n";
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -270,9 +282,11 @@ void BlobInfoGrid::recognizePage() {
               blobinfo->validword = api->IsValidWord(blobinfo->wordstr());
           }
           // Now to insert the blobinfo object into the BlobInfoGrid
-          InsertBBox(true, true, blobinfo);
-          // insert a pointer to the blob into the ROW_INFO_BLOBS object for this row
-          addBlobToLastRowWord(blobinfo);
+          bool inserted = insertUniqueBlobToGrid(blobinfo);
+          if(inserted) {
+            // insert a pointer to the blob into the ROW_INFO object for this row
+            addBlobToLastRowWord(blobinfo);
+          }
           blob_it.forward();
         }
         wordresit.forward();
@@ -282,6 +296,7 @@ void BlobInfoGrid::recognizePage() {
     }
     bres_it.forward();
   }
+
 #ifdef DBG_INFO_GRID
   rec_col_parts_sv = MakeWindow(100, 100,
       "Original BlobInfoGrid (after recognizeColParts)");
@@ -295,8 +310,6 @@ void BlobInfoGrid::recognizePage() {
 // into their appropriate BLOBINFO object and/or creating a new BLOBINFO object
 // for blobs which may not have been recognized at all.
 void BlobInfoGrid::insertRemainingBlobs() {
-
-
 #ifdef DBG_INFO_GRID
   int dbgBLOBNBOXleft = -1;
   int dbgBLOBNBOXtop = -1;
@@ -374,7 +387,7 @@ void BlobInfoGrid::insertRemainingBlobs() {
         BLOBINFO* newblinfo = new BLOBINFO(box);
         newblinfo->original_part = blob->owner();
         newblinfo->reinserted = true;
-        InsertBBox(true, true, newblinfo);
+        bool new_inserted = insertUniqueBlobToGrid(newblinfo);
       }
       boxDestroy(&blobbox);
       boxDestroy(&blinfobox);
@@ -393,7 +406,9 @@ void BlobInfoGrid::insertRemainingBlobs() {
       blinfo = new BLOBINFO(box);
       blinfo->original_part = blob->owner();
       blinfo->reinserted = true;
-      InsertBBox(true, true, blinfo); // insert the new blobinfo object into the grid
+      bool inserted = insertUniqueBlobToGrid(blinfo);
+      if(!inserted)
+        continue; // this would've been a duplicate, just moving on in the loop now
     }
     if(blinfo->unrecognized_blobs == NULL)
       blinfo->unrecognized_blobs = new BLOBNBOX_LIST();
@@ -421,6 +436,8 @@ void BlobInfoGrid::insertRemainingBlobs() {
     }
   }
 
+  // just makes sure the same pointer doesn't appear in the grid more than once.
+  // ensuring the same bounding box isn't added multiple times is left for me to solve.
   AssertNoDuplicates();
 
 #ifdef DBG_INFO_GRID
@@ -429,7 +446,7 @@ void BlobInfoGrid::insertRemainingBlobs() {
   M_Utils::waitForInput();
 #endif
 
-  // Second pass: Here I split up blobinfo elements that were'nt properly
+  // Second pass: Here I split up blobinfo elements that weren't properly
   //              recognized during page recognition, into seperate "child"
   //              blobinfo elements to facilitate more thorough analysis of
   //              misrecognized regions.
@@ -453,12 +470,10 @@ void BlobInfoGrid::insertRemainingBlobs() {
       bool is_italic = blinfo->is_italic;
       int replace_index = -1;
       BlobIndices replacement_indices = removeAllBlobOccurrences(blinfo, !blinfo->reinserted);
+      BLOBINFO* blob_toremove = blinfo;
       bblist = blinfo->copyBlobNBoxes();
-      if(!blinfo->reinserted) {
+      if(!blinfo->reinserted)
         bigs.RemoveBBox(); // this doesn't modify blinfo pointer, just removes it from the grid...
-        delete blinfo;
-        blinfo = NULL;
-      }
       BLOBNBOX_IT bbit(bblist);
       bbit.move_to_first();
       for(int i = 0; i < bblist->length(); i++) {
@@ -489,16 +504,22 @@ void BlobInfoGrid::insertRemainingBlobs() {
         newblinfo->dbgjustadded = true;
         // insert new shallow copy replacement back into each of the wordinfo
         // objects from which the "parent" was removed
-        insertBlobReplacements(newblinfo, replacement_indices, i);
-        InsertBBox(true, true, newblinfo); // insert into the grid
-        bigs.RepositionIterator();
-        blinfo = bigs.NextFullSearch(); // skip over this
-        if(blinfo == NULL) {
+        bool inserted = insertUniqueBlobToGrid(newblinfo);
+        if(inserted) {
+          insertBlobReplacements(newblinfo, replacement_indices, i);
+          bigs.RepositionIterator();
+          blinfo = bigs.NextFullSearch(); // skip over this
+        }
+   /*     if(blinfo == NULL) {
           cout << "Either something was inserted at the end of the grid or something is terribly wrong\n";
           M_Utils::waitForInput();
           break;
-        }
+        }*/
         bbit.forward();
+      }
+      if(!blob_toremove->reinserted) {
+        delete blob_toremove;
+        blob_toremove = NULL;
       }
       if(bblist != NULL) {
         bblist->clear();
@@ -509,6 +530,8 @@ void BlobInfoGrid::insertRemainingBlobs() {
   }
 
   AssertNoDuplicates();
+
+  assertAllUnique();
 
 #ifdef DBG_INFO_GRID
   // now display it!
@@ -615,7 +638,6 @@ void BlobInfoGrid::findSentences() {
 
 
 void BlobInfoGrid::getSentenceRegions() {
-
 #ifdef DBG_INFO_GRID_S
   int dbgsentence = -1;
 #endif
@@ -756,14 +778,99 @@ void BlobInfoGrid::getSentenceRegions() {
     boxDestroy(&bbox);
   }
 
+  // Now iterate the grid one more time to make sure every blob is assigned a
+  // row if it hasn't already and resides within its bounding box regardless of
+  // whether or not it belongs to a sentence.
+  curblob = NULL;
+  bigs.StartFullSearch();
+  while((curblob = bigs.NextFullSearch()) != NULL) {
+    if(curblob->rowinfo() != NULL)
+      continue;
+    for(int i = 0; i < rows.length(); ++i) {
+      TBOX rowbox = rows[i]->rowBox();
+      TBOX blobbx = curblob->bounding_box();
+      if(rowbox.contains(blobbx)) {
+        curblob->row_index = i;
+        curblob->row_no_word = rows[i];
+      }
+    }
+  }
 
+  // TODO: Combine row and word assignment into single iteration, it may
+  //       not be the optimally efficient that way but it will still be
+  //       better than this.
+
+  // make sure each one is assigned to the word it should belong to
+  for(int i = 0; i < rows.length(); ++i) {
+    ROW_INFO* row = rows[i];
+    GenericVector<WORD_INFO*> words = row->wordinfovec;
+    for(int j = 0; j < words.length(); ++j) {
+      BlobInfoGridSearch bigs(this);
+      if(!words[j]->word())
+        continue;
+      bigs.StartRectSearch(words[j]->word()->bounding_box());
+      BLOBINFO* b = NULL;
+      while((b = bigs.NextRectSearch()) != NULL) {
+        if(b->wordinfo == NULL) {
+          b->wordinfo = words[j];
+          b->word_index = j;
+        }
+      }
+    }
+  }
+
+#ifdef SHOW_BLOB_ROWS
+  PIX* dbg_blob_row_im = pixCopy(NULL, img);
+  dbg_blob_row_im = pixConvertTo32(dbg_blob_row_im);
+  static int b_rows_dbg_num = 1;
+  string rows_dbg_name = (string)"blob_rows_" + Basic_Utils::intToString(b_rows_dbg_num) +
+      (string)".png";
+  curblob = NULL;
+  bigs.StartFullSearch();
+  while((curblob = bigs.NextFullSearch()) != NULL) {
+    if(curblob->rowinfo() != NULL)
+      M_Utils::drawHlBlobInfoRegion(curblob, dbg_blob_row_im, LayoutEval::RED);
+  }
+  pixWrite(rows_dbg_name.c_str(), dbg_blob_row_im, IFF_PNG);
+#ifdef DBG_DISPLAY
+  pixDisplay(dbg_blob_row_im, 100, 100);
+  cout << "Displaying all blobs which belong to rows colored in red, and saving to "
+       << rows_dbg_name << endl;
+  M_Utils::waitForInput();
+#endif
+  ++b_rows_dbg_num;
+  pixDestroy(&dbg_blob_row_im);
+#endif
+
+#ifdef SHOW_BLOB_WORDS
+  PIX* dbg_blob_word_im = pixCopy(NULL, img);
+  dbg_blob_word_im = pixConvertTo32(dbg_blob_word_im);
+  static int b_word_dbg_num = 1;
+  string words_dbg_name = (string)"blob_words_" + Basic_Utils::intToString(b_word_dbg_num) +
+      (string)".png";
+  curblob = NULL;
+  bigs.StartFullSearch();
+  while((curblob = bigs.NextFullSearch()) != NULL) {
+    if(curblob->wordinfo != NULL)
+      M_Utils::drawHlBlobInfoRegion(curblob, dbg_blob_word_im, LayoutEval::RED);
+  }
+  pixWrite(words_dbg_name.c_str(), dbg_blob_word_im, IFF_PNG);
+#ifdef DBG_DISPLAY
+  pixDisplay(dbg_blob_word_im, 100, 100);
+  cout << "Displaying all blobs which belong to words colored in red, and saving to "
+       << words_dbg_name << endl;
+  M_Utils::waitForInput();
+#endif
+  ++b_word_dbg_num;
+  pixDestroy(&dbg_blob_word_im);
+#endif
 
 #ifdef DBG_INFO_GRID_S
 #ifdef DBG_INFO_GRID_SHOW_SENTENCE_REGIONS
   // for debugging, color the blobs for each sentence region and display the results
   // while showing the contents of the sentence on the terminal. do one at
   // a time requiring user input to continue in between displaying each sentence
-  bool displayon = true;
+  bool displayon = false;
   bool showlines = false; // if showlines is false then highlights the blobs
                           // belonging to each sentence, otherwise highlights
                           // the lines belonging to each sentence
@@ -911,10 +1018,9 @@ BlobIndices BlobInfoGrid::removeAllBlobOccurrences(BLOBINFO* blob, bool remove) 
         blbidx.rowindex = i;
         indices.push_back(blbidx);
         if(remove)
-          --j; // this is the worst kind of bug.. took > 3 hours to realize I needed this...
-             // needed because a duplicate blob often occurs more than once in the same
-             // word. Thus need to stay on the same word until all duplicates removed. could
-             // have used a separate while loop instead but this works fine.
+          --j; // needed because a duplicate blob often occurs more than once in the same
+               // word. Thus need to stay on the same word until all duplicates removed. could
+               // have used a separate while loop instead but this works fine.
       }
     }
   }
@@ -937,6 +1043,39 @@ void BlobInfoGrid::insertBlobReplacements(BLOBINFO* blob,
     else
       wordinfo->blobs.push_back(blob);
   }
+}
+
+bool BlobInfoGrid::insertUniqueBlobToGrid(BLOBINFO* blob) {
+  BlobInfoGridSearch bigs(this);
+  bigs.StartRectSearch(blob->bounding_box());
+  BLOBINFO* potential_match = NULL;
+  while((potential_match = bigs.NextFullSearch()) != NULL) {
+    // if the provided pointer was already inserted
+    // then this function is not being used properly
+    assert(blob != potential_match);
+    if(blob->bounding_box() == potential_match->bounding_box()) {
+      // pre-existing blob with same bounding box as the one provided was found!
+      if(blob->validword && !potential_match->validword) {
+        // replace the existing one with the one provided
+        RemoveBBox(potential_match);
+        BlobIndices indices = removeAllBlobOccurrences(potential_match, true);
+        delete potential_match;
+        potential_match = NULL;
+        InsertBBox(true, true, blob);
+        return true;
+      }
+      else {
+        // keep the new one and delete the one provided
+        delete blob;
+        blob = NULL;
+        return false;
+      }
+    }
+  }
+  // a pre-existing blob with the same bounding box as the one provided
+  // was not found. simply insert the blob provided into the grid.
+  InsertBBox(true, true, blob);
+  return true;
 }
 
 void BlobInfoGrid::dbgDisplayRowText() {
@@ -1040,6 +1179,191 @@ int BlobInfoGrid::findSentence(const int& rowindex, const int& wordindex) {
   return -1;
 }
 
+void BlobInfoGrid::assertAllUnique() {
+  AssertNoDuplicates();
+  BlobInfoGridSearch bigs(this);
+  BLOBINFO* curblob = NULL;
+  bigs.StartFullSearch();
+  while((curblob = bigs.NextFullSearch()) != NULL) {
+    BlobInfoGridSearch rectsearch(this);
+    rectsearch.StartRectSearch(curblob->bounding_box());
+    BLOBINFO* overlap = NULL;
+    int pointer_count = 0;
+    while((overlap = rectsearch.NextRectSearch()) != NULL) {
+      if(overlap != curblob)
+        assert(!(overlap->bounding_box() == curblob->bounding_box()));
+      else
+        ++pointer_count; // hits the same pointer multiple times because of how grid is implemented
+    }                    // (i.e., a single blob covers multiple grid cells)
+                         // AssertNoDuplicates ensures there really aren't duplicates...
+  //  cout << pointer_count << endl;
+  //  assert(pointer_count == 1);
+  }
+}
+
+
+//TODO: Modify so that first row with valid words is considered the top row
+//      and discarded, rather than simply the top row. Sometimes there is noise
+//      on the top row.
+void BlobInfoGrid::findAllRowCharacteristics() {
+#ifdef DBG_ROW_CHARACTERISTICS
+  cout << "here are the rows in their vector ordering:\n";
+  for(int i = 0; i < rows.length(); ++i) {
+    cout << rows[i]->getRowText() << endl;
+  }
+  M_Utils::waitForInput();
+#endif
+  // find the average # of valid words per row
+  double avg_valid_words = 0;
+  double num_rows_with_valid = 0;
+  for(int i = 0; i < rows.length(); ++i) {
+    ROW_INFO* row = rows[i];
+    if(!row->has_valid_word) {
+      row->setValidWordCount(0);
+      continue;
+    }
+    GenericVector<WORD_INFO*> words = row->wordinfovec;
+    int valid_words_cur_row = 0;
+    for(int j = 0; j < words.length(); ++j) {
+      if(!words[j]->wordstr())
+        continue;
+      if(api->IsValidWord(words[j]->wordstr()))
+        ++valid_words_cur_row;
+    }
+    assert(valid_words_cur_row > 0); // shouldn't be 0 or less
+    ++num_rows_with_valid;
+    row->setValidWordCount(valid_words_cur_row);
+    avg_valid_words += (double)valid_words_cur_row;
+  }
+  avg_valid_words /= num_rows_with_valid;
+#ifdef DBG_ROW_CHARACTERISTICS
+  cout << "average number of valid words per row: " << avg_valid_words << endl;
+#endif
+  // find the standard deviation of the # of valid words per row that fall short of
+  // the average
+  double std_dev_valid_words = 0;
+  for(int i = 0; i < rows.length(); ++i) {
+    if(!rows[i]->has_valid_word) {
+      assert(rows[i]->numValidWords() == 0);
+      continue;
+    }
+    double cur_deviation = avg_valid_words - (double)(rows[i]->numValidWords());
+    cur_deviation = pow(cur_deviation, (double)2);
+    std_dev_valid_words += cur_deviation;
+    ++num_rows_with_valid;
+  }
+  std_dev_valid_words /= num_rows_with_valid;
+  std_dev_valid_words = sqrt(std_dev_valid_words);
+#ifdef DBG_ROW_CHARACTERISTICS
+  cout << "standard deviation of valid words per row: " << std_dev_valid_words << endl;
+#endif
+  // for low standard deviation it is expected that much of the text is normal
+  // although it could also indicate that most of the text is abnormal and with
+  // very little variance. in the latter case it would be difficult to come up
+  // with any indication of whether or not a row is normal without comparing the
+  // page to some preconceived model, which would be outside of the scope of
+  // the current work. thus the former case is what is assuemd by this design.
+  // for a row to be considered as "normal" in the first pass it must have
+  // a number of valid words greater than a threshold determined as follows:
+  // if the row has a count of valid words which negatively deviates from the average by
+  // more than twice the standard deviation, then the row is considered abnormal
+  // initially, otherwise it is labeled as normal. only rows that have at least one
+  // valid word are used to calculate average and standard deviation.
+
+  // now get average vertical spacing between rows and standard devation
+  double avg_vertical_space = 0;
+  for(int i = 0; i < rows.length(); ++i) {
+    // discard top row since it is usually a heading
+    if(i == 0)
+      continue;
+    if(!rows[i]->has_valid_word)
+      continue;
+    if(i != (rows.length() - 1)) {
+      if(!rows[i+1]->has_valid_word)
+        continue;
+      double dist_below = rows[i]->rowBox().bottom() - rows[i+1]->rowBox().top();
+      avg_vertical_space += dist_below;
+    }
+  }
+  avg_vertical_space /= num_rows_with_valid;
+#ifdef DBG_ROW_CHARACTERISTICS
+  cout << "average vertical space between rows with at least one valid word: " << avg_vertical_space << endl;
+#endif
+  double vert_space_std_dev = 0;
+  for(int i = 0; i < rows.length(); ++i) {
+    if(i == 0)
+      continue;
+    if(!rows[i]->has_valid_word)
+      continue;
+    if(i != (rows.length() - 1)) {
+      if(!rows[i+1]->has_valid_word)
+        continue;
+      double dist_below = rows[i]->rowBox().bottom() - rows[i+1]->rowBox().top();
+      double cur_vert_space_dev = avg_vertical_space - dist_below;
+      cur_vert_space_dev = pow(cur_vert_space_dev, (double)2);
+      vert_space_std_dev += cur_vert_space_dev;
+    }
+  }
+  vert_space_std_dev /= num_rows_with_valid;
+  vert_space_std_dev = sqrt(vert_space_std_dev);
+#ifdef DBG_ROW_CHARACTERISTICS
+  cout << "vertical space standard deviation for rows with at least 1 valid word: " << vert_space_std_dev << endl;
+#endif
+  // pass 1: assign initial abnormal rows based on valid word counts
+  for(int i = 0; i < rows.length(); ++i) {
+    if(i == 0) // assume top row is heading
+      continue;
+    ROW_INFO* row = rows[i];
+    double valid_word_deviation = (double)(rows[i]->numValidWords() - avg_valid_words);
+    if(valid_word_deviation < 0) {
+      valid_word_deviation = -valid_word_deviation;
+      if(valid_word_deviation > (1.0*std_dev_valid_words)) {
+#ifdef DBG_ROW_CHARACTERISTICS
+        cout << "pass 1: assigning the following row to being abnormal:\n";
+        cout << row->getRowText() << endl;
+        if(row->getRowText().empty())
+          cout << "NULL\n";
+        M_Utils::dispHlTBoxRegion(row->rowBox(), img);
+        M_Utils::waitForInput();
+#endif
+        row->is_normal = false;
+      }
+    }
+    else
+      assert(rows[i]->numValidWords() > 0);
+  }
+
+  // pass 2: use vertical space standard deviation to label rows at
+  // paragraph endings which may have a small number of valid words as normal
+  for(int i = 0; i < rows.length(); ++i) {
+    ROW_INFO* row = rows[i];
+    if(i == 0 || i == 1) { // here I just assume the top row is a heading
+      continue;
+    }
+    double above_v_space = 0;
+    double above_deviation = 0;
+    above_v_space = rows[i-1]->rowBox().bottom() - rows[i]->rowBox().top();
+    above_deviation = -(avg_vertical_space - above_v_space);
+    if(above_deviation < ((double)1.0)*vert_space_std_dev) {
+      if(rows[i-1]->is_normal && !row->is_normal) {
+#ifdef DBG_ROW_CHARACTERISTICS
+        cout << "pass 2: assigning the following row back to normal:\n";
+        cout << row->getRowText() << endl;
+        cout << "above deviation: " << above_deviation << endl;
+        cout << "vert space standard deviation: " << vert_space_std_dev << endl;
+        M_Utils::dispHlTBoxRegion(row->rowBox(), img);
+        M_Utils::waitForInput();
+#endif
+        row->is_normal = true;
+      }
+    }
+  }
+#ifdef DBG_ROW_CHARACTERISTICS
+  cout << "Finished getting row characteristics.\n";
+  M_Utils::waitForInput();
+#endif
+}
+
 void BlobInfoGrid::HandleClick(int x, int y) {
   cout << "-----------------------------------\n";
   cout << "\nx,y: " << x << ", " << y << endl;
@@ -1071,6 +1395,7 @@ void BlobInfoGrid::HandleClick(int x, int y) {
   }
   else
     cout << "The blob is on a row with no valid words!\n";
+  cout << "blob has " << bb->nestedcount << " nested blobs within it\n";
   // find the colpartition we are on
 /*  ColPartitionGridSearch cpgs(part_grid); // comment from here to
   ColPartition* cp = NULL;
@@ -1099,6 +1424,17 @@ void BlobInfoGrid::HandleClick(int x, int y) {
   }
   else
     cout << "the blob you clicked belongs to sentence number " << bb->sentenceindex << ", which is NULL\n......\n";
+  if(bb->getParagraph() != NULL) {
+    cout << "The blob belongs to a word in a paragraph with the following traits:\n";
+    PARA* paragraph = bb->getParagraph();
+    if(paragraph->model == NULL)
+      cout << "the model is null!!\n";
+    else
+      cout << paragraph->model->ToString().string() << endl;
+    cout << "api has " << api->getParagraphModels()->length() << " models\n";
+  }
+  else
+    cout << "The blob doesn't belong to any paragraph.\n";
 #ifdef SHOW_BLOB_WINDOW
     M_Utils::dispHlBlobInfoRegion(bb, img);
     M_Utils::dispBlobInfoRegion(bb, img);
@@ -1109,8 +1445,11 @@ void BlobInfoGrid::HandleClick(int x, int y) {
 
 void BlobInfoGrid::dbgDisplayBlobFeatures(BLOBINFO* blob) {
   if(!blob->features_extracted) {
-    cout << "ERROR: Feature extraction hasn't been carried out on the blob\n";
-    exit(EXIT_FAILURE);
+    if(!dbgmode) {
+      cout << "ERROR: Feature extraction hasn't been carried out on the blob\n";
+      exit(EXIT_FAILURE);
+    }
+    else return;
   }
   vector<double> features = blob->features;
   if(features.size() != featformat.length())

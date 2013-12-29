@@ -34,10 +34,24 @@
 #include <string>
 using namespace std;
 
-// Modify these to try different detector-segmentor combinations
-// as defined in MEDS_Types.h
+/**************************************************************************
+ * Uncomment out the MEDS module to be tested. Make sure that one and only
+ * one of them are uncommented!
+ *************************************************************************/
+#define MEDS1TEST
+//#define MEDS2TEST
+
+#ifdef MEDS1TEST
+typedef MEDS1 MEDSType;
+typedef MEDS1Detector DetectorType;
+#define MEDSNUM 1;
+#endif
+
+#ifdef MEDS2TEST
 typedef MEDS2 MEDSType;
 typedef MEDS2Detector DetectorType;
+#define MEDSNUM 2;
+#endif
 
 // Runs evaluation test on the given detector for the given dataset
 // which should be within the "topdir" specified (if detector is null
@@ -61,6 +75,9 @@ int main() {
   // set this to false if only want to train the module
   // if it hasn't been trained yet.
   bool train_always = false;
+  // if true then extract features during training even
+  // if they've already been written to a file
+  bool new_samples = false;
 
   // specify how the tesseract api should always be initialized
   // i.e. what language and the path to the training files necessary
@@ -69,24 +86,27 @@ int main() {
   api_init_params.push_back((string)"eng"); // tesseract language
 
   // Pick a detector/segmentor combo and train if necessary
-  MEDS_Trainer<DetectorType> trainer(train_always, trainpath, false, api_init_params);
-
+  MEDS_Trainer<DetectorType> trainer(train_always, trainpath, new_samples, api_init_params);
   trainer.trainDetector();
+  cout << "Finished training the detector!\n";
 
   // Instantiate a MEDS module which uses the detector that was
   // initialized by the trainer
-  EquationDetectBase* meds = new MEDSType();
-  DetectorType* detector = trainer.getDetector();
-  ((MEDSType*)meds)->setDetector(detector);
-
+  EquationDetectBase* meds = new MEDSType(); // MEDS is owned by the evaluator
+  DetectorType* detector = trainer.getDetector(); // the detector is owned by the evaluator
+  ((MEDSType*)meds)->setDetector(detector); // MEDS owns the detector
+  cout << "Finished initializing MEDS class\n";
   // Test it
   vector<string> datasets;
   for(int i = 0; i < 4; ++i) {
     string dataset_ = dataset + intToString(i+1);
     datasets.push_back(dataset_);
   }
-  evaluateDataSets(meds, topdir, datasets, "myMEDS", false);
-
+  int testnum_ = MEDSNUM;
+  string testnum = intToString(testnum_);
+  cout << "About to run evaluation.\n";
+  evaluateDataSets(meds, topdir, datasets, "myMEDS" + testnum, false);
+  cout << "outside evaluateDataSets\n";
   // TODO: Evaluate default and compare the results!
 
   return 0;
@@ -99,6 +119,7 @@ void evaluateDataSets(EquationDetectBase*& meds, string topdir,
   if(meds)
     meds_given = true;
   DocumentLayoutTester<MEDSType> test(meds);
+  cout << "Finished constructing evaluator class.\n";
   if(!type_eval)
     test.turnOffTypeEval();
   test.activateEquOutput();
@@ -106,7 +127,7 @@ void evaluateDataSets(EquationDetectBase*& meds, string topdir,
     string dataset = datasets[i];
     test.setFileStructure(topdir, dataset, extension);
     test.runTessLayout(testname);
-    test.evalTessLayout(testname, true);
+    test.evalTessLayout(testname, false);
   }
 }
 

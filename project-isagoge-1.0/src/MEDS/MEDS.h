@@ -57,7 +57,18 @@ class MEDS : public EquationDetectBase {
 
   ~MEDS() {
     reset();
-    // TODO: Any remaining cleanup as necessary
+    cout << "1\n";
+    if(detector != NULL) {
+      cout << "MEDS destructor: deleting the detector\n";
+      delete detector;
+      detector = NULL;
+    }
+    cout << "2\n";
+    if(segmentor != NULL) {
+      cout << "MEDS destructor: deleting the segmentor\n";
+      delete segmentor;
+      segmentor = NULL;
+    }
   }
 
   // Iterate over the blobs inside to_block, and set the blobs that we want to
@@ -98,6 +109,12 @@ class MEDS : public EquationDetectBase {
                                        // the feature extractor
     blobinfogrid->setTessAPI(api);
     blobinfogrid->prepare(part_grid, best_columns, tess);
+#ifdef SHOW_GRID
+    string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(dbg_img_index);
+    ScrollView* gridviewer = blobinfogrid->MakeWindow(100, 100, winname.c_str());
+    blobinfogrid->DisplayBoxes(gridviewer);
+    M_Utils::waitForInput();
+#endif
 
     // Once the blobinfo grid has been established, it becomes possible to then run
     // each individual blobinfo element through feature detection and classification.
@@ -115,79 +132,40 @@ class MEDS : public EquationDetectBase {
     // Print the results of this module to user-specified directory
     dbgPrintDetectionResults(dbg_img_index);
 
+    ++dbg_img_index;
+     if(dbg_img_index > DATASET_SIZE)
+       dbg_img_index = 1;
+
 #ifdef SHOW_GRID
-     string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(dbg_img_index);
-     ScrollView* gridviewer = blobinfogrid->MakeWindow(100, 100, winname.c_str());
-     blobinfogrid->DisplayBoxes(gridviewer);
-     Basic_Utils::waitForInput();
      delete gridviewer;
      gridviewer = NULL;
 #endif
 
-     // TODO: Incorporate results into Tesseract!!!
-
-
-     // ^^^ For creating the math segmentations I will be using my own custom data structure
-     //     called the MathSegment, so I'll have a list of these, then I'll convert those into
-     //     ColPartitions later. The MathSegment structure is designed to facilitate merging of
-     //     detected mathematical blobs into proper segments for subsequent mathematical
-     //     recognition. Each MathSegment initially consists of one BLOBINFO object which was
-     //     deemed as mathati, the
-     //     segments are then iteratively merged with their nearest neighbors on the blobinfogrid
-     //     based on some heuristics. This procedure is carried out for each MathSegment.
-
-
-
-
-
-
-
-
-     // Once the final results have been obtained, the issue becomes that of converting
-     // all of my custom data structures back into structures that will be useful for
-     // Tesseract. This will involve simply taking the initial ColPartsGrid and x
-
-     // going to want to call setowner on the blobnbox to change the owner to the new
-      //  colpartition... set_owner.... the inline expressions need to be placed in their
-      // own separate ColPartition which will have the polyblocktype of INLINE_EXPRESSION
-      // and removed from the ColPartition to which it was previously assumed to belong.
-
-     // The InsertPartAfterAbsorb() method from Joe Liu's work is what I
-     // will use as a starting point for this purpose.. The first step will be to convert
-     // the MathSegmentation list entries into new ColPartitions. This will involve
-     // moving all of the BLOBNBOXES inside the mathsegment to the associated ColPartition
-     // the ClaimBoxes() method should be useful here, you need to remember to make the
-     // original partition disown the boxes first by using DisownBoxes() otherwise an
-     // exception will be raised. There may also be a lot of settings for the
-     // ColPartition to which the box originally belonged that should be kept the same
-     // in the new ColPartition.. This I'll play by ear
-     // then I should be able to insert these
-     // partitions back into the grid using Joe Liu's technique or something similar.
-
-
-
-
-
-   /*
-     BLOBNBOX* bb = bbgridsearch.NextFullSearch();
-     BOX* bbbox = getBlobBoxImCoords(bb);
-     cout << "original blob coords in image space:\n";
-     dispBoxCoords(bbbox);
-     dispRegion(bbbox);
-     TBOX cbox = bb->cblob()->bounding_box();
-     cout << "original blob coords in cblob grid space:\n";
-     cout << "(l,t,r,b): (" << cbox.left() << ", " << cbox.top() \
-          << ", " << cbox.right() << ", " << cbox.bottom() << ")\n";
-   */
-
-
-     //waitForInput();
-
-
-     ++dbg_img_index;
-     if(dbg_img_index > DATASET_SIZE)
-       dbg_img_index = 1;
      reset();
+
+     /*********************************************************************************
+     * TODO: Incorporate results into Tesseract
+     * ********************************************************************************
+     * Some (scattered) thoughts on this:
+     * Once the final results have been obtained, the issue becomes that of converting
+     * all of my custom data structures back into structures that will be useful for
+     * Tesseract. This will involve simply taking the initial ColPartsGrid and
+     * going to want to call setowner on the blobnbox to change the owner to the new
+     *  colpartition... set_owner.... the inline expressions need to be placed in their
+     * own separate ColPartition which will have the polyblocktype of INLINE_EXPRESSION
+     * and removed from the ColPartition to which it was previously assumed to belong.
+     * The InsertPartAfterAbsorb() method from Joe Liu's work is what I
+     * will use as a starting point for this purpose.. The first step will be to convert
+     * the MathSegmentation list entries into new ColPartitions. This will involve
+     * moving all of the BLOBNBOXES inside the mathsegment to the associated ColPartition
+     * the ClaimBoxes() method should be useful here, I need to remember to make the
+     * original partition disown the boxes first by using DisownBoxes() otherwise an
+     * exception will be raised. There may also be a lot of settings for the
+     * ColPartition to which the box originally belonged that should be kept the same
+     * in the new ColPartition.. This I'll play by ear
+     * then I should be able to insert these
+     * partitions back into the grid using Joe Liu's technique or something similar.
+     **********************************************************************************/
      return 0;
   }
 
@@ -262,7 +240,7 @@ class MEDS : public EquationDetectBase {
   Tesseract* tess; // language-specific ocr engine
   PIX* img; // the binary image that is being operated on
   TessBaseAPI* api;
-  DetectorType* detector;
+  DetectorType* detector; // owned by the trainer
   SegmentorType* segmentor;
   string dbg_results_dir;
 };

@@ -59,7 +59,7 @@ class Detector {
   typedef IFeatureExtractor<FeatExtType> IFeatExt;
 
   Detector<TrainerType, BinClassType, FeatExtType>()
-    : training_done(false), curimg(NULL), api(NULL) {
+    : training_done(false), curimg(NULL), api(NULL), samples(NULL) {
     trainer = new I_Trainer(); // this constructs both the trainer and classifier
     featext = new IFeatExt();
     classifier = trainer->classifier; // classifier memory is managed by trainer interface
@@ -67,13 +67,37 @@ class Detector {
 
   ~Detector<TrainerType, BinClassType, FeatExtType>() {
     if(featext != NULL) {
+      cout << "in Detector destructor: deleting feature extractor\n";
       delete featext;
       featext = NULL;
     }
     if(trainer != NULL) {
+      cout << "in Detector destructor: deleting trainer\n";
       delete trainer; // this also deletes the classifier object
       trainer = NULL;
     }
+    // detector owns the samples
+    cout << "in Detector destructor: deleting samples\n";
+    destroySamples(samples);
+    cout << "done deleting samples\n";
+  }
+
+  void destroySamples(vector<vector<BLSample*> >*& samples) {
+    if(!samples)
+      return;
+    for(int i = 0; i < samples->size(); i++) {
+      for(int j = 0; j < (*samples)[i].size(); j++) {
+        BLSample* sample = (*samples)[i][j];
+        if(sample != NULL) {
+          delete sample;
+          sample = NULL;
+        }
+      }
+      (*samples)[i].clear();
+    }
+    samples->clear();
+    delete samples;
+    samples = NULL;
   }
 
   inline void initTrainingPaths(const string& groundtruth_path_,
@@ -213,19 +237,24 @@ class Detector {
     return classifier->getFullSamplePath();
   }
 
-  inline void initTraining(const vector<vector<BLSample*> >& samples_) {
+  inline void initTraining(vector<vector<BLSample*> >* samples_) {
     samples = samples_;
     trainer->initTraining(classifier);
   }
 
+  inline void setAlwaysTrain() {
+    trainer->setAlwaysTrain(); // tell trainer to always retrain even if parameters can be loaded
+  }
+
   inline void train_() {
-    classifier = trainer->train_(samples);
+    classifier = trainer->train_(*samples);
   }
 
   // prediction is just done on one page and will be using some
   // binary classifier which has already been trained with the
   // features specified for this type of trainer_predictor
   inline void initPrediction(vector<string> api_init_params) {
+    featext->setDBGDir(training_set_path + "../");
     initFeatExtFull(api, false, api_init_params); // initializes the feature extractor
     classifier->initPredictor(); // loads up the predictor, halts with an error if there is none.
   }
@@ -268,7 +297,7 @@ class Detector {
   // each sample image (i.e. samples[0] is the list of
   // samples for the first image, samples[1] for the
   // second, etc.)
-  vector<vector<BLSample*> > samples;
+  vector<vector<BLSample*> >* samples;
 
   bool training_done;
   string groundtruth_path; // path to the groundtruth file used to determine sample labels

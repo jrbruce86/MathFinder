@@ -60,6 +60,10 @@ class IBinaryClassifier {
     classifier.doTraining(samples);
   }
 
+  inline void setAlwaysTrain() {
+    classifier.setAlwaysTrain();
+  }
+
   // Prediction is binary, either true or false.
   // True represents 1, false represents 0.
   inline bool predict(const std::vector<double>& sample) {

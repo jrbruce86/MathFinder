@@ -25,6 +25,8 @@
 #include "tesseractclass.h"
 #include "bbgrid.h"
 
+//#define SHOW_GRID
+
 namespace tesseract {
 
 TessInterface::TessInterface() : tess(NULL), blobinfogrid(NULL), img(NULL),
@@ -51,10 +53,20 @@ int TessInterface::FindEquationParts(ColPartitionGrid* part_grid,
   // well as everything which couldn't (will hold all of the blobs
   // and if they were recognized then holds the word and sentence
   // it belongs to as well)
+#ifdef SHOW_GRID
+  static int dbg_img_index = 1;
+#endif
   blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
       part_grid->tright());
   blobinfogrid->setTessAPI(api);
   blobinfogrid->prepare(part_grid, best_columns, tess);
+#ifdef SHOW_GRID
+    string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(dbg_img_index);
+    ScrollView* gridviewer = blobinfogrid->MakeWindow(100, 100, winname.c_str());
+    blobinfogrid->DisplayBoxes(gridviewer);
+    M_Utils::waitForInput();
+    ++dbg_img_index;
+#endif
   return 0;
 }
 

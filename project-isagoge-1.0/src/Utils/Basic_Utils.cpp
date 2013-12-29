@@ -147,6 +147,21 @@ double strToDouble(const string& str) {
   return x;
 }
 
+
+bool checkForPrimeGlyph(const char* str, int position) {
+  if(position < 0)
+    position = strlen(str) - 2;
+  assert(position > -1 && position < strlen(str));
+  const int seq_size = 3;
+  const char glyph_seq[] = {-30, -128, -103};
+  for(int i = 0; i < seq_size; ++i) {
+    const int curpos = position - i;
+    if(str[curpos] != glyph_seq[seq_size - (i+1)])
+      return false;
+  }
+  return true;
+}
+
 char* removeExtraNLs(char* str) {
   if(!str)
     return NULL;

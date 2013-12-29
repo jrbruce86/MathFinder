@@ -28,7 +28,8 @@
 #include <Detection.h>
 #include <Segmentation.h>
 
-// TODO: Come up with more descriptive detector names
+// TODO: Come up with more descriptive detector names and explanations of what they do
+//       and how each one differs
 
 typedef MEDS<SVMDetector, Segmentor1> MEDS1;
 typedef SVMDetector MEDS1Detector;

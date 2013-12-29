@@ -76,7 +76,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   * results of the two corresponding instantiations of this
   * class into the comparison algorithm.
   **********************************************************/
-  DocumentLayoutTester(EquationDetectBase* equ_detect) {
+  DocumentLayoutTester(EquationDetectBase* equ_detect) : layoutruns(0) {
     // set the equation detector (or just stick to the default)
     if(equ_detect) {
       new_equ_detector = equ_detect;
@@ -122,10 +122,12 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     }
     if(api != NULL) {
       if(new_equ_detector != NULL) {
+        cout << "Deleting the MEDS module\n";
         delete (MEDSType*)new_equ_detector; // need to typecast to delete properly
         new_equ_detector = NULL;
       }
-      api->setEquationDetector(NULL); // avoid seg fault
+      cout << "Deleting the api used by the evaluator\n";
+      api->setEquationDetector(NULL); // avoid dangling pointer seg fault
       delete api;
       api = NULL;
     }
@@ -168,6 +170,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     exec((string)"mkdir " + topdir + (string)"output/", false);
     outputdir = topdir + (string)"output/" + subdir;
     numfiles = 1;//fileCount(inputdir);
+    layoutruns = 0;
     assert(numfiles == DATASET_SIZE);
     exec((string)"mkdir " + outputdir, false);
   }
@@ -311,6 +314,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
       inputfile_path = inputdir + inputfile_name;
       outputfile_path = all_results_dir + inputfile_name + "/";
       exec((string)"mkdir " + outputfile_path);
+      cout << "out filepath: " << outputfile_path << endl;
 
       // read image and run layout analysis
       Pix* img = leptReadImg(inputfile_path);
@@ -388,104 +392,6 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     layoutruns++;
   }
 
-  /*************************************************************************
-  * For whatever test is currently being run (the test name is specified by the
-  * string, "subdir", which is assumed to have already been set by a call to
-  * setFileStructure()), read from it's GroundTruth.dat file to find all of
-  * the rectangles and then color the foreground of the corresponding input
-  * image within these rectangles based on the color of interest. The resulting
-  * image(s) are then saved in [topdir]/groundtruth/[subdir]/colorblobs. These
-  * images can be used for pixel accurate evaluation for layout analysis.
-  *************************************************************************/
-  void colorGroundTruthBlobs() {
-    // open the groundtruth text file which holds all of the math rectangles
-    ifstream gtfile;
-    string gtfilename = groundtruthtxt;
-    gtfile.open(gtfilename.c_str(), ifstream::in);
-    if((gtfile.rdstate() & ifstream::failbit) != 0) {
-      cout << "ERROR: Could not open Groundtruth.dat in "
-           << groundtruthdir << endl;
-      exit(EXIT_FAILURE);
-    }
-
-    // Now start reading and coloring
-    int max = 55;
-    char* curline = new char[max];
-    int curfilenum = -1;
-    int expectedfilenum = 1;
-    Pix* curimg;
-    int linenum = 1;
-    while(!gtfile.eof()) {
-      gtfile.getline(curline, max);
-      string curlinestr = (string)curline;
-      assert(curlinestr.length() < max);
-      // parse the line
-      if(curlinestr.empty()) {
-        continue;
-      }
-      vector<string> splitline = stringSplit(curlinestr);
-
-      string filename   = splitline[0];
-      string recttype   = splitline[1];
-      int rectleft   = atoi(splitline[2].c_str());
-      int recttop    = atoi(splitline[3].c_str());
-      int rectright  = atoi(splitline[4].c_str());
-      int rectbottom = atoi(splitline[5].c_str());
-      vector<string> tmp = stringSplit(filename, '.');
-      int filenum = atoi(tmp[0].c_str());
-
-      // open the image if it isn't already opened
-      // save the previous one if applicable
-      if(curfilenum != filenum) {
-        cout << "Coloring groundtruth blobs for image " << filenum << endl;
-        if(curfilenum != -1) {
-          // save previous and then deallocate it
-          string savename = gt_blobsdir + intToString(curfilenum) + ext;
-          pixWrite(savename.c_str(), curimg, IFF_PNG);
-          pixDestroy(&curimg);
-          thresholder_->Clear();
-        }
-        string imgname = inputdir + intToString(filenum) + ext;
-        curimg = leptReadImg(imgname);
-        thresholder_->SetImage(curimg);
-        if (!thresholder_->IsBinary()) {
-          pixDestroy(&curimg); // thresholder has a clone so destroy this one
-          thresholder_->ThresholdToPix(&curimg);
-        }
-        curimg = pixConvertTo32(curimg);
-        curfilenum = filenum;
-      }
-      // now color the foreground regions of the image in the
-      // rectangle based on the rectangle's type
-      if(rectleft == -1 || recttop == -1 ||
-          rectright == -1 || rectbottom == -1)
-        continue; // if the image has nothing then it should have a single entry with -1's
-      BOX* box = boxCreate(rectleft, recttop,
-          rectright - rectleft, rectbottom - recttop);
-      LayoutEval::Color color;
-      if(recttype == "displayed")
-        color = LayoutEval::RED;
-      else if(recttype == "embedded")
-        color = LayoutEval::BLUE;
-      else if(recttype == "label")
-        color = LayoutEval::GREEN;
-      else {
-        cout << "ERROR: Rectangle of unknown type in GroundTruth.dat!\n";
-        exit(EXIT_FAILURE);
-      }
-      fillBoxForeground(curimg, box, color);
-      boxDestroy(&box);
-      linenum++;
-    }
-    delete [] curline;
-    curline = NULL;
-    // save and destroy the final image
-    string savename = gt_blobsdir + intToString(curfilenum) + ext;
-    pixWrite(savename.c_str(), curimg, IFF_PNG);
-    pixDestroy(&curimg);
-    gtfile.close();
-  }
-
   /********************************************************************************
   * Evaluate layout accuracy (assumes that runTessLayout was already run).        *
   *                                                                               *
@@ -534,10 +440,11 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   void evalTessLayout(string testname_, bool layoutdone=false) {
     const string testname = checkTrailingSlash(testname_);
     if(!layoutdone) {
-      if(layoutruns != 1) {
+      if(layoutruns != numfiles) {
         cout << "ERROR: evalTessLayout requires layout analysis to"
-            << " be done in advance (and no more than once per "
-            << "DocumentLayoutTester object)\n";
+            << " be done in advance on all " << numfiles << " of the "
+            << "input files for the current test. Layout analysis has been done "
+            << "for " << layoutruns << " of them.\n";
         exit(EXIT_FAILURE);
       }
     }
@@ -665,6 +572,105 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
             i, hypboxfile);
       }
     }
+    cout << "Finished with evalTessLayout()\n";
+  }
+
+  /*************************************************************************
+  * For whatever test is currently being run (the test name is specified by the
+  * string, "subdir", which is assumed to have already been set by a call to
+  * setFileStructure()), read from it's GroundTruth.dat file to find all of
+  * the rectangles and then color the foreground of the corresponding input
+  * image within these rectangles based on the color of interest. The resulting
+  * image(s) are then saved in [topdir]/groundtruth/[subdir]/colorblobs. These
+  * images can be used for pixel accurate evaluation for layout analysis.
+  *************************************************************************/
+  void colorGroundTruthBlobs() {
+    // open the groundtruth text file which holds all of the math rectangles
+    ifstream gtfile;
+    string gtfilename = groundtruthtxt;
+    gtfile.open(gtfilename.c_str(), ifstream::in);
+    if((gtfile.rdstate() & ifstream::failbit) != 0) {
+      cout << "ERROR: Could not open Groundtruth.dat in "
+           << groundtruthdir << endl;
+      exit(EXIT_FAILURE);
+    }
+
+    // Now start reading and coloring
+    int max = 55;
+    char* curline = new char[max];
+    int curfilenum = -1;
+    int expectedfilenum = 1;
+    Pix* curimg;
+    int linenum = 1;
+    while(!gtfile.eof()) {
+      gtfile.getline(curline, max);
+      string curlinestr = (string)curline;
+      assert(curlinestr.length() < max);
+      // parse the line
+      if(curlinestr.empty()) {
+        continue;
+      }
+      vector<string> splitline = stringSplit(curlinestr);
+
+      string filename   = splitline[0];
+      string recttype   = splitline[1];
+      int rectleft   = atoi(splitline[2].c_str());
+      int recttop    = atoi(splitline[3].c_str());
+      int rectright  = atoi(splitline[4].c_str());
+      int rectbottom = atoi(splitline[5].c_str());
+      vector<string> tmp = stringSplit(filename, '.');
+      int filenum = atoi(tmp[0].c_str());
+
+      // open the image if it isn't already opened
+      // save the previous one if applicable
+      if(curfilenum != filenum) {
+        cout << "Coloring groundtruth blobs for image " << filenum << endl;
+        if(curfilenum != -1) {
+          // save previous and then deallocate it
+          string savename = gt_blobsdir + intToString(curfilenum) + ext;
+          pixWrite(savename.c_str(), curimg, IFF_PNG);
+          pixDestroy(&curimg);
+          thresholder_->Clear();
+        }
+        string imgname = inputdir + intToString(filenum) + ext;
+        curimg = leptReadImg(imgname);
+        thresholder_->SetImage(curimg);
+        if (!thresholder_->IsBinary()) {
+          pixDestroy(&curimg); // thresholder has a clone so destroy this one
+          thresholder_->ThresholdToPix(&curimg);
+        }
+        curimg = pixConvertTo32(curimg);
+        curfilenum = filenum;
+      }
+      // now color the foreground regions of the image in the
+      // rectangle based on the rectangle's type
+      if(rectleft == -1 || recttop == -1 ||
+          rectright == -1 || rectbottom == -1)
+        continue; // if the image has nothing then it should have a single entry with -1's
+      BOX* box = boxCreate(rectleft, recttop,
+          rectright - rectleft, rectbottom - recttop);
+      LayoutEval::Color color;
+      if(recttype == "displayed")
+        color = LayoutEval::RED;
+      else if(recttype == "embedded")
+        color = LayoutEval::BLUE;
+      else if(recttype == "label")
+        color = LayoutEval::GREEN;
+      else {
+        cout << "ERROR: Rectangle of unknown type in GroundTruth.dat!\n";
+        exit(EXIT_FAILURE);
+      }
+      fillBoxForeground(curimg, box, color);
+      boxDestroy(&box);
+      linenum++;
+    }
+    delete [] curline;
+    curline = NULL;
+    // save and destroy the final image
+    string savename = gt_blobsdir + intToString(curfilenum) + ext;
+    pixWrite(savename.c_str(), curimg, IFF_PNG);
+    pixDestroy(&curimg);
+    gtfile.close();
   }
 
   int dbgColorCount(string imname, LayoutEval::Color color) {

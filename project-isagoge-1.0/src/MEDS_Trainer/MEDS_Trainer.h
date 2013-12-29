@@ -38,8 +38,11 @@
 #include <fstream>
 using namespace std;
 
-//#define DBG_MEDS_TRAINER // comment this out to turn off debugging
+//#define JUST_GET_SAMPLES
+
+//#define DBG_MEDS_TRAINER // comment this out to not display grid
 //#define DBG_MEDS_TRAINER_SHOW_TRAINDATA
+//#define DBG_DISPLAY
 
 // This class carry out any training needed for both the detector and segmenter
 template <typename DetectorType>
@@ -58,12 +61,13 @@ class MEDS_Trainer {
   //                      otherwise only gets samples if file hasn't already
   //                      been written. If not doing training this argument
   //                      has no effect.
-  // 4. ext (optional) - The extension expected for all images
-  //                     (png by default)
+  // 4. ext (optional) - The extension expected for all document images
+  //                     (.png by default)
   MEDS_Trainer(bool always_train_, const string& detector_path,
       bool get_new_samples_, vector<string> api_init_params_,
       const string& ext_=".png") :
-        tess_interface(NULL) {
+        tess_interface(NULL), samples_read(NULL), samples_extracted(NULL),
+        detector(NULL) {
     get_new_samples = get_new_samples_;
     top_path = Basic_Utils::checkTrailingSlash(detector_path);
     groundtruth_path = top_path + (string)"*.dat";
@@ -99,6 +103,8 @@ class MEDS_Trainer {
       cout << "Could not turn on Tesseract's equation detection during training!\n";
       exit(EXIT_FAILURE);
     }
+    // initialize the interface used to grab the custom BlobInfoGrid from
+    // tesseract's api
     tesseract::EquationDetectBase* ti = new tesseract::TessInterface();
     tess_interface = (tesseract::TessInterface*)ti;
   }
@@ -108,20 +114,8 @@ class MEDS_Trainer {
       delete tess_interface;
       tess_interface = NULL;
     }
-    destroySamples(samples_extracted);
-    destroySamples(samples_read);
-  }
-
-  void destroySamples(vector<vector<BLSample*> > samples) {
-    for(int i = 0; i < samples.size(); i++) {
-      for(int j = 0; j < samples[i].size(); j++) {
-        BLSample* sample = samples[i][j];
-        if(sample != NULL) {
-          delete sample;
-          sample = NULL;
-        }
-      }
-    }
+    samples_read = samples_extracted = NULL; // owned by detector
+    detector = NULL; // owned by MEDS class
   }
 
   // Here is where training of the detection component
@@ -134,11 +128,16 @@ class MEDS_Trainer {
   // training will only be carried out if the classifier hasn't been
   // trained on the chosen classifier/extractor/trainer/dataset combination
   // -- If desired training was already carried out then the purpose of this
-  //    funciton is only to initialize the predictor
+  //    function is only to read in and initialize the predictor
   void trainDetector() {
+    if(detector != NULL) {
+      cout << "ERROR: Detector expected to be uninitialized prior to training, however "
+           << "was already initialized. Make sure it has been deleted.\n";
+      exit(EXIT_FAILURE);
+    }
+    detector = new DetectorType;
     if(tess_interface == NULL) {
-      cout << "ERROR: trainDetector() called with a NULL TessInterface module."
-           << " setDetectorSegmentor needs to be called before training.\n";
+      cout << "ERROR: trainDetector() called with a NULL TessInterface module.\n";
       exit(EXIT_FAILURE);
     }
     // make sure the directories are there!
@@ -155,6 +154,7 @@ class MEDS_Trainer {
            << "to contain training images but is empty!\n";
       exit(EXIT_FAILURE);
     }
+
     // assumes all n files in the training_ are images
     // named 1.png, 2.png, 3.png, .... n.png
     // do training only if necessary (i.e. if always_train is turned on
@@ -162,24 +162,34 @@ class MEDS_Trainer {
     // in the predictor_path)
     //   this should determine the full predictor path as well as where the samples
     //   are stored for the given classifier
-    detector.initClassifier(predictor_path, sample_path);
-    predictor_path = detector.getPredictorPath(); // change it to the full path
-    sample_path = detector.getSamplePath();
+    detector->initClassifier(predictor_path, sample_path);
+    predictor_path = detector->getPredictorPath(); // change it to the full path
+    sample_path = detector->getSamplePath();
     // tell the detector where it can find the groundtruth.dat file
     // so it can determine the label of each sample
-    detector.initTrainingPaths(groundtruth_path, training_set_path, ext);
+    detector->initTrainingPaths(groundtruth_path, training_set_path, ext);
     if(always_train || !Basic_Utils::existsFile(predictor_path)) {
       vector<vector<BLSample*> >* samples = getSamples();
-      detector.initTraining(*samples);
-      detector.train_();
+      cout << "finished calling detector's getSamples() method\n";
+#ifdef JUST_GET_SAMPLES
+      cout << "Finished getting samples. To continue with training, comment out "
+           << "JUST_GET_SAMPLES in MEDS_Trainer.h.\n";
+      exit(EXIT_SUCCESS);
+#endif
+      detector->initTraining(samples); // detector owns the samples
+      cout << "finished calling inittraining\n";
+      if(always_train)
+        detector->setAlwaysTrain();
+      detector->train_();
+      cout << "Finished calling the detector's train_() method\n";
     }
     else {
       cout << "Predictor found at " << predictor_path
            << ". Training was not carried out.\n";
     }
     cout << "Initializing the Detector to use the predictor at the "
-         << "following location: " << detector.getPredictorPath() << endl;
-    detector.initPrediction(api_init_params);
+         << "following location: " << detector->getPredictorPath() << endl;
+    detector->initPrediction(api_init_params);
   }
 
   // Its much harder to do supervised training on this part. Much of the computations
@@ -199,8 +209,8 @@ class MEDS_Trainer {
     cout << "-- Extracting features from training set to create new samples.\n";
     getNewSamples(false);
     cout << "-- Comparing the read samples to the extracted ones.\n";
-    assert(samples_extracted.size() == samples_read.size());
-    for(int i = 0; i < samples_extracted.size(); ++i) {
+    assert(samples_extracted->size() == samples_read->size());
+    for(int i = 0; i < samples_extracted->size(); ++i) {
       assert(samples_extracted[i].size() == samples_read[i].size());
       for(int j = 0; j < samples_extracted[i].size(); ++j) {
         BLSample* newsample = samples_extracted[i][j];
@@ -209,10 +219,12 @@ class MEDS_Trainer {
       }
     }
     cout << "Success!\n";
+    detector->destroySamples(samples_extracted);
+    detector->destroySamples(samples_read);
   }
 
   inline DetectorType* getDetector() {
-    return &detector;
+    return detector;
   }
 
   inline string getPredictorPath() {
@@ -226,30 +238,29 @@ class MEDS_Trainer {
   // returns a pointer to the resulting vector of samples (each entry of the
   // vector holds the samples extracted from one image).
   vector<vector<BLSample*> >* getSamples() {
-    // get the samples
-    string sample_path = detector.getSamplePath();
-    bool newsamples = false;
-    if(get_new_samples || !Basic_Utils::existsFile(sample_path)) {
-      getNewSamples(true);
-      newsamples = true;
+    if(samples_extracted != NULL || samples_read != NULL) {
+      cout << "ERROR: samples have already been extracted but not deleted and "
+           << "nullified prior to calling getSamples(). Make sure samples are "
+           << "deleted prior to calling this function.\n";
+      exit(EXIT_FAILURE);
     }
+    // get the samples
+    string sample_path = detector->getSamplePath();
+    if(get_new_samples || !Basic_Utils::existsFile(sample_path))
+      return getNewSamples(true);
     else
-      readOldSamples(sample_path);
-    vector<vector<BLSample*> >* samples;
-    if(newsamples)
-      samples = &samples_extracted;
-    else
-      samples = &samples_read;
-    return samples;
+      return readOldSamples(sample_path);
   }
 
   // does feature extraction on the detector to get all of the samples,
   // also optionally writes them to a file
-  void getNewSamples(bool write_to_file) {
+  vector<vector<BLSample*> >* getNewSamples(bool write_to_file) {
+    samples_extracted = new vector<vector<BLSample*> >;
     // set the tesseract api's equation detector to the one being used
     api.setEquationDetector(tess_interface);
     // count the number of training images in the training_set_path
     int img_num = Basic_Utils::fileCount(training_set_path);
+
     // the newapi is owned by BlobInfoGrid which is instantiated from findEquationParts
     // of the tess_interface. findEquationParts is called from within the "api"
     // (i.e. the stack-allocated TessBaseAPI instantiated as part of this class).
@@ -272,8 +283,8 @@ class MEDS_Trainer {
     // the tesseract api initialization params are passed in incase the
     // feature extractor initialization requires the api. It is expected
     // that the api is ended if it is used upon completion of this method
-    detector.initFeatExtFull(newapi, false, api_init_params);
-    for(int i = 1; i <= img_num; i++) {
+    detector->initFeatExtFull(newapi, false, api_init_params);
+    for(int i = 1; i <= img_num; ++i) {
       ((TessInterface*)tess_interface)->setTessAPI(newapi);
       string img_name = Basic_Utils::intToString(i) + ext;
       string img_filepath = training_set_path + img_name;
@@ -281,12 +292,27 @@ class MEDS_Trainer {
       api.SetImage(curimg); // SetImage SHOULD deallocate everything from the last page
       // including my MEDS module, the BlobInfoGrid, etc!!!!
       api.AnalyseLayout(); // Run Tesseract's layout analysis
+      cout << "ran layout analysis!\n";
       tesseract::BlobInfoGrid* grid = ((TessInterface*)tess_interface)->getGrid();
-      detector.setImage(curimg);
-      detector.setAPI(newapi);
+#ifdef DBG_MEDS_TRAINER
+      string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(i);
+      ScrollView* gridviewer = grid->MakeWindow(100, 100, winname.c_str());
+      grid->DisplayBoxes(gridviewer);
+#endif
+
+      detector->setImage(curimg);
+      detector->setAPI(newapi);
       // now to get the features from the grid and append them to the
       // samples vector.
-      vector<BLSample*> img_samples = detector.getAllSamples(grid, i);
+      vector<BLSample*> img_samples = detector->getAllSamples(grid, i);
+
+#ifdef DBG_MEDS_TRAINER
+      cout << "Finished grabbing samples.\n";
+      M_Utils::waitForInput();
+      delete gridviewer;
+      gridviewer = NULL;
+#endif
+
 #ifdef DBG_MEDS_TRAINER_SHOW_TRAINDATA
       // to debug I'll color all the blobs that are labeled as math
       // red and all the other ones as blue
@@ -300,45 +326,45 @@ class MEDS_Trainer {
         else
           Lept_Utils::fillBoxForeground(colorimg, sample->blobbox, LayoutEval::BLUE);
       }
-      pixDisplay(colorimg, 100, 100);
       string dbgname = "dbg_training_im" + Basic_Utils::intToString(i) + ".png";
       pixWrite(dbgname.c_str(), colorimg, IFF_PNG);
-      M_Utils mutils;
-      mutils.waitForInput();
+#ifdef DBG_DISPLAY
+      pixDisplay(colorimg, 100, 100);
+      M_Utils::waitForInput();
+#endif
       pixDestroy(&colorimg);
 #endif
-#ifdef DBG_MEDS_TRAINER
-      // debug: make sure it worked!!!! and we got the grid out of it...
-      string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(i);
-      ScrollView* gridviewer = grid->MakeWindow(100, 100, winname.c_str());
-      grid->DisplayBoxes(gridviewer);
-      Basic_Utils::waitForInput();
-      delete gridviewer;
-      gridviewer = NULL;
-#endif
+
+
       // now append the samples found for the current image to the
       // the vector which holds all of them. For now I have this organized
       // as a vector for each image
-      samples_extracted.push_back(img_samples);
+      samples_extracted->push_back(img_samples);
       pixDestroy(&curimg); // destroy finished image
       // clear the memory used by the current MEDS module and the feature extractor
       ((TessInterface*)tess_interface)->reset();
       newapi = new tesseract::TessBaseAPI;
-      detector.reset();
+      detector->reset();
 #ifdef DBG_MEDS_TRAINER
       delete gridviewer;
       gridviewer = NULL;
 #endif
-      cout << "Finished acquiring " << samples_extracted[i-1].size()
+      cout << "Finished acquiring " << (*samples_extracted)[i-1].size()
            << " samples for image " << i << endl;
     }
+    cout << "about to delete newapi\n";
     delete newapi;
     newapi = NULL;
+    cout << "done deleting newapi\n";
+    cout << "about to write samples to file\n";
     if(write_to_file)
       writeSamples(sample_path);
+    cout << "done writing samples to file\n";
+    return samples_extracted;
   }
 
-  void readOldSamples(const string& sample_path) {
+  vector<vector<BLSample*> >* readOldSamples(const string& sample_path) {
+    samples_read = new vector<vector<BLSample*> >;
     ifstream s(sample_path.c_str());
     if(!s.is_open()) {
       cout << "ERROR: Couldn't open sample file for reading at " << sample_path << endl;
@@ -362,10 +388,11 @@ class MEDS_Trainer {
         assert(sample->image_index == (curimg + 1)); // should start at 1 and go up by 1
         ++curimg;
         vector<BLSample*> imgsample_vec;
-        samples_read.push_back(imgsample_vec);
+        samples_read->push_back(imgsample_vec);
       }
-      samples_read[curimg - 1].push_back(sample);
+      (*samples_read)[curimg - 1].push_back(sample);
     }
+    return samples_read;
   }
 
   // reads the sample in the following space-delimited format:
@@ -392,7 +419,7 @@ class MEDS_Trainer {
     string fvecstring = spacesplit[1];
     vector<string> featstrvec = Basic_Utils::stringSplit(fvecstring, ',');
     vector<double> featurevec;
-    assert(featstrvec.size() == detector.numFeatures());
+    assert(featstrvec.size() == detector->numFeatures());
     for(int i = 0; i < featstrvec.size(); i++) {
       double feat = atof(featstrvec[i].c_str());
       featurevec.push_back(feat);
@@ -464,9 +491,9 @@ class MEDS_Trainer {
       cout << "ERROR: Couldn't open " << sample_path << " for writing\n";
       exit(EXIT_FAILURE);
     }
-    for(int i = 0; i < samples_extracted.size(); i++) {
-      for(int j = 0; j < samples_extracted[i].size(); j++) {
-        writeSample(samples_extracted[i][j], s);
+    for(int i = 0; i < samples_extracted->size(); i++) {
+      for(int j = 0; j < (*samples_extracted)[i].size(); j++) {
+        writeSample((*samples_extracted)[i][j], s);
         samplecount++;
       }
     }
@@ -534,11 +561,16 @@ class MEDS_Trainer {
 
   // here different trainer_predictors in Detection/Detection.h can be chosen from
   // and experimented with through compile-time polymorphism
-  DetectorType detector; // see Detection.h for details on this class
+  // --owned by MEDS class
+  DetectorType* detector; // see Detection.h for details on this class
 
-  vector<vector<BLSample*> > samples_extracted;
-  vector<vector<BLSample*> > samples_read; // should be the same as samples_extracted
-                                           // can be verified by sampleReadVerify
+  // only one of the following is used unless sampleReadVerify is being used to test
+  // that the samples extracted are the same as the ones read from the file. if training
+  // is carried out, however, only one is used and whichever one is used will be owned
+  // by the detector, not by this class.
+  vector<vector<BLSample*> >* samples_extracted;
+  vector<vector<BLSample*> >* samples_read; // should be the same as samples_extracted
+                                            // can be verified by sampleReadVerify
 
   // some paths and such
   string top_path; // this is the root of the detector directory

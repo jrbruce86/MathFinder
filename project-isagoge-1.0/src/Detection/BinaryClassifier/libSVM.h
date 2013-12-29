@@ -132,6 +132,9 @@ class libSVM {
   inline string getFeatExtName() {
     return feat_ext_name;
   }
+  inline void setAlwaysTrain() {
+    always_train = true;
+  }
  private:
   bool trained; // flag that's true once training complete
 
@@ -178,6 +181,8 @@ class libSVM {
 
   bool predictor_loaded; // true only after loading the predictor
   bool init_done; // true after initialization successfully completed
+  bool always_train; // true if it is desired to always re-do all the training
+                     // to find optimal parameters, even if they can already be found
 };
 
 #endif

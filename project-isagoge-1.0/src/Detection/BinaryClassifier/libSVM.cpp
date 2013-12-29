@@ -30,7 +30,7 @@
 using namespace dlib;
 
 libSVM::libSVM() : trained(false), C_optimal(-1),
-    predictor_loaded(false), init_done(false) {
+    predictor_loaded(false), init_done(false), always_train(false) {
 #ifdef RBF_KERNEL
   gamma_optimal = -1;
 #endif
@@ -80,6 +80,7 @@ void libSVM::initPredictor() {
 
 void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   // Convert the samples into format suitable for DLib
+  cout << "started libSVM's doTraining\n";
   int num_features = samples[0][0]->features.size();
   for(int i = 0; i < samples.size(); ++i) { // iterates through the images
     for(int j = 0; j < samples[i].size(); ++j) { // iterates the blobs in the image
@@ -99,12 +100,13 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
         labels.push_back(-1);
     }
   }
+  cout << "done pushing back samples\n";
   // Randomize the order of the samples so that they do not appear to be
   // from different distributions during cross validation training. The
   // samples are grouped by the image from which they came and each image
   // can, in some regards, be seen as a separate distribution.
   randomize_samples(training_samples, labels);
-
+  cout << "done randomizing smaples\n";
   // Here we normalize all the samples by subtracting their mean and dividing by their
   // standard deviation.  This is generally a good idea since it often heads off
   // numerical stability problems and also prevents one large feature from smothering
@@ -112,21 +114,25 @@ void libSVM::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
   // so you can see an easy way to accomplish this with the library.
   // let the normalizer learn the mean and standard deviation of the samples
   normalizer.train(training_samples);
+  cout << "done setting up normalizing\n";
   // now normalize each sample
   for (unsigned long i = 0; i < training_samples.size(); ++i)
     training_samples[i] = normalizer(training_samples[i]);
-
+  cout << "done normalizing each samples\n";
   // Now ready to find the optimal C and Gamma parameters through a coarse
   // grid search then through a finer one. Once the "optimal" C and Gamma
   // parameters are found, the SVM is trained on these to give the final
   // predictor which can be serialized and saved for later usage.
-  if(!loadOptParams()) {
+  if(!loadOptParams() || always_train) {
     doCoarseCVTraining(10);
     doFineCVTraining(10);
     saveOptParams();
   }
+  cout << "about to do training\n";
   trainFinalClassifier();
+  cout << "done with trainFinalClassifier\n";
   savePredictor();
+  cout << "done with savePredictor\n";
   trained = true;
   cout << "Training Complete! The predictor has been saved to "
        << predictor_path << endl;
@@ -162,6 +168,8 @@ void libSVM::doCoarseCVTraining(int folds) {
   grid = C_vec;
 #endif
 
+  cout << "Predictor Path: " << predictor_path << endl;
+  cout << "Training on samples in sample path: " << sample_path << endl;
   //    Carry out course grid search. The grid is actually implemented as a
   //    2x100 matrix where row 1 is the C part of the grid pair and row 2
   //    is the corresponding gamma part. Each index represents a pair on the
@@ -328,7 +336,9 @@ void libSVM::trainFinalClassifier() {
   svm_c_trainer<LinearKernel> trainer;
 #endif
   trainer.set_c(C_optimal);
+  cout << "setting normalizer\n";
   final_predictor.normalizer = normalizer;
+  cout << "calling trainer.train()\n";
   final_predictor.function = trainer.train(training_samples, labels);
   cout << "The number of support vectors in the final learned function is: "
        << final_predictor.function.basis_vectors.size() << endl;

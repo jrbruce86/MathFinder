@@ -63,6 +63,7 @@ class F_Ext1 {
   }
 
   inline void setDBGDir(const string& dbgdir_) {
+    cout << "setting dbgdir to " << dbgdir_ << endl;
     dbgdir = dbgdir_;
   }
 
@@ -81,7 +82,8 @@ class F_Ext1 {
   typedef GenericVector<RankedNGramVec> RankedNGramVecs; // holds counts for uni, bi and tri grams
   // cover feature
   int countCoveredBlobs(BLOBINFO* blob, Direction dir);
-  bool isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir);
+  bool isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir,
+      bool indbg, bool& dbgdontcare);
 
   // nested feature
   int countNestedBlobs(BLOBINFO* blob);
@@ -144,6 +146,11 @@ class F_Ext1 {
   string training_set_path;
 
   PIX* dbgim;
+  virtual void resetDbgIm() {
+    pixDestroy(&dbgim);
+    dbgim = pixCopy(NULL, curimg);
+    dbgim = pixConvertTo32(dbgim);
+  }
 };
 
 #endif

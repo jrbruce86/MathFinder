@@ -70,9 +70,13 @@ struct WORD_INFO {
   }
 
   inline WERD_CHOICE* bestchoice() {
-    return wordres->best_choice;
+    if(wordres != NULL)
+      return wordres->best_choice;
+    return NULL;
   }
   inline WERD* word() {
+    if(!wordres)
+      return NULL;
     return wordres->word;
   }
 
@@ -106,7 +110,8 @@ struct WORD_INFO {
 //enum ROW_TYPE {NORMAL, ABNORMAL};
 struct ROW_INFO {
   ROW_INFO() : rowres(NULL), has_valid_word(false),
-      avg_baselinedist((double)0), words(NULL), rowid(-1) {}
+      avg_baselinedist((double)0), words(NULL), rowid(-1),
+      valid_word_count(-1), is_normal(true) {}
 
   ~ROW_INFO() {
     rowres = NULL;
@@ -134,8 +139,25 @@ struct ROW_INFO {
     return rowres->row;
   }
 
+  inline PARA* getParagraph() {
+    return row()->para();
+  }
+
+  inline TBOX rowBox() {
+    return row()->bounding_box();
+  }
+
   // unmodified words found directly by the tesseract api
   WERD_RES_LIST* words;
+
+  inline int numValidWords() {
+    assert(valid_word_count >= 0);
+    return valid_word_count;
+  }
+
+  inline void setValidWordCount(const int& wc) {
+    valid_word_count = wc;
+  }
 
   // list of the same words as found by tesseract api but also
   // holding pointers to all of the BLOBINFO elements contained in that
@@ -154,6 +176,9 @@ struct ROW_INFO {
                            // the row's baseline (only non-zero if
                            // row has at leat one valid word.
   int rowid;
+  bool is_normal;
+private:
+  int valid_word_count; // number of valid words on this row
 };
 
 
@@ -196,9 +221,10 @@ class BLOBINFO:public ELIST_LINK {
            row_index(-1), block_index(-1), has_sup(false), has_sub(false), is_sup(false),
            is_sub(false), row_has_valid(false), wordinfo(NULL),
            cosbabp(0), cosbabp_processed(false), ismathword(false),
-           is_italic(false),
+           is_italic(false), rhabc((double)0), uvabc((double)0), dvabc((double)0),
            has_nested(false), certainty((double)-20), features_extracted(false),
-           dist_above_baseline((double)0), predicted_math(false) {}
+           dist_above_baseline((double)0), predicted_math(false), nestedcount(0),
+           row_no_word(NULL) {}
 
   // Copy construtor is simply not used and avoided here so was not implemented
 
@@ -249,15 +275,26 @@ class BLOBINFO:public ELIST_LINK {
   WORD_INFO* wordinfo;
 
   inline ROW_INFO* rowinfo() {
-    if(wordinfo == NULL)
+    if(wordinfo == NULL) {
+      if(row_no_word != NULL)
+        return row_no_word;
       return NULL;
+    }
     return wordinfo->rowinfo;
   }
+
+  ROW_INFO* row_no_word; // for the case when a blob has no word but resides in the row
 
   inline ROW* row() {
     if(wordinfo == NULL)
       return NULL;
     return wordinfo->rowinfo->row();
+  }
+
+  inline bool onRowNormal() {
+    if(rowinfo() == NULL)
+      return false;
+    return rowinfo()->is_normal;
   }
 
   // the recognized word to which this blob belongs (can be NULL)
@@ -317,6 +354,15 @@ class BLOBINFO:public ELIST_LINK {
     return wordchoice()->unichar_string().string();
   }
 
+  // returns the paragraph to which this blob belongs, if there is
+  // none then returns NULL.
+  inline PARA* getParagraph() {
+    if(rowinfo() != NULL)
+      return rowinfo()->getParagraph();
+    else
+      return NULL;
+  }
+
   int block_index; // the blob's block index with respect to the entire page
   int row_index; // the blob's row index with respect to the entire page
   int word_index; // the word index on the current row
@@ -336,6 +382,11 @@ class BLOBINFO:public ELIST_LINK {
   // true only if the blob belongs to an italic word
   bool is_italic;
 
+  // the "covered" neighbor features
+  double rhabc; // righward horizontally adjacent blobs covered
+  double uvabc; // upward vertically adjacent blobs covered
+  double dvabc; // downward vertically adjacent blobs covered
+
   // subscript/superscript features
   bool has_sup; // true if this blob has a superscript
   bool has_sub; // true if this blob has a subscript
@@ -343,6 +394,7 @@ class BLOBINFO:public ELIST_LINK {
   bool is_sub; // true if blob is a subscript
 
   bool has_nested; // the blob has one or more nested elements
+  double nestedcount; // the amount of nested elements
 
   // count of stacked blobs at blob position (cosbabp) feature
   int cosbabp;
@@ -472,6 +524,11 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
     insertRemainingBlobs();
     // The next step is to separate the lines of text recognized into sentences
     findSentences();
+    // Determine which rows are "normal" and which are "abnormal" based upon
+    // a combination of spatial deviations from the page's mean and deviations
+    // in the number of valid words on a row compared to that of the page's
+    // average
+    findAllRowCharacteristics();
   }
 
   inline void setColPart(ColPartitionGrid* partgrid_, ColPartitionSet** bcd) {
@@ -517,6 +574,15 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   //    Display which blobs are assigned to which sentence for debugging or
   //    display the regions by highlighting foreground pixels.
   void getSentenceRegions();
+
+  /*
+  // Assumes that the ROW_INFO vector for the page has already
+  // been initialized, requiring that recognizePage() and insertRemainingBlobs()
+  // have both already been called to initialize the grid properly. Uses
+  // the paragraph information already acquired from the tesseract api during
+  // the call to getUTF8Text(). Each row has already been assigned to a paragraph
+  // during the call to the api's Recognize() method.
+  void findCharactersticsofAllRows();*/
 
   inline void setTessAPI(TessBaseAPI* api_) {
     api = api_;
@@ -580,6 +646,19 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   // more detailed analysis.
   void insertBlobReplacements(BLOBINFO* blob, const BlobIndices& replacement_indices,
       const int& replacement_num);
+  // simply inserts a blob into the grid if another blob with the same bounding box
+  // doesn't already exist. requires that the validword flag of the blob to be inserted
+  // is set to true if the blob belongs to a valid word and false otherwise. if another
+  // blob with the same bounding box is already in the grid, then either the blob
+  // existing in the grid will remain there or the blob provided will replace it. If
+  // neither blob is part of a valid word then the existing blob will remain and the
+  // one provided will be deleted. If the existing blob is part of a valid word
+  // then it will remain in the grid and the one provided will be deleted. If the
+  // existing blob is not part of a valid word and the one provided is, then the
+  // existing blob will be removed from the grid and replaced by the one provided.
+  // returns true if the provided blob was inserted and false if there's a pre-existing
+  // one that is kept in the grid.
+  bool insertUniqueBlobToGrid(BLOBINFO* blob);
   // walks through the rows and prints each word in them with a new line after the
   // end of each row.
   void dbgDisplayRowText();
@@ -590,6 +669,15 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   // finds the sentence at the given row and word index and returns it's index.
   // if the sentence doesn't exist then returns -1
   int findSentence(const int& rowindex, const int& wordindex);
+
+  // only used for debugging iterates the grid looking for blobs that overlap current one.
+  // ensures that no overlapping blobs have the same bounding box
+  void assertAllUnique();
+
+  // Determines some basic characteristics for each ROW_INFO object based on an
+  // analysis of all the rows on the page. A row can then be considered as
+  // "normal" or "abnormal" based upon this analysis.
+  void findAllRowCharacteristics();
 
   ColPartitionGrid* part_grid; // this should remain as the original
                               // from Tesseract's document layout

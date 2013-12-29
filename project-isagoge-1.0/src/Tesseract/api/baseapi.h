@@ -689,6 +689,10 @@ class TESS_API TessBaseAPI {
 
   const PAGE_RES* extGetPageResults();
 
+  inline GenericVector<ParagraphModel*>* getParagraphModels() {
+    return paragraph_models_;
+  }
+
  protected:
 
   /** Common code for setting the image. Returns true if Init has been called. */
@@ -761,6 +765,7 @@ class TESS_API TessBaseAPI {
   TESS_LOCAL const PAGE_RES* GetPageRes() const {
     return page_res_;
   };
+
   /* @} */
 
  protected:

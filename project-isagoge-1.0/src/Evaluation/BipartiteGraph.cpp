@@ -42,7 +42,9 @@ using namespace Basic_Utils;
 //#define SHOW_HYP_VERTICES
 //#define SHOW_VERTICES
 //#define SHOW_TRUE_NEGATIVES
+// saves the tracker to a file, optionally displays as well if DISPLAY_ON is turned on
 #define SHOW_HYP_TRACKER_FINAL
+//#define DISPLAY_ON
 
 BipartiteGraph::BipartiteGraph(string type_, GraphInput input)
 : type(type_), typemode(true) {
@@ -754,9 +756,11 @@ void BipartiteGraph::getHypothesisMetrics() {
   string final_tracker_im = tracker_dir + (string)"hyp_tracker_final.png";
   cout << "Displaying the final hypothesis tracker image and saving it to "
        << final_tracker_im << endl;
-  pixDisplay(hyp_tracker, 100, 100);
   pixWrite(final_tracker_im.c_str(), hyp_tracker, IFF_PNG);
+#ifdef DISPLAY_ON
+  pixDisplay(hyp_tracker, 100, 100);
   waitForInput();
+#endif
 #endif
 }
 
