@@ -325,6 +325,22 @@ void F_Ext1::initFeatExtSinglePage() {
   pixDestroy(&mathwordim);
 
 #endif
+
+  // Determine the ratio of non-italicized blobs to total blobs on the page
+  // A low proportion of non-italics would indicate that the italics feature
+  // is not reliable.
+  int total_blobs = 0;
+  int non_ital_blobs = 0;
+  bigs.StartFullSearch();
+  blob = NULL;
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    if(!blob->is_italic)
+      ++non_ital_blobs;
+    ++total_blobs;
+  }
+  assert(grid->non_ital_ratio == -1);
+  grid->non_ital_ratio = (double)non_ital_blobs / (double)total_blobs;
+
 #ifdef DBG_SHOW_ITALIC
   bigs.StartFullSearch();
   PIX* boldital_img = pixCopy(NULL, curimg);
@@ -335,6 +351,10 @@ void F_Ext1::initFeatExtSinglePage() {
   }
   pixWrite((dbgdir + "bolditalics" + num + ".png").c_str(), boldital_img, IFF_PNG);
 #ifdef DBG_DISPLAY
+  cout << "Displaying the blobs which were found by Tesseract to be italicized as red. "
+       << "All other blobs are in black.\n";
+  cout << "The displayed image was saved to "
+       << (dbgdir + "bolditalics" + num + ".png").c_str() << endl;
   pixDisplay(boldital_img, 100, 100);
   M_Utils::waitForInput();
 #endif
@@ -555,8 +575,10 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
 
   /******** Features II.2 ********/
   double is_italic = (double)0;
-  if(blob->is_italic)
-    is_italic = (double)1;
+  assert(grid->non_ital_ratio >= 0);
+  if(blob->is_italic) {
+    is_italic = (double)1 * grid->non_ital_ratio;
+  }
   fv.push_back(is_italic);
 
   /******** Features II.3 ********/

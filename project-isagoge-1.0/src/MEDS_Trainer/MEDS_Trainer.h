@@ -88,7 +88,11 @@ class MEDS_Trainer {
     always_train = always_train_;
     api_init_params = api_init_params_;
     ext = ext_;
-    api.Init(api_init_params[0].c_str(), api_init_params[1].c_str());
+    const int init_res = api.Init(api_init_params[0].c_str(), api_init_params[1].c_str());
+    if(init_res != 0) {
+      cout << "ERROR: Tesseract was not initialized properly.\n";
+      exit(EXIT_FAILURE);
+    }
     char* page_seg_mode = (char*)"tessedit_pageseg_mode";
     if (!api.SetVariable(page_seg_mode, "3")) {
       cout << "ERROR: Could not set tesseract's api corectly during training!\n";

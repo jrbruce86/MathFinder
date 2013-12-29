@@ -40,8 +40,6 @@
 #define SHOW_BLOB_WORDS // colors all blobs belonging to words and displays
 //#define DBG_DISPLAY // display what is being saved for debugging otherwise just save
 
-#define dbgmode 1
-
 #include "BlobInfoGrid.h"
 #include <ctype.h>
 
@@ -58,7 +56,7 @@ BlobInfoGrid::BlobInfoGrid(int gridsize, const ICOORD& bleft,
             tess(NULL), img(NULL), api(NULL), part_win(NULL),
             blobnboxgridview(NULL), rec_col_parts_sv(NULL),
             insertrblobs1_sv(NULL), insertrblobs2_sv(NULL), line_sv(NULL),
-            sentence_sv(NULL), dbgfeatures(false) {
+            sentence_sv(NULL), dbgfeatures(true), non_ital_ratio(-1) {
   Init(gridsize, bleft, tright);
 }
 
@@ -1445,11 +1443,9 @@ void BlobInfoGrid::HandleClick(int x, int y) {
 
 void BlobInfoGrid::dbgDisplayBlobFeatures(BLOBINFO* blob) {
   if(!blob->features_extracted) {
-    if(!dbgmode) {
-      cout << "ERROR: Feature extraction hasn't been carried out on the blob\n";
-      exit(EXIT_FAILURE);
-    }
-    else return;
+    cout << "ERROR: Feature extraction hasn't been carried out on the blob. "
+         << "Disable dbgfeatures to ignore this.\n";
+    exit(EXIT_FAILURE);
   }
   vector<double> features = blob->features;
   if(features.size() != featformat.length())

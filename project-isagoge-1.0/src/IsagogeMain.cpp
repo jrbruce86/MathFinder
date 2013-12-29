@@ -93,7 +93,7 @@ int main() {
   // Instantiate a MEDS module which uses the detector that was
   // initialized by the trainer
   EquationDetectBase* meds = new MEDSType(); // MEDS is owned by the evaluator
-  DetectorType* detector = trainer.getDetector(); // the detector is owned by the evaluator
+  DetectorType* detector = trainer.getDetector();
   ((MEDSType*)meds)->setDetector(detector); // MEDS owns the detector
   cout << "Finished initializing MEDS class\n";
   // Test it

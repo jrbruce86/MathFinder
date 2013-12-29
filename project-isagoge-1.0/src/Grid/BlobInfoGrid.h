@@ -618,6 +618,9 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
   GenericVector<string> featformat;
   bool dbgfeatures;
 
+  // the ratio of non-italicized blobs to total blobs on the page
+  double non_ital_ratio;
+
  private:
   // allocates ROW_INFO corresponding to the given ROW_RES. Appends the
   // resulting ROW_INFO pointer to this class's "rows" vector.

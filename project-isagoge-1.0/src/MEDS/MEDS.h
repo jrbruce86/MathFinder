@@ -109,12 +109,6 @@ class MEDS : public EquationDetectBase {
                                        // the feature extractor
     blobinfogrid->setTessAPI(api);
     blobinfogrid->prepare(part_grid, best_columns, tess);
-#ifdef SHOW_GRID
-    string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(dbg_img_index);
-    ScrollView* gridviewer = blobinfogrid->MakeWindow(100, 100, winname.c_str());
-    blobinfogrid->DisplayBoxes(gridviewer);
-    M_Utils::waitForInput();
-#endif
 
     // Once the blobinfo grid has been established, it becomes possible to then run
     // each individual blobinfo element through feature detection and classification.
@@ -128,6 +122,13 @@ class MEDS : public EquationDetectBase {
     while((blob = bigs.NextFullSearch()) != NULL) {
       blob->predicted_math = detector->predict(blob);
     }
+
+#ifdef SHOW_GRID
+    string winname = "BlobInfoGrid for Image " + Basic_Utils::intToString(dbg_img_index);
+    ScrollView* gridviewer = blobinfogrid->MakeWindow(100, 100, winname.c_str());
+    blobinfogrid->DisplayBoxes(gridviewer);
+    M_Utils::waitForInput();
+#endif
 
     // Print the results of this module to user-specified directory
     dbgPrintDetectionResults(dbg_img_index);

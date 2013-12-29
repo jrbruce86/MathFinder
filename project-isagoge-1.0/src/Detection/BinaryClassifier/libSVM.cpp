@@ -151,7 +151,7 @@ void libSVM::doCoarseCVTraining(int folds) {
   // range. But since it was noticed that numerical difficulties are experienced for
   // values over 1000 they are capped to that (numerical difficulties being that it
   // was taking hours to do a single fold of cross validation...).
-  matrix<double> C_vec = logspace(log10(1e-7), log10(1000), 10);
+  matrix<double> C_vec = logspace(log10(1e-3), log10(1000), 10);
 #ifdef RBF_KERNEL
   cout << "Started coarse training for RBF Kernel.\n";
   matrix<double> Gamma_vec = logspace(log10(1e-7), log10(1000), 10);
