@@ -115,9 +115,10 @@ class MEDS_Trainer {
 
   ~MEDS_Trainer() {
     if(tess_interface != NULL) {
-      delete tess_interface;
+      delete (TessInterface*)tess_interface;
       tess_interface = NULL;
     }
+    api.setEquationDetector(NULL); // avoids seg fault
     samples_read = samples_extracted = NULL; // owned by detector
     detector = NULL; // owned by MEDS class
   }
