@@ -25,7 +25,7 @@
 
 #include <F_Ext1.h>
 
-#define NUM_FEATURES 22
+#define NUM_FEATURES 19
 
 // TODO: Consider adding OnNormalRow feature for blobs (maybe not since this isn't very reliable)
 
@@ -671,15 +671,15 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
     bigram = sentence_ngram_features[1];
     trigram = sentence_ngram_features[2];
   }
-  fv.push_back(unigram);
-  fv.push_back(bigram);
-  fv.push_back(trigram);
+ // fv.push_back(unigram);
+ // fv.push_back(bigram);
+ // fv.push_back(trigram);
 
   /******** Features II.5 ********/
   double in_valid_row = (double)0;
   if(blob->row_has_valid)
     in_valid_row = bin_val;
-  fv.push_back(in_valid_row);
+  //fv.push_back(in_valid_row);
 
   /******** Features II.6 ********/
   double in_valid_word = (double)0;
