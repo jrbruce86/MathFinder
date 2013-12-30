@@ -106,8 +106,8 @@ void F_Ext1::initFeatExtFull(TessBaseAPI* api, vector<string> tess_api_params,
 void F_Ext1::initFeatExtSinglePage() {
   static int imdbgnum = 1;
   string num = Basic_Utils::intToString(imdbgnum);
-  dbgim = pixCopy(NULL, curimg);
-  dbgim = pixConvertTo32(dbgim);
+  //dbgim = pixCopy(NULL, curimg);
+ // dbgim = pixConvertTo32(dbgim);
   // search initialization
   BlobInfoGridSearch bigs(grid);
   BLOBINFO* blob = NULL;
@@ -436,7 +436,8 @@ void F_Ext1::initFeatExtSinglePage() {
   while((blob = bigs.NextFullSearch()) != NULL) {
     blob->isstopword = ng.isStrStopWord(blob->wordstr());
 #ifdef SHOW_STOP_WORDS
-    M_Utils::drawHlBlobInfoRegion(blob, dbgim, LayoutEval::RED);
+    if(blob->isstopword)
+      M_Utils::drawHlBlobInfoRegion(blob, dbgim, LayoutEval::RED);
 #endif
   }
 #ifdef SHOW_STOP_WORDS

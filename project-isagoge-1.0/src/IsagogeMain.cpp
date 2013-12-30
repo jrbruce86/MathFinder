@@ -74,10 +74,10 @@ int main() {
 
   // set this to false if only want to train the module
   // if it hasn't been trained yet.
-  bool train_always = false;
+  bool train_always = true;
   // if true then extract features during training even
   // if they've already been written to a file
-  bool new_samples = false;
+  bool new_samples = true;
 
   // specify how the tesseract api should always be initialized
   // i.e. what language and the path to the training files necessary
