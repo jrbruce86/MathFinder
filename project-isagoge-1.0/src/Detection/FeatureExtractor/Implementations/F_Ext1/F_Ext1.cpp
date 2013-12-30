@@ -529,6 +529,8 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   //  9. Blob belongs to a valid word (valid_word) -f23
   const int num_features = NUM_FEATURES;
 
+  const double bin_val = (double).5;
+
   // feature vector
   vector<double> fv;
 
@@ -572,13 +574,13 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   double has_sup = (double)0, has_sub = (double)0,
       is_sup = (double)0, is_sub = (double)0;
   if(blob->has_sup)
-    has_sup = (double)1;
+    has_sup = bin_val;
   if(blob->has_sub)
-    has_sub = (double)1;
+    has_sub = bin_val;
   if(blob->is_sup)
-    is_sup = (double)1;
+    is_sup = bin_val;
   if(blob->is_sub)
-    is_sub = (double)1;
+    is_sub = bin_val;
 #ifdef DBG_FEAT3
   if(has_sup || has_sub || is_sup || is_sub) {
     cout << "The displayed blob has/is a sub/superscript!\n";
@@ -640,7 +642,7 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   /******** Features II.1 ********/
   double imw = (double)0;
   if(blob->ismathword)
-    imw = (double)1;
+    imw = bin_val;
   fv.push_back(imw);
 
   /******** Features II.2 ********/
@@ -675,31 +677,31 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   /******** Features II.5 ********/
   double in_valid_row = (double)0;
   if(blob->row_has_valid)
-    in_valid_row = (double)1;
+    in_valid_row = bin_val;
   fv.push_back(in_valid_row);
 
   /******** Features II.6 ********/
   double in_valid_word = (double)0;
   if(blob->validword)
-    in_valid_word = (double)1;
+    in_valid_word = bin_val;
   fv.push_back(in_valid_word);
 
   /******** Features II.7 ********/
   double bad_page_ = (double)0;
   if(bad_page)
-    bad_page_ = (double)1;
+    bad_page_ = bin_val;
   fv.push_back(bad_page_);
 
   /******** Features II.8 ********/
   double stop_word = (double)0;
   if(blob->isstopword)
-    stop_word = (double)1;
+    stop_word = bin_val;
   fv.push_back(stop_word);
 
   /******** Features II.9 ********/
   double valid_word = (double)0;
   if(blob->validword)
-    valid_word = (double)1;
+    valid_word = bin_val;
   fv.push_back(valid_word);
 
   /******** Done extracting features! ********/
