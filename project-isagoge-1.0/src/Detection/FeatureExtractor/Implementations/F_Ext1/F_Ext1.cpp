@@ -25,7 +25,7 @@
 
 #include <F_Ext1.h>
 
-#define NUM_FEATURES 23
+#define NUM_FEATURES 22
 
 // TODO: Consider adding OnNormalRow feature for blobs (maybe not since this isn't very reliable)
 
@@ -700,10 +700,10 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   fv.push_back(stop_word);
 
   /******** Features II.9 ********/
-  double valid_word = (double)0;
+/*  double valid_word = (double)0;
   if(blob->validword)
     valid_word = bin_val;
-  fv.push_back(valid_word);
+  fv.push_back(valid_word);*/
 
   /******** Done extracting features! ********/
   // return all the features, make sure there's the right amount
