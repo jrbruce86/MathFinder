@@ -46,7 +46,8 @@ typedef GenericVector<RankedNGramVec> RankedNGramVecs;
 NGramProfileGenerator::NGramProfileGenerator(const string& training_set_path_) :
     dbgfile_open(false), mathfile(NULL),
     nonmathfile(NULL), api(NULL) {
-  stopwords = r.readInStopWords(training_set_path_);
+  r.readInStopWords(training_set_path_);
+  stopwords = r.getStopWords();
   training_set_path = training_set_path_;
 }
 

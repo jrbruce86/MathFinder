@@ -66,6 +66,9 @@ class NGramProfileGenerator {
       const string& groundtruth_path_, const string& training_set_path,
       const string& ext, bool make_new);
 
+  inline GenericVector<char*> getRankerStopWordsCopy() {
+    return r.getStopWordsCopy(); // caller owns what is returned here
+  }
 
  private:
   // use existing n-grams to avoid the time overhead when I

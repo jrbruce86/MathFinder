@@ -255,7 +255,7 @@ void F_Ext2::initFeatExtSinglePage() {
   // Determine the N-Gram features for each sentence
   // -- first get the ranked ngram vectors for each sentence
   GenericVector<Sentence*> page_sentences = grid->getSentences();
-  NGramRanker ng(training_set_path);
+  NGramRanker ng(training_set_path, stopwords);
   ng.setTessAPI(api);
   for(int i = 0; i < page_sentences.length(); i++) {
     Sentence* cursentence = page_sentences[i];

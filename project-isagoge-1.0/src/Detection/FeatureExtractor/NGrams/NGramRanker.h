@@ -40,11 +40,13 @@ using namespace tesseract;
 
 class NGramRanker {
  public:
-  NGramRanker(const string& training_set_path);
-
   NGramRanker() : unigram_filename("uni-grams"),
       bigram_filename("bi-grams"), trigram_filename("tri-grams"),
-      api_(NULL) {};
+      api_(NULL), owns_stop_words(true) {};
+
+//  NGramRanker(const string&); // TODO: remove this
+
+  NGramRanker(const string&, GenericVector<char*>);
 
   ~NGramRanker();
 
@@ -108,82 +110,105 @@ class NGramRanker {
   }
 
 
-  GenericVector<char*> readInStopWords(const string& training_set_path);
+  void readInStopWords(const string& training_set_path);
+
+  // returns a new copy of the stop words which will not be owned
+  // by this class. destruction of this copy is required by the
+  // caller.
+  inline GenericVector<char*> getStopWordsCopy() {
+    GenericVector<char*> newstopwords;
+    assert(stopwords.length() > 0); // if this is empty then caller did something wrong
+    for(int i = 0; i < stopwords.length(); ++i) {
+      char* newstpwrd = Basic_Utils::strCopy(stopwords[i]);
+      newstopwords.push_back(newstpwrd);
+    }
+    return newstopwords;
+  }
+
+  // simply returns the pointers without copying, if this is
+  // used then the caller has no ownership but can't access the
+  // stop words after the ranker's destruction.
+  inline GenericVector<char*> getStopWords() {
+    return stopwords;
+  }
+
+  inline bool isStrStopWord(const char* const str) {
+    if(!str)
+      return false;
+    return isStopWord(str, 1);
+  }
 
  private:
+  // writes just one ngram file (either uni, bi, or tri depending
+  // on first argument
+  void writeNGramFile(int gram, const GenericVector<Sentence*>& sentences,
+      const string& path, ofstream* stream);
 
+  // returns true if gram == 1 (unigram) and the word is a
+  // stopword on the stopword list
+  bool isStopWord(const char* const word, int gram);
 
+  // ranks just one ngram file (either uni, bi, or tri depending
+  // on first argument)
+  RankedNGramVec rankNGram(int gram, const string& path);
 
-   // writes just one ngram file (either uni, bi, or tri depending
-   // on first argument
-   void writeNGramFile(int gram, const GenericVector<Sentence*>& sentences,
-       const string& path, ofstream* stream);
+  // Subtracts the counts of matching non-math ngrams from the math ngram
+  // counts for either uni, bi, or tri grams depending on the first argument
+  // Returns the updated math ngrams and their counts
+  RankedNGramVec subtractAndReRankNGram(int gram, RankedNGramVec& math,
+      const RankedNGramVec& nonmath, const string& mathdir,
+      const double& nonmath_weight);
 
-   // returns true if gram == 1 (unigram) and the word is a
-   // stopword on the stopword list
-   bool isStopWord(const char* const word, int gram);
+  // comparator used in sorting n-grams in increasing count order
+  inline static int sortcmp(const void* ngf1, const void* ngf2) {
+    NGramFrequency* n1 = *((NGramFrequency**)ngf1);
+    NGramFrequency* n2 = *((NGramFrequency**)ngf2);
+    if(n1->frequency < n2->frequency)
+      return 1;
+    else if(n1->frequency > n2->frequency)
+      return -1;
+    else
+      return 0;
+  }
 
-   // ranks just one ngram file (either uni, bi, or tri depending
-   // on first argument)
-   RankedNGramVec rankNGram(int gram, const string& path);
+  // reads in all the n-grams in a file assumes a file only has
+  // a list of one n-gram type (uni/bi/tri). throws exception if
+  // an unexpected number of grams are detected. returns the vector
+  // of n-grams, each n-gram is a vector of words (no more than three)
+  GenericVector<NGram*> readNGramFile(const string& filepath, int gram);
 
+  // returns vector of ngrams where each ngram is unique and
+  // also has a frequency count associated with it found from
+  // counting the occurences of each
+  RankedNGramVec countNGramFrequencies(
+      const GenericVector<NGram*>& ngrams);
 
-   // Subtracts the counts of matching non-math ngrams from the math ngram
-   // counts for either uni, bi, or tri grams depending on the first argument
-   // Returns the updated math ngrams and their counts
-   RankedNGramVec subtractAndReRankNGram(int gram, RankedNGramVec& math,
-       const RankedNGramVec& nonmath, const string& mathdir,
-       const double& nonmath_weight);
+  // print the counts to a file for analysis
+  void writeNGramCounts(const GenericVector<NGramFrequency*> ngfs,
+      const string& filepath);
 
-   // comparator used in sorting n-grams in increasing count order
-   inline static int sortcmp(const void* ngf1, const void* ngf2) {
-     NGramFrequency* n1 = *((NGramFrequency**)ngf1);
-     NGramFrequency* n2 = *((NGramFrequency**)ngf2);
-     if(n1->frequency < n2->frequency)
-       return 1;
-     else if(n1->frequency > n2->frequency)
-       return -1;
-     else
-       return 0;
-   }
+  inline void nGramReadError(const string& filepath) {
+    cout << "ERROR: Invalid ngram detected in " << filepath << endl;
+    exit(EXIT_FAILURE);
+  }
 
-   // reads in all the n-grams in a file assumes a file only has
-   // a list of one n-gram type (uni/bi/tri). throws exception if
-   // an unexpected number of grams are detected. returns the vector
-   // of n-grams, each n-gram is a vector of words (no more than three)
-   GenericVector<NGram*> readNGramFile(const string& filepath, int gram);
+  string unigram_filename;
+  string bigram_filename;
+  string trigram_filename;
 
-   // returns vector of ngrams where each ngram is unique and
-   // also has a frequency count associated with it found from
-   // counting the occurences of each
-   RankedNGramVec countNGramFrequencies(
-       const GenericVector<NGram*>& ngrams);
+  //destroys all the ngrams in the vector
+  void destroyNGramVec(GenericVector<NGramFrequency*> ngramcounts);
 
-   // print the counts to a file for analysis
-   void writeNGramCounts(const GenericVector<NGramFrequency*> ngfs,
-       const string& filepath);
+  string groundtruth_path;
 
-   inline void nGramReadError(const string& filepath) {
-     cout << "ERROR: Invalid ngram detected in " << filepath << endl;
-     exit(EXIT_FAILURE);
-   }
+  GenericVector<char*> stopwords;
+  bool owns_stop_words; // this class may or may not own the stop words depending on how it is used
 
-   string unigram_filename;
-   string bigram_filename;
-   string trigram_filename;
+  TessBaseAPI* api_;
 
-   //destroys all the ngrams in the vector
-   void destroyNGramVec(GenericVector<NGramFrequency*> ngramcounts);
+  RankedNGramVecs ranked_math; // ranked math n-grams (output of initFeatExtFull)
 
-   string groundtruth_path;
-
-   GenericVector<char*> stopwords;
-
-   TessBaseAPI* api_;
-
-   RankedNGramVecs ranked_math; // ranked math n-grams (output of initFeatExtFull)
-
-   string training_set_path;
+  string training_set_path;
 };
 
 #endif

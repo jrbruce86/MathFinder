@@ -19,4 +19,6 @@ Trigram Feature (trigram)
 Blob belongs to row with normal text (in_valid_row)
 Blob belongs to normal text (in_valid_word)
 Page Doesn't Have Normal Text (bad_page)
+Blob belongs to stop word (stop_word)
+Blob belongs to valid word (valid_word)
 

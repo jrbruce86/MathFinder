@@ -136,6 +136,7 @@ class F_Ext1 {
   string dbgdir;
 
   GenericVector<string> mathwords;
+  GenericVector<char*> stopwords;
 
   BlobInfoGrid* grid;
   double avg_blob_height;

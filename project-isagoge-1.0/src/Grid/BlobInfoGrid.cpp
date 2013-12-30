@@ -36,8 +36,8 @@
 
 //#define DBG_ROW_CHARACTERISTICS
 
-#define SHOW_BLOB_ROWS // colors all blobs which belong to rows and displays
-#define SHOW_BLOB_WORDS // colors all blobs belonging to words and displays
+//#define SHOW_BLOB_ROWS // colors all blobs which belong to rows and displays
+//#define SHOW_BLOB_WORDS // colors all blobs belonging to words and displays
 //#define DBG_DISPLAY // display what is being saved for debugging otherwise just save
 
 #include "BlobInfoGrid.h"

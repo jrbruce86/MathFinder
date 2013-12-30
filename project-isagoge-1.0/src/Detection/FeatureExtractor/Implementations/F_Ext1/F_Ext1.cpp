@@ -25,9 +25,9 @@
 
 #include <F_Ext1.h>
 
-#define NUM_FEATURES 21
+#define NUM_FEATURES 23
 
-// TODO: Consider adding OnNormalRow feature for blobs
+// TODO: Consider adding OnNormalRow feature for blobs (maybe not since this isn't very reliable)
 
 /* uncomment any of the following to enable debugging */
 //#define DBG_AVG
@@ -49,8 +49,10 @@
 //#define DBG_CERTAINTY
 //#define DBG_SHOW_NGRAMS
 //#define DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
+//#define SHOW_STOP_WORDS
+//#define SHOW_VALID_WORDS
 
-//#define DBG_DISPLAY // turn this on to display dbg images as they are saved
+#define DBG_DISPLAY // turn this on to display dbg images as they are saved
 
 typedef GenericVector<NGramFrequency*> RankedNGramVec;
 typedef GenericVector<RankedNGramVec> RankedNGramVecs;
@@ -61,6 +63,14 @@ F_Ext1::F_Ext1() : curimg(NULL), grid(NULL), avg_blob_height(-1),
 F_Ext1::~F_Ext1() {
   NGramRanker ng;
   ng.destroyNGramVecs(math_ngrams);
+  for(int i = 0; i < stopwords.length(); i++) {
+    char* w = stopwords[i];
+    if(w != NULL) {
+      delete [] w;
+      w = NULL;
+    }
+  }
+  stopwords.clear();
 }
 
 void F_Ext1::reset() {}
@@ -69,6 +79,8 @@ void F_Ext1::initFeatExtFull(TessBaseAPI* api, vector<string> tess_api_params,
     const string& groundtruth_path_, const string& training_set_path_,
     const string& ext, bool makenew) {
   NGramProfileGenerator ng_gen(training_set_path_);
+  assert(stopwords.empty());
+  stopwords = ng_gen.getRankerStopWordsCopy();
   math_ngrams = ng_gen.generateMathNGrams(api, tess_api_params, groundtruth_path_,
       training_set_path_, ext, makenew);
   training_set_path = training_set_path_;
@@ -142,11 +154,15 @@ void F_Ext1::initFeatExtSinglePage() {
     else
       M_Utils::drawHlBlobInfoRegion(blob, pixdbg_r, LayoutEval::BLUE);
   }
-  cout << "displaying the abnormal rows for image " << imdbgnum << endl;
-  pixDisplay(pixdbg_r, 100, 100);
   pixWrite((dbgdir + (string)"Rows_Abnormal"
       + Basic_Utils::intToString(imdbgnum) + (string)".png").c_str(),
       pixdbg_r, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "displaying the abnormal rows for image " << imdbgnum << " as blue regions\n";
+  pixDisplay(pixdbg_r, 100, 100);
+  M_Utils::waitForInput();
+#endif
+  pixDestroy(&pixdbg_r);
 #endif
 
   // Determine the adjacent covered neighbors in the rightward, downward,
@@ -249,6 +265,7 @@ void F_Ext1::initFeatExtSinglePage() {
   }
   pixWrite((dbgdir + "baselines" + num + ".png").c_str(), dbgim, IFF_PNG);
 #ifdef DBG_DISPLAY
+  cout << "Displaying the baselines in green.\n";
   pixDisplay(dbgim, 100, 100);
   M_Utils::waitForInput();
 #endif
@@ -380,7 +397,7 @@ void F_Ext1::initFeatExtSinglePage() {
   // Determine the N-Gram features for each sentence
   // -- first get the ranked ngram vectors for each sentence
   GenericVector<Sentence*> page_sentences = grid->getSentences();
-  NGramRanker ng(training_set_path);
+  NGramRanker ng(training_set_path, stopwords);
   ng.setTessAPI(api);
   for(int i = 0; i < page_sentences.length(); ++i) {
     Sentence* cursentence = page_sentences[i];
@@ -404,13 +421,64 @@ void F_Ext1::initFeatExtSinglePage() {
       ng_features->push_back(getNGFeature(cursentence, j+1));
     cursentence->ngram_features = ng_features;
   }
+
+
+  // Find out which blobs belong to stop words
+  bigs.StartFullSearch();
+  blob = NULL;
+#ifdef SHOW_STOP_WORDS
+  string stpwrdim_name = dbgdir + (string)"stop_words_"
+      + Basic_Utils::intToString(imdbgnum) + (string)".png";
+  assert(dbgim == NULL);
+  dbgim = pixCopy(NULL, curimg);
+  dbgim = pixConvertTo32(dbgim);
+#endif
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    blob->isstopword = ng.isStrStopWord(blob->wordstr());
+#ifdef SHOW_STOP_WORDS
+    M_Utils::drawHlBlobInfoRegion(blob, dbgim, LayoutEval::RED);
+#endif
+  }
+#ifdef SHOW_STOP_WORDS
+  pixWrite(stpwrdim_name.c_str(), dbgim, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "Displaying the blobs belonging to stop words in red on the page.\n";
+  pixDisplay(dbgim, 100, 100);
+  M_Utils::waitForInput();
+#endif
+  pixDestroy(&dbgim);
+  dbgim = NULL;
+#endif
+
+#ifdef SHOW_VALID_WORDS
+  string validwrdim_name = dbgdir + (string)"valid_words_" +
+      Basic_Utils::intToString(imdbgnum) + (string)".png";
+  assert(dbgim == NULL);
+  dbgim = pixCopy(NULL, curimg);
+  dbgim = pixConvertTo32(dbgim);
+  blob = NULL;
+  bigs.StartFullSearch();
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    if(blob->validword)
+      M_Utils::drawHlBlobInfoRegion(blob, dbgim, LayoutEval::RED);
+  }
+  pixWrite(validwrdim_name.c_str(), dbgim, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "Displaying the blobs belonging to valid words in red on the page.\n";
+  pixDisplay(dbgim, 100, 100);
+  M_Utils::waitForInput();
+#endif
+  pixDestroy(&dbgim);
+  dbgim = NULL;
+#endif
+
   ++imdbgnum;
 }
 
 /* Carries out feature extraction on the given blob returning the
  resulting feature vector, with each feature normalized to [0,1] */
 vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
-  // The following 20 features are extracted:
+  // The following 23 features are extracted:
   // I. Blob Spatial Features (12 features total):
   //  1. Number of Horizontally or Vertically Aligned Characters
   //     - # rightward horizontally adjacent blobs covered (rhabc) -f1
@@ -457,6 +525,8 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   //  7. Page Doesn't Have Normal Text (bad_page) -f21
   //     - 1 if the page doesn't have normal text based on
   //       Tesseract's dictionary, otherwise is 0
+  //  8. Blob belongs to a stop word (stop_word) -f22
+  //  9. Blob belongs to a valid word (valid_word) -f23
   const int num_features = NUM_FEATURES;
 
   // feature vector
@@ -619,6 +689,18 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   if(bad_page)
     bad_page_ = (double)1;
   fv.push_back(bad_page_);
+
+  /******** Features II.8 ********/
+  double stop_word = (double)0;
+  if(blob->isstopword)
+    stop_word = (double)1;
+  fv.push_back(stop_word);
+
+  /******** Features II.9 ********/
+  double valid_word = (double)0;
+  if(blob->validword)
+    valid_word = (double)1;
+  fv.push_back(valid_word);
 
   /******** Done extracting features! ********/
   // return all the features, make sure there's the right amount

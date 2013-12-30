@@ -224,7 +224,7 @@ class BLOBINFO:public ELIST_LINK {
            is_italic(false), rhabc((double)0), uvabc((double)0), dvabc((double)0),
            has_nested(false), certainty((double)-20), features_extracted(false),
            dist_above_baseline((double)0), predicted_math(false), nestedcount(0),
-           row_no_word(NULL) {}
+           row_no_word(NULL), isstopword(false) {}
 
   // Copy construtor is simply not used and avoided here so was not implemented
 
@@ -378,6 +378,7 @@ class BLOBINFO:public ELIST_LINK {
   bool features_extracted; // true after feature extraction is completed for this blob
 
   bool ismathword; // true if the blob is on a finite list of math words
+  bool isstopword; // true if the blob is on a finite list of stop words
 
   // true only if the blob belongs to an italic word
   bool is_italic;

@@ -36,10 +36,21 @@ typedef GenericVector<NGramFrequency*> RankedNGramVec;
 typedef GenericVector<RankedNGramVec> RankedNGramVecs;
 
 
+/*// TODO: Remove this one... Don't think it is ever even used.
 NGramRanker::NGramRanker(const string& training_set_path_) : unigram_filename("uni-grams"),
     bigram_filename("bi-grams"), trigram_filename("tri-grams"),
     api_(NULL) {
   readInStopWords(training_set_path_);
+  owns_stop_words = true;
+  training_set_path = training_set_path_;
+}*/
+
+NGramRanker::NGramRanker(const string& training_set_path_,
+    GenericVector<char*> stopwords_) :
+        unigram_filename("uni-grams"), bigram_filename("bi-grams"),
+        trigram_filename("tri-grams"), api_(NULL) {
+  stopwords = stopwords_;
+  owns_stop_words = false; // stop words owned externally
   training_set_path = training_set_path_;
 }
 
@@ -48,14 +59,15 @@ NGramRanker::~NGramRanker() {
   // everything else thats been allocated however must be destroyed!!!
   // TODO: Check for memory leaks! A lot is owned by the grid, but make
   //       sure I didn't miss anything.
-  for(int i = 0; i < stopwords.length(); i++) {
-    char* w = stopwords[i];
-    if(w != NULL) {
-      delete [] w;
-      w = NULL;
+  if(owns_stop_words) {
+    for(int i = 0; i < stopwords.length(); i++) {
+      char* w = stopwords[i];
+      if(w != NULL) {
+        delete [] w;
+        w = NULL;
+      }
     }
   }
-  stopwords.clear();
 }
 
 // This also writes the uni, bi, and tri -grams each to their own file in the
@@ -410,7 +422,7 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
   stream->close();
 }
 
-GenericVector<char*> NGramRanker::readInStopWords(const string& training_set_path) {
+void NGramRanker::readInStopWords(const string& training_set_path) {
   // Read in all the stopwords
   string stopwordfile = training_set_path + (string)"../../stopwords";
   ifstream stpwrdfs(stopwordfile.c_str());
@@ -432,7 +444,6 @@ GenericVector<char*> NGramRanker::readInStopWords(const string& training_set_pat
     char* stpwrd = Basic_Utils::strCopy(line);
     stopwords.push_back(stpwrd);
   }
-  return stopwords;
 }
 
 bool NGramRanker::isStopWord(const char* const word, int gram) {
