@@ -73,7 +73,7 @@ class IBinaryClassifier {
     else {
       std::cout << "ERROR: MEDS detection module attempted prediction "
            << "with untrained classifier.\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     return false;
   }

@@ -43,11 +43,11 @@
 
 #include "Detector.h"
 
-// Detector1 is the first Detector implementation.
-// Uses a binary SVM classifier trained through 10-fold cross validation on 15 training
-// pages randomly selected from E. Bidwell, Advanced Calculus. (1911). The following
-// 21 features are implemented during classifier training and prediction (See thesis
-// for more details on each feature):
+// SVMDectector is the first Detector implementation.
+// Uses a binary SVM classifier trained through 10-fold cross validation first on 15 training
+// pages randomly selected from E. Bidwell, Advanced Calculus. (1911), and then experiments
+// were carried out on other datasets. The following 23 features are implemented during classifier
+// training and prediction (See thesis for more details on each feature):
 //   1.  Rightward horizontally adjacent blobs covered (rhabc)
 //   2.  Upward vertically adjacent blobs covered (uvabc)
 //   3.  Downard vertically adjacent blobs covered (dvabc)
@@ -69,12 +69,17 @@
 //   19. Blob belongs to row with normal text (in_valid_row)
 //   20. Blob belongs to normal text (in_valid_word)
 //   21. Page Doesn't Have Normal Text (bad_page)
+//   22. Blob belongs to a stop word (stop_word)
+//   23. Blob belongs to a valid word (valid_word)
 typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext1> SVMDetector;
 
-// The following is a slight adaptation of SVMDetector. It was observed that
-// the height and width-height ratio features can often result in false positive
-// detections. This is the same detector but trained without those two features.
-typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext2> SVMDetector2;
+// The following are variations of the SVMDetector that use slightly different feature combinations
+// (See the F_Ext2, F_Ext3, etc. for more details):
+typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext2> SVMDetector1; // no valid_word feature
+typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext3> SVMDetector2; // no n-grams or valid_row
+typedef Detector<CrossValidatorSVM<libSVM>, libSVM, F_Ext4> SVMDetector3; // no italics feature
+
+
 
 #endif
 

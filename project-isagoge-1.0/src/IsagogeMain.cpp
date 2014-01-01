@@ -38,19 +38,31 @@ using namespace std;
  * Uncomment out the MEDS module to be tested. Make sure that one and only
  * one of them are uncommented!
  *************************************************************************/
-#define MEDS1TEST
+//#define MEDS1TEST
 //#define MEDS2TEST
+//#define MEDS3TEST
+#define MEDS4TEST
 
+// TODO: Find out if there's a way to abbreviate these macros??
 #ifdef MEDS1TEST
 typedef MEDS1 MEDSType;
 typedef MEDS1Detector DetectorType;
 #define MEDSNUM 1;
 #endif
-
 #ifdef MEDS2TEST
 typedef MEDS2 MEDSType;
 typedef MEDS2Detector DetectorType;
 #define MEDSNUM 2;
+#endif
+#ifdef MEDS3TEST
+typedef MEDS3 MEDSType;
+typedef MEDS3Detector DetectorType;
+#define MEDSNUM 3;
+#endif
+#ifdef MEDS4TEST
+typedef MEDS4 MEDSType;
+typedef MEDS4Detector DetectorType;
+#define MEDSNUM 4;
 #endif
 
 // Runs evaluation test on the given detector for the given dataset
@@ -68,13 +80,13 @@ void evaluateDataSets(EquationDetectBase*& detector,
 int main() {
   string topdir = "../test_sets/";
   string dataset = "test";
-  string train_dir = "training/";
-  string train_set = "SVM_AdvCalc1_15/";
-  const string trainpath = topdir+train_dir+train_set;
+  string train_dir = "training/MainTrainingDir/";
+  string train_set = "AdvCalc1";
+  const string trainpath = topdir + train_dir + (string)"training_sets/" + train_set;
 
   // set this to false if only want to train the module
   // if it hasn't been trained yet.
-  bool train_always = true;
+  bool train_always = false;
   // if true then extract features during training even
   // if they've already been written to a file
   bool new_samples = true;
@@ -86,7 +98,7 @@ int main() {
   api_init_params.push_back((string)"eng"); // tesseract language
 
   // Pick a detector/segmentor combo and train if necessary
-  MEDS_Trainer<DetectorType> trainer(train_always, trainpath, new_samples, api_init_params);
+  MEDS_Trainer<DetectorType> trainer(train_always, trainpath, train_set, new_samples, api_init_params);
   trainer.trainDetector();
   cout << "Finished training the detector!\n";
 

@@ -1,0 +1,35 @@
+Here are the features for each extractor:
+
+
+--F_Ext1
+1.  Rightward horizontally adjacent blobs covered (rhabc)
+2.  Upward vertically adjacent blobs covered (uvabc)
+3.  Downard vertically adjacent blobs covered (dvabc)
+4.  Number of completely nested characters (cn)
+5.  Has a superscript
+6.  Has a subscript
+7.  Is a superscript
+8.  Is a subscript
+9.  Blob height (h)
+10. Blob width/height ratio (whr)
+11. Vertical distance above row baseline (vdarb)
+12. Count of stacked blobs at blob position (cosbabp)
+13. Is blob in math word (imw)
+14. Italicized text (is_italic)
+15. OCR confidence rating (ocr_conf)
+16. Unigram Feature (unigram)
+17. Bigram Feature (bigram)
+18. Trigram Feature (trigram)
+19. Blob belongs to row with normal text (in_valid_row)
+20. Blob belongs to normal text (in_valid_word)
+21. Page Doesn't Have Normal Text (bad_page)
+22. Blob belongs to stop word (stop_word)
+23. Blob belongs to valid word (valid_word)
+
+--F_Ext2
+Same as F_Ext1 but trying without the valid_word feature, so this is the 
+first 22 features of F_Ext1.
+
+--F_Ext3
+Same as F_Ext1 but trying without the 3 N-Gram features and without the
+in_valid_row feature. 

@@ -52,51 +52,48 @@ class MEDS_Trainer {
   // 1. train_detector - If true then train the detector even if
   //                     it has already been trained. Otherwise
   //                     only train it if necessary
-  // 2. detector_path  - This is the path to both the detector's
-  //                     training dataset and to the detector
-  //                     itself (i.e. the result of training). These
-  //                     two are subdirectories in this path.
-  // 3. get_new_samples - If true will get new samples during training
+  // 2. detector_path  - This is the path to the training images to be used. It is required to be
+  //                     a subdirectory of test_sets/training/MainTrainingDir/training_sets
+  // 3. training_set   - The name of the dataset on which training is carried out. The
+  //                     dataset is located in [detector_path]/training_sets/[training_set].
+  //                     Included in this directory are all the images used for training.
+  // 4. get_new_samples - If true will get new samples during training
   //                      even if samples were previously written to a file,
   //                      otherwise only gets samples if file hasn't already
   //                      been written. If not doing training this argument
   //                      has no effect.
-  // 4. ext (optional) - The extension expected for all document images
+  // 5. ext (optional) - The extension expected for all document images
   //                     (.png by default)
-  MEDS_Trainer(bool always_train_, const string& detector_path,
+  MEDS_Trainer(bool always_train_, const string& detector_path, string training_set_,
       bool get_new_samples_, vector<string> api_init_params_,
       const string& ext_=".png") :
         tess_interface(NULL), samples_read(NULL), samples_extracted(NULL),
         detector(NULL) {
     get_new_samples = get_new_samples_;
-    top_path = Basic_Utils::checkTrailingSlash(detector_path);
-    groundtruth_path = top_path + (string)"*.dat";
-    groundtruth_path = Basic_Utils::exec((string)"ls "
-        + groundtruth_path + (string)" | tail -n 1 | tr -d '\n'");
-    if(groundtruth_path.empty()) {
-      cout << "ERROR: A *.dat (groundtruth) file is expected in "
-           << top_path << " but was not found.\n";
-      exit(EXIT_FAILURE);
-    }
+    training_set = training_set_;
+    training_set_ = Basic_Utils::checkTrailingSlash(training_set_);
+    top_path = Basic_Utils::checkTrailingSlash(detector_path) + (string)"../../"; // path the MainTrainingDir/
+    groundtruth_path = top_path + (string)"groundtruths/" + training_set + (string)".dat";
+
     // the following is the directory in which the predictor will be
     // contained. the full path to the predictor is determined by
     // the classifier during its initialization during trainDetector()
     // function which must be called in order to fully initialize the detector.
-    predictor_path = detector_path + (string)"predictor/";
-    sample_path = detector_path + (string)"samples/";
-    training_set_path = detector_path + (string)"training_set/";
+    predictor_path = top_path + (string)"predictor/" + training_set_;
+    sample_path = top_path + training_set_ + (string)"samples/";
+    training_set_path = Basic_Utils::checkTrailingSlash(detector_path);
     always_train = always_train_;
     api_init_params = api_init_params_;
     ext = ext_;
     const int init_res = api.Init(api_init_params[0].c_str(), api_init_params[1].c_str());
     if(init_res != 0) {
       cout << "ERROR: Tesseract was not initialized properly.\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     char* page_seg_mode = (char*)"tessedit_pageseg_mode";
     if (!api.SetVariable(page_seg_mode, "3")) {
       cout << "ERROR: Could not set tesseract's api corectly during training!\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     // make sure that we're in the right document layout analysis mode
     int psm = 0;
@@ -105,7 +102,7 @@ class MEDS_Trainer {
     // turn on equation detection
     if (!api.SetVariable("textord_equation_detect", "true")) {
       cout << "Could not turn on Tesseract's equation detection during training!\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     // initialize the interface used to grab the custom BlobInfoGrid from
     // tesseract's api
@@ -138,12 +135,12 @@ class MEDS_Trainer {
     if(detector != NULL) {
       cout << "ERROR: Detector expected to be uninitialized prior to training, however "
            << "was already initialized. Make sure it has been deleted.\n";
-      exit(EXIT_FAILURE);
+      assert(false); // probably lame programming style.. but this at least tells where the line number is so I don't have to hunt for it
     }
     detector = new DetectorType;
     if(tess_interface == NULL) {
       cout << "ERROR: trainDetector() called with a NULL TessInterface module.\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     // make sure the directories are there!
     if(!Basic_Utils::existsDirectory(predictor_path))
@@ -152,12 +149,12 @@ class MEDS_Trainer {
       cout << "ERROR: " << training_set_path << " is expected "
            << "to exist and contain the images that can be used "
            << "to train the detector if necessary. The directory does not exist!\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     if(Basic_Utils::fileCount((string)training_set_path) == 0) {
       cout << "ERROR: " << training_set_path << " is expected "
            << "to contain training images but is empty!\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
 
     // assumes all n files in the training_ are images
@@ -174,6 +171,7 @@ class MEDS_Trainer {
     // so it can determine the label of each sample
     detector->initTrainingPaths(groundtruth_path, training_set_path, ext);
     if(always_train || !Basic_Utils::existsFile(predictor_path)) {
+      cout << "predictor at " << predictor_path << " doesn't exist. Training is about to be carried out.\n";
       vector<vector<BLSample*> >* samples = getSamples();
       cout << "finished calling detector's getSamples() method\n";
 #ifdef JUST_GET_SAMPLES
@@ -247,7 +245,7 @@ class MEDS_Trainer {
       cout << "ERROR: samples have already been extracted but not deleted and "
            << "nullified prior to calling getSamples(). Make sure samples are "
            << "deleted prior to calling this function.\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     // get the samples
     string sample_path = detector->getSamplePath();
@@ -373,7 +371,7 @@ class MEDS_Trainer {
     ifstream s(sample_path.c_str());
     if(!s.is_open()) {
       cout << "ERROR: Couldn't open sample file for reading at " << sample_path << endl;
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     int maxlen = 1500;
     char line[maxlen];
@@ -384,7 +382,7 @@ class MEDS_Trainer {
       if(s == NULL) {
         if(nullcount++ > 1) {
           cout << "ERROR: Invalid sample file at " << sample_path << endl;
-          exit(EXIT_FAILURE);
+          assert(false);
         }
         continue;
       }
@@ -485,7 +483,7 @@ class MEDS_Trainer {
 
   inline void error() {
     cout << "ERROR: Invalid sample file!\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
 
   void writeSamples(const string& sample_path) {
@@ -494,7 +492,7 @@ class MEDS_Trainer {
     ofstream s(sample_path.c_str());
     if(!s.is_open()) {
       cout << "ERROR: Couldn't open " << sample_path << " for writing\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     for(int i = 0; i < samples_extracted->size(); i++) {
       for(int j = 0; j < (*samples_extracted)[i].size(); j++) {
@@ -544,7 +542,7 @@ class MEDS_Trainer {
         fs << "L,";
       else {
         cout << "ERROR: Unexpected groundtruth entry type\n";
-        exit(EXIT_FAILURE);
+        assert(false);
       }
       BOX* gtbox = entry->rect;
       fs << gtbox->x << "," << gtbox->y << "," << gtbox->w
@@ -579,6 +577,7 @@ class MEDS_Trainer {
 
   // some paths and such
   string top_path; // this is the root of the detector directory
+  string training_set; // name of the directory which contains the images used for training and also the name of the corresponding groundtruth file
   string predictor_path;  // top_path/predictor
   string sample_path; // top_path/samples
   string training_set_path; // top_path/training_set

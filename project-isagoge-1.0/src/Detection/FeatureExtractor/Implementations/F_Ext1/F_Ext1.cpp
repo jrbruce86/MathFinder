@@ -25,7 +25,7 @@
 
 #include <F_Ext1.h>
 
-#define NUM_FEATURES 19
+#define NUM_FEATURES 23
 
 // TODO: Consider adding OnNormalRow feature for blobs (maybe not since this isn't very reliable)
 
@@ -52,7 +52,7 @@
 //#define SHOW_STOP_WORDS
 //#define SHOW_VALID_WORDS
 
-#define DBG_DISPLAY // turn this on to display dbg images as they are saved
+//#define DBG_DISPLAY // turn this on to display dbg images as they are saved
 
 typedef GenericVector<NGramFrequency*> RankedNGramVec;
 typedef GenericVector<RankedNGramVec> RankedNGramVecs;
@@ -84,11 +84,11 @@ void F_Ext1::initFeatExtFull(TessBaseAPI* api, vector<string> tess_api_params,
   math_ngrams = ng_gen.generateMathNGrams(api, tess_api_params, groundtruth_path_,
       training_set_path_, ext, makenew);
   training_set_path = training_set_path_;
-  string mathwordsfile = training_set_path_ + (string)"../../mathwords";
+  string mathwordsfile = training_set_path_ + (string)"../../../mathwords";
   ifstream mathwordstream(mathwordsfile.c_str());
   if(!mathwordstream.is_open()) {
     cout << "ERROR: Could not open mathwords file at " << mathwordsfile << endl;
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   int maxlen = 55;
   char mathword[maxlen];
@@ -292,7 +292,7 @@ void F_Ext1::initFeatExtSinglePage() {
       continue;
     if(blob->cosbabp < 0) {
       cout << "ERROR: stacked character count < 0 >:-[\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     LayoutEval::Color color;
     if(blob->cosbabp == 1)
@@ -530,7 +530,7 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   //  9. Blob belongs to a valid word (valid_word) -f23
   const int num_features = NUM_FEATURES;
 
-  const double bin_val = (double).5;
+  const double bin_val = (double)1;
 
   // feature vector
   vector<double> fv;
@@ -671,15 +671,15 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
     bigram = sentence_ngram_features[1];
     trigram = sentence_ngram_features[2];
   }
- // fv.push_back(unigram);
- // fv.push_back(bigram);
- // fv.push_back(trigram);
+  fv.push_back(unigram);
+  fv.push_back(bigram);
+  fv.push_back(trigram);
 
   /******** Features II.5 ********/
   double in_valid_row = (double)0;
   if(blob->row_has_valid)
     in_valid_row = bin_val;
-  //fv.push_back(in_valid_row);
+  fv.push_back(in_valid_row);
 
   /******** Features II.6 ********/
   double in_valid_word = (double)0;
@@ -700,10 +700,10 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   fv.push_back(stop_word);
 
   /******** Features II.9 ********/
-/*  double valid_word = (double)0;
+  double valid_word = (double)0;
   if(blob->validword)
     valid_word = bin_val;
-  fv.push_back(valid_word);*/
+  fv.push_back(valid_word);
 
   /******** Done extracting features! ********/
   // return all the features, make sure there's the right amount
@@ -756,7 +756,7 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
   else {
     cout << "ERROR: countCoveredBlobs only "
          << "supports upward, downward, and rightward searches\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
 
   // do beam searches to look for covered blobs
@@ -893,7 +893,7 @@ bool F_Ext1::isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir
   }
   else {
     cout << "ERROR: isNeighborCovered only supports RIGHT, UP, and DOWN directions\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   // it the neighbor covered?
   if(neighbor_center >= blob_lower && neighbor_center <= blob_upper) {
@@ -1088,7 +1088,7 @@ void F_Ext1::setBlobSubSuperScript(BLOBINFO* blob, SubSuperScript subsuper) {
     }
     else {
       cout << "ERROR: Invalid setBlobSubSuperScript option\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
   }
 }

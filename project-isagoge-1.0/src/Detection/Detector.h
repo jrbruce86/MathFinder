@@ -59,7 +59,8 @@ class Detector {
   typedef IFeatureExtractor<FeatExtType> IFeatExt;
 
   Detector<TrainerType, BinClassType, FeatExtType>()
-    : training_done(false), curimg(NULL), api(NULL), samples(NULL) {
+    : training_done(false), curimg(NULL), api(NULL), samples(NULL),
+      feat_ext_init(false) {
     trainer = new I_Trainer(); // this constructs both the trainer and classifier
     featext = new IFeatExt();
     classifier = trainer->classifier; // classifier memory is managed by trainer interface
@@ -112,6 +113,7 @@ class Detector {
       vector<string> api_init_params) {
     featext->initFeatExtFull(api, api_init_params, groundtruth_path,
         training_set_path, ext, makenew);
+    feat_ext_init = true;
   }
 
   inline void initFeatExtSinglePage() {
@@ -151,7 +153,7 @@ class Detector {
       if(!blob->features_extracted) {
         cout << "ERROR: Attempting to create a training sample from a blob "
              << "from which features haven't been extracted!>:-[\n";
-        exit(EXIT_FAILURE);
+        assert(false);
       }
       BLSample* lsample = new BLSample; // labeled sample
       lsample->features = blob->features;
@@ -182,7 +184,7 @@ class Detector {
     if((gtfile.rdstate() & ifstream::failbit) != 0) {
       cout << "ERROR: Could not open Groundtruth.dat in " \
            << groundtruth_path << endl;
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     int max = 55;
     char* curline = new char[max];
@@ -255,7 +257,8 @@ class Detector {
   // features specified for this type of trainer_predictor
   inline void initPrediction(vector<string> api_init_params) {
     featext->setDBGDir(training_set_path + "../");
-    initFeatExtFull(api, false, api_init_params); // initializes the feature extractor
+    if(!feat_ext_init)
+      initFeatExtFull(api, false, api_init_params); // initializes the feature extractor
     classifier->initPredictor(); // loads up the predictor, halts with an error if there is none.
   }
 
@@ -314,6 +317,8 @@ class Detector {
 
   PIX* curimg; // the image on which detection is being carried out
   TessBaseAPI* api;
+
+  bool feat_ext_init; // true after feature extractor has been initialized (initFeatExtFull has been called)
 };
 
 #endif

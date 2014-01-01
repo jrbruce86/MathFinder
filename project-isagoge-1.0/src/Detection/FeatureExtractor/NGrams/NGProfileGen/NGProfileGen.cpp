@@ -65,7 +65,7 @@ RankedNGramVecs NGramProfileGenerator::generateMathNGrams(TessBaseAPI* api_,
   // all the n-grams from scratch each time, and is unnecessary when the same
   // one is being used each time anyway).
   bool files_exist = true;
-  string ngramdir = training_set_path + (string)"../N-Grams/";
+  string ngramdir = training_set_path + (string)"../../N-Grams/";
   string ngrams_math_dir = ngramdir + "math/";
   for(int i = 0; i < 3; i++) {
     string ngramfile = ngrams_math_dir + r.getNGramFileName(i + 1)

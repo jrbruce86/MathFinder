@@ -424,7 +424,7 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
 
 void NGramRanker::readInStopWords(const string& training_set_path) {
   // Read in all the stopwords
-  string stopwordfile = training_set_path + (string)"../../stopwords";
+  string stopwordfile = training_set_path + (string)"../../../stopwords";
   ifstream stpwrdfs(stopwordfile.c_str());
   if(!stpwrdfs.is_open()) {
     cout << "ERROR: Could not open the stopword file at " << stopwordfile << endl;

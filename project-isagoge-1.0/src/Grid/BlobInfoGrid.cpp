@@ -126,7 +126,7 @@ BlobInfoGrid::~BlobInfoGrid() {
   else {
     cout << "ERROR: TessBaseAPI used by the grid is owned by it and should only be "
          << "destroyed in its constructor. It was destroyed somewhere else.\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
 }
 
@@ -883,7 +883,7 @@ void BlobInfoGrid::getSentenceRegions() {
   if(!sentencedbgfile.is_open()) {
     cout << "ERROR: Could not open debug file for writing in "
          << sentencefilename << endl;
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   for(int j = 0; j < recognized_sentences.length(); ++j) {
     Sentence* cursentence = recognized_sentences[j];
@@ -1445,7 +1445,7 @@ void BlobInfoGrid::dbgDisplayBlobFeatures(BLOBINFO* blob) {
   if(!blob->features_extracted) {
     cout << "ERROR: Feature extraction hasn't been carried out on the blob. "
          << "Disable dbgfeatures to ignore this.\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   vector<double> features = blob->features;
   if(features.size() != featformat.length())
@@ -1475,13 +1475,13 @@ void BlobInfoGrid::dbgDisplayBlobFeatures(BLOBINFO* blob) {
 
 void BlobInfoGrid::setFeatExtFormat(const string& trainpath,
     const string& featextname, const int numfeat) {
-  string formatpath = trainpath + (string)"../../FeatureVectorFormats/"
+  string formatpath = trainpath + (string)"../../../FeatureVectorFormats/"
       + featextname + (string)"_Format";
   ifstream s(formatpath.c_str());
   if(!s.is_open()) {
     cout << "ERROR: The debug feature extraction formatting file at " << formatpath
          << " couldn't be found >:-[\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   int maxlen = 150;
   char line[maxlen];

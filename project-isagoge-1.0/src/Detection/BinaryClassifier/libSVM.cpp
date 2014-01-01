@@ -55,14 +55,14 @@ void libSVM::initClassifier(const string& predictor_path_,
 #ifdef LINEAR_KERNEL
     cout << "ERROR: Can only train SVM with RBF or Linear kernel exclusively. "
          << "Both are enabled, need to disable one at the top of libSVM.h.\n";
-    exit(EXIT_FAILURE);
+    assert(false);
 #endif
 #endif
 #ifndef LINEAR_KERNEL
 #ifndef RBF_KERNEL
     cout << "ERROR: Need to enable either the LINEAR_KERNEL or the RBF_KERNEL "
          << "at the top of libSVM.h\n";
-    exit(EXIT_FAILURE);
+    assert(false);
 #endif
 #endif
     init_done = true;
@@ -72,7 +72,7 @@ void libSVM::initPredictor() {
   if(!init_done) {
     cout << "ERROR: Attempted to initialize predictor before initializing "
          << "the classifier.\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   loadPredictor();
   trained = true;
@@ -312,7 +312,7 @@ bool libSVM::loadOptParams() {
 #ifdef RBF_KERNEL
   if(params.size() > 2 || params.size() == 0) {
     cout << "ERROR: Wrong number of parameters loaded in for RBF Kernel.\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   C_optimal = params[0];
   gamma_optimal = params[1];
@@ -320,7 +320,7 @@ bool libSVM::loadOptParams() {
 #ifdef LINEAR_KERNEL
   if(params.size() > 1 || params.size() == 0) {
     cout << "ERROR: Wrong number of parameters loaded in for Linear Kernel.\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   C_optimal = params[0];
 #endif
@@ -354,7 +354,7 @@ void libSVM::loadPredictor() {
   ifstream fin(predictor_path.c_str(),ios::binary);
   if(!fin.is_open()) {
     cout << "ERROR: Could not open the predictor at " << predictor_path << endl;
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   deserialize(final_predictor, fin);
   predictor_loaded = true;

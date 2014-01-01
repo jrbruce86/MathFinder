@@ -6,9 +6,7 @@
  * ------------------------------------------------------------------------
  * Description: Implements the FeatureExtractor interface. Derived from
  *              F_Ext1, this is a modification which tries a slightly different
- *              feature combination, namely it removes the height and
- *              width to height ratio features to see if false positives are
- *              reduced by this change.
+ *              feature combination, i.e., without the valid_word feature.
  * ------------------------------------------------------------------------
  * This file is part of Project Isagoge.
  *
@@ -28,11 +26,13 @@
 
 #include <F_Ext2.h>
 
-#define NUM_FEATURES 19
+#define NUM_FEATURES 22
 
 void F_Ext2::initFeatExtSinglePage() {
-  dbgim = pixCopy(NULL, curimg);
-  dbgim = pixConvertTo32(dbgim);
+  static int imdbgnum = 1;
+  string num = Basic_Utils::intToString(imdbgnum);
+  //dbgim = pixCopy(NULL, curimg);
+ // dbgim = pixConvertTo32(dbgim);
   // search initialization
   BlobInfoGridSearch bigs(grid);
   BLOBINFO* blob = NULL;
@@ -41,17 +41,21 @@ void F_Ext2::initFeatExtSinglePage() {
 
   // Determine the average height and width/height ratio of normal text on the page
   bigs.StartFullSearch();
- // double avgheight = 0;
- // double avgwhr = 0;
+  double avgheight = 0;
+  double avgwhr = 0;
   double count = 0;
   while((blob = bigs.NextFullSearch()) != NULL) {
-    if(blob->validword) {
-      //avgheight += (double)blob->height();
-      //avgwhr += ((double)blob->width() / (double)blob->height());
+    if(blob->validword && blob->onRowNormal()) {
+      avgheight += (double)blob->height();
+      avgwhr += ((double)blob->width() / (double)blob->height());
       ++count;
     }
   }
-  if(count == 0)
+  if(count > 0) {
+    avg_blob_height = avgheight / count;
+    avg_whr = avgwhr / count;
+  }
+  else
     bad_page = true;
 #ifdef DBG_AVG
   if(bad_page)
@@ -61,6 +65,40 @@ void F_Ext2::initFeatExtSinglePage() {
     cout << "Average width to height ratio for normal text: " << avg_whr << endl;
   }
 #endif
+
+#ifdef SHOW_ABNORMAL_ROWS
+  bigs.StartFullSearch();
+  blob = NULL;
+  PIX* pixdbg_r = pixCopy(NULL, curimg);
+  pixdbg_r = pixConvertTo32(pixdbg_r);
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    if(blob->rowinfo() == NULL)
+      continue;
+    if(blob->rowinfo()->is_normal)
+      M_Utils::drawHlBlobInfoRegion(blob, pixdbg_r, LayoutEval::RED);
+    else
+      M_Utils::drawHlBlobInfoRegion(blob, pixdbg_r, LayoutEval::BLUE);
+  }
+  pixWrite((dbgdir + (string)"Rows_Abnormal"
+      + Basic_Utils::intToString(imdbgnum) + (string)".png").c_str(),
+      pixdbg_r, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "displaying the abnormal rows for image " << imdbgnum << " as blue regions\n";
+  pixDisplay(pixdbg_r, 100, 100);
+  M_Utils::waitForInput();
+#endif
+  pixDestroy(&pixdbg_r);
+#endif
+
+  // Determine the adjacent covered neighbors in the rightward, downward,
+  // and upward directions for each blob
+  bigs.StartFullSearch();
+  blob = NULL;
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    blob->rhabc = countCoveredBlobs(blob, RIGHT);
+    blob->uvabc = countCoveredBlobs(blob, UP);
+    blob->dvabc = countCoveredBlobs(blob, DOWN);
+  }
 
   // Determine the sub/super-script feature for each blob in the grid
   bigs.StartFullSearch();
@@ -74,16 +112,19 @@ void F_Ext2::initFeatExtSinglePage() {
   bigs.StartFullSearch();
   while((blob = bigs.NextFullSearch()) != NULL) {
     if(blob->has_sup || blob->has_sub)
-      m.drawHlBlobInfoRegion(blob, dbgss_im, RED);
+      M_Utils::drawHlBlobInfoRegion(blob, dbgss_im, LayoutEval::RED);
     else if(blob->is_sup)
-      m.drawHlBlobInfoRegion(blob, dbgss_im, GREEN);
+      M_Utils::drawHlBlobInfoRegion(blob, dbgss_im, LayoutEval::GREEN);
     else if(blob->is_sub)
-      m.drawHlBlobInfoRegion(blob, dbgss_im, BLUE);
+      M_Utils::drawHlBlobInfoRegion(blob, dbgss_im, LayoutEval::BLUE);
   }
+  pixWrite((dbgdir + (string)"subsuper" + num + (string)".png").c_str(), dbgss_im, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(dbgss_im, 100, 100);
-  pixWrite((dbgdir + (string)"subsuper.png").c_str(), dbgss_im, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&dbgss_im);
-  m.waitForInput();
+
 #endif
   // --- Baseline distance feature ---
   // for each row, compute the average vertical distance from the baseline for all
@@ -98,14 +139,6 @@ void F_Ext2::initFeatExtSinglePage() {
       GenericVector<BLOBINFO*> blobs = words[j]->blobs;
       for(int k = 0; k < blobs.length(); ++k) {
         BLOBINFO* curblob = blobs[k];
-        if(curblob->row_index != i) {
-          cout << "expected row index: " << i << ", actual: " << curblob->row_index << endl;
-          cout << "blob coords:\n";
-          BOX* b = M_Utils::getBlobInfoBox(curblob, dbgim);
-          M_Utils::dispBoxCoords(b);
-          M_Utils::dispHlBlobInfoRegion(curblob, dbgim);
-          boxDestroy(&b);
-        }
         assert(curblob->row_index == i);
         assert(curblob->row() != NULL);
         assert(curblob->row()->bounding_box() == row->row()->bounding_box());
@@ -129,7 +162,7 @@ void F_Ext2::initFeatExtSinglePage() {
   PIX* dbgim = pixCopy(NULL, curimg);
   dbgim = pixConvertTo32(dbgim);
   for(int i = 0; i < rows.length(); i++) {
-    ROW* row = rows[i];
+    ROW_INFO* row = rows[i];
     // find left-most and rightmost blobs on that row
     BlobInfoGridSearch bigs(grid);
     bigs.StartFullSearch();
@@ -137,7 +170,9 @@ void F_Ext2::initFeatExtSinglePage() {
     int left = INT_MAX;
     int right = INT_MIN;
     while((b = bigs.NextFullSearch()) != NULL) {
-      if(b->row == row) {
+      if(b->wordinfo == NULL)
+        continue;
+      if(b->row()->bounding_box() == row->row()->bounding_box()) {
         if(b->left() < left)
           left = b->left();
         if(b->right() > right)
@@ -148,15 +183,19 @@ void F_Ext2::initFeatExtSinglePage() {
       cout << "WARNING::ROW EMPTY!!\n";
       continue;
     }
-    Lept_Utils lu;
     for(int j = left; j < right; j++) {
-      inT32 y = curimg->h - (inT32)row->base_line((float)j);
-      lu.drawAtXY(dbgim, j, y, GREEN);
+      inT32 y = curimg->h - (inT32)row->row()->base_line((float)j);
+      Lept_Utils::drawAtXY(dbgim, j, y, LayoutEval::GREEN);
     }
   }
+  pixWrite((dbgdir + "baselines" + num + ".png").c_str(), dbgim, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "Displaying the baselines in green.\n";
   pixDisplay(dbgim, 100, 100);
-  pixWrite((dbgdir + "baselines.png").c_str(), dbgim, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&dbgim);
+
 #endif
   // count of stacked characters at character position (coscacp)
   bigs.StartFullSearch();
@@ -178,21 +217,24 @@ void F_Ext2::initFeatExtSinglePage() {
       continue;
     if(blob->cosbabp < 0) {
       cout << "ERROR: stacked character count < 0 >:-[\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
-    SimpleColor color;
+    LayoutEval::Color color;
     if(blob->cosbabp == 1)
-      color = RED;
+      color = LayoutEval::RED;
     if(blob->cosbabp == 2)
-      color = GREEN;
+      color = LayoutEval::GREEN;
     if(blob->cosbabp > 2)
-      color = BLUE;
-    m.drawHlBlobInfoRegion(blob, dbgim2, color);
+      color = LayoutEval::BLUE;
+    M_Utils::drawHlBlobInfoRegion(blob, dbgim2, color);
   }
+  pixWrite((dbgdir + "stacked_blobs" + num + ".png").c_str(), dbgim2, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(dbgim2, 100, 100);
-  pixWrite((dbgdir + "stacked_blobs.png").c_str(), dbgim2, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&dbgim2);
-  m.waitForInput();
+
 #endif
 
   // determine whether or not each blob belongs to a "math word"
@@ -214,26 +256,51 @@ void F_Ext2::initFeatExtSinglePage() {
   mathwordim = pixConvertTo32(mathwordim);
   while((blob = bigs.NextFullSearch()) != NULL) {
     if(blob->ismathword) {
-      m.drawHlBlobInfoRegion(blob, mathwordim, RED);
+      M_Utils::drawHlBlobInfoRegion(blob, mathwordim, LayoutEval::RED);
     }
   }
+  pixWrite((dbgdir + (string)"mathwords" + num + ".png").c_str(), mathwordim, IFF_PNG);
+#ifdef DBG_DISPLAY
   pixDisplay(mathwordim, 100, 100);
-  pixWrite((dbgdir + (string)"mathwords.png").c_str(), mathwordim, IFF_PNG);
-  pixDestroy(&mathwordim);
-  m.waitForInput();
+  M_Utils::waitForInput();
 #endif
+  pixDestroy(&mathwordim);
+
+#endif
+
+  // Determine the ratio of non-italicized blobs to total blobs on the page
+  // A low proportion of non-italics would indicate that the italics feature
+  // is not reliable.
+  int total_blobs = 0;
+  int non_ital_blobs = 0;
+  bigs.StartFullSearch();
+  blob = NULL;
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    if(!blob->is_italic)
+      ++non_ital_blobs;
+    ++total_blobs;
+  }
+  assert(grid->non_ital_ratio == -1);
+  grid->non_ital_ratio = (double)non_ital_blobs / (double)total_blobs;
+
 #ifdef DBG_SHOW_ITALIC
   bigs.StartFullSearch();
   PIX* boldital_img = pixCopy(NULL, curimg);
   boldital_img = pixConvertTo32(boldital_img);
   while((blob = bigs.NextFullSearch()) != NULL) {
     if(blob->is_italic)
-      m.drawHlBlobInfoRegion(blob, boldital_img, RED);
+      M_Utils::drawHlBlobInfoRegion(blob, boldital_img, LayoutEval::RED);
   }
+  pixWrite((dbgdir + "bolditalics" + num + ".png").c_str(), boldital_img, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "Displaying the blobs which were found by Tesseract to be italicized as red. "
+       << "All other blobs are in black.\n";
+  cout << "The displayed image was saved to "
+       << (dbgdir + "bolditalics" + num + ".png").c_str() << endl;
   pixDisplay(boldital_img, 100, 100);
-  pixWrite((dbgdir + (string)"bolditalics.png").c_str(), boldital_img, IFF_PNG);
+  M_Utils::waitForInput();
+#endif
   pixDestroy(&boldital_img);
-  m.waitForInput();
 #endif
 
   // determine the average ocr confidence for valid words on the page,
@@ -257,7 +324,7 @@ void F_Ext2::initFeatExtSinglePage() {
   GenericVector<Sentence*> page_sentences = grid->getSentences();
   NGramRanker ng(training_set_path, stopwords);
   ng.setTessAPI(api);
-  for(int i = 0; i < page_sentences.length(); i++) {
+  for(int i = 0; i < page_sentences.length(); ++i) {
     Sentence* cursentence = page_sentences[i];
     RankedNGramVecs* sentence_ngrams = new RankedNGramVecs;
     *sentence_ngrams = ng.generateSentenceNGrams(cursentence);
@@ -279,19 +346,122 @@ void F_Ext2::initFeatExtSinglePage() {
       ng_features->push_back(getNGFeature(cursentence, j+1));
     cursentence->ngram_features = ng_features;
   }
+
+
+  // Find out which blobs belong to stop words
+  bigs.StartFullSearch();
+  blob = NULL;
+#ifdef SHOW_STOP_WORDS
+  string stpwrdim_name = dbgdir + (string)"stop_words_"
+      + Basic_Utils::intToString(imdbgnum) + (string)".png";
+  assert(dbgim == NULL);
+  dbgim = pixCopy(NULL, curimg);
+  dbgim = pixConvertTo32(dbgim);
+#endif
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    blob->isstopword = ng.isStrStopWord(blob->wordstr());
+#ifdef SHOW_STOP_WORDS
+    if(blob->isstopword)
+      M_Utils::drawHlBlobInfoRegion(blob, dbgim, LayoutEval::RED);
+#endif
+  }
+#ifdef SHOW_STOP_WORDS
+  pixWrite(stpwrdim_name.c_str(), dbgim, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "Displaying the blobs belonging to stop words in red on the page.\n";
+  pixDisplay(dbgim, 100, 100);
+  M_Utils::waitForInput();
+#endif
+  pixDestroy(&dbgim);
+  dbgim = NULL;
+#endif
+
+#ifdef SHOW_VALID_WORDS
+  string validwrdim_name = dbgdir + (string)"valid_words_" +
+      Basic_Utils::intToString(imdbgnum) + (string)".png";
+  assert(dbgim == NULL);
+  dbgim = pixCopy(NULL, curimg);
+  dbgim = pixConvertTo32(dbgim);
+  blob = NULL;
+  bigs.StartFullSearch();
+  while((blob = bigs.NextFullSearch()) != NULL) {
+    if(blob->validword)
+      M_Utils::drawHlBlobInfoRegion(blob, dbgim, LayoutEval::RED);
+  }
+  pixWrite(validwrdim_name.c_str(), dbgim, IFF_PNG);
+#ifdef DBG_DISPLAY
+  cout << "Displaying the blobs belonging to valid words in red on the page.\n";
+  pixDisplay(dbgim, 100, 100);
+  M_Utils::waitForInput();
+#endif
+  pixDestroy(&dbgim);
+  dbgim = NULL;
+#endif
+
+  ++imdbgnum;
 }
 
 std::vector<double> F_Ext2::extractFeatures(tesseract::BLOBINFO* blob) {
+  // The following 22 features are extracted:
+  // I. Blob Spatial Features (12 features total):
+  //  1. Number of Horizontally or Vertically Aligned Characters
+  //     - # rightward horizontally adjacent blobs covered (rhabc) -f1
+  //     - # upward vertically adjacent blobs covered (uvabc) -f2
+  //     - # downward vertically adjacent blobs covered (dvabc) -f3
+  //  2. Number of Completely Nested Characters (cn) -f4
+  //  3. Sub-scripts or Super-scripts (4 binary features)
+  //     - has a superscript (has_sup) -f5
+  //     - has a subscript (has_sub) -f6
+  //     - is superscript (is_sup) -f7
+  //     - is subscript (is_sub) -f8
+  //  4. Height (h) -f9
+  //     - blob height / average normal text blob height
+  //     - if no normal text on the page then just use the height
+  //       and set the bad_page feature to 1
+  //  5. Character Width/Height Ratio (whr) -f10
+  //     - blob whr / average normal text whr
+  //     - if no normal text on the page then just use whr and set
+  //       the bad_page feature to 1
+  //  6. Vertical Distance Above Row Baseline (vdarb) -f11
+  //     - 0 if the current row has no valid words or blob bottom is below baseline
+  //       otherwise this feature is (blob_bottom - baseline)/rowheight.
+  //  7. Count of Stacked Blobs at Blob Position (cosbabp) -f12
+  //     - 0 if blob belongs to valid word, otherwise counts the number of
+  //       "vertically stacked" blobs (including the blob itself) at the given
+  //       blob's position. Blob is vertically stacked if it is within a vertical distance
+  //       <= half the current blob's height.
+
+  // II. Blob Recognition Features:
+  //  1. Recognized Math Symbols or Words (is in math word = imw) -f13
+  //     - 1 if the symbol is part of a word which matches a word in the mathwords file
+  //       (located in the training directory) otherwise is zero
+  //  2. Italicized Text (1 binary feature)
+  //     - is italic (is_italic) -f14
+  //  3. OCR Confidence Rating (ocr_conf) -f15
+  //     - blob confidence divided by average normal text confidence on page.
+  //       if no normal text on page then just the negative of blob confidence
+  //  4. N-Grams (3 features) - see thesis for description
+  //     - unigram feature (unigram) -f16
+  //     - bigram feature (bigram) -f17
+  //     - trigram feature (trigram) -f18
+  //  5. Blob belongs to normal text (in_valid_word) -f19
+  //  6. Blob belongs to row that has normal text (in_valid_row) -f20
+  //  7. Page Doesn't Have Normal Text (bad_page) -f21
+  //     - 1 if the page doesn't have normal text based on
+  //       Tesseract's dictionary, otherwise is 0
+  //  8. Blob belongs to a stop word (stop_word) -f22
+  //  9. Blob belongs to a valid word (valid_word) -f23 (not used here)
   const int num_features = NUM_FEATURES;
+
+  const double bin_val = (double)1;
 
   // feature vector
   vector<double> fv;
 
   /******** Features I.1 ********/
-  double rhabc = (double)0, uvabc = (double)0, dvabc = (double)0;
-  rhabc = countCoveredBlobs(blob, RIGHT);
-  uvabc = countCoveredBlobs(blob, UP);
-  dvabc = countCoveredBlobs(blob, DOWN);
+  double rhabc = blob->rhabc;
+  double uvabc = blob->uvabc;
+  double dvabc = blob->dvabc;
 
 #ifdef DBG_FEAT1
   if(rhabc > 1)
@@ -303,7 +473,6 @@ std::vector<double> F_Ext2::extractFeatures(tesseract::BLOBINFO* blob) {
   if(rhabc > 1 || uvabc > 1 || dvabc > 1)
     dbgDisplayBlob(blob);
 #endif
-
   rhabc = expNormalize(rhabc);
   uvabc = expNormalize(uvabc);
   dvabc = expNormalize(dvabc);
@@ -312,8 +481,8 @@ std::vector<double> F_Ext2::extractFeatures(tesseract::BLOBINFO* blob) {
   fv.push_back(dvabc);
 
   /******** Features I.2 ********/
-  double cn = (double)0;
-  cn = countNestedBlobs(blob);
+  double cn = countNestedBlobs(blob);
+  blob->nestedcount = cn;
 
 #ifdef DBG_FEAT2
   if(cn > 0) {
@@ -329,13 +498,13 @@ std::vector<double> F_Ext2::extractFeatures(tesseract::BLOBINFO* blob) {
   double has_sup = (double)0, has_sub = (double)0,
       is_sup = (double)0, is_sub = (double)0;
   if(blob->has_sup)
-    has_sup = 1;
+    has_sup = bin_val;
   if(blob->has_sub)
-    has_sub = 1;
+    has_sub = bin_val;
   if(blob->is_sup)
-    is_sup = 1;
+    is_sup = bin_val;
   if(blob->is_sub)
-    is_sub = 1;
+    is_sub = bin_val;
 #ifdef DBG_FEAT3
   if(has_sup || has_sub || is_sup || is_sub) {
     cout << "The displayed blob has/is a sub/superscript!\n";
@@ -350,20 +519,20 @@ std::vector<double> F_Ext2::extractFeatures(tesseract::BLOBINFO* blob) {
   fv.push_back(is_sub);
 
   /******** Features I.4 ********/
-/*  double h = (double)0;
+  double h = (double)0;
   if(!bad_page)
     h = (double)blob->height() / avg_blob_height;
   else
     h = (double)blob->height();
   h = expNormalize(h);
-  fv.push_back(h);*/
+  fv.push_back(h);
 
   /******** Features I.5 ********/
- /* double whr = (double)blob->width() / (double)blob->height();
+  double whr = (double)blob->width() / (double)blob->height();
   if(!bad_page)
     whr = whr / avg_whr;
   whr = expNormalize(whr);
-  fv.push_back(whr);*/
+  fv.push_back(whr);
 
   /******** Features I.6 ********/
   double vdarb = (double)0;
@@ -397,13 +566,15 @@ std::vector<double> F_Ext2::extractFeatures(tesseract::BLOBINFO* blob) {
   /******** Features II.1 ********/
   double imw = (double)0;
   if(blob->ismathword)
-    imw = (double)1;
+    imw = bin_val;
   fv.push_back(imw);
 
   /******** Features II.2 ********/
   double is_italic = (double)0;
-  if(blob->is_italic)
-    is_italic = (double)1;
+  assert(grid->non_ital_ratio >= 0);
+  if(blob->is_italic) {
+    is_italic = (double)1 * grid->non_ital_ratio;
+  }
   fv.push_back(is_italic);
 
   /******** Features II.3 ********/
@@ -430,20 +601,32 @@ std::vector<double> F_Ext2::extractFeatures(tesseract::BLOBINFO* blob) {
   /******** Features II.5 ********/
   double in_valid_row = (double)0;
   if(blob->row_has_valid)
-    in_valid_row = (double)1;
+    in_valid_row = bin_val;
   fv.push_back(in_valid_row);
 
   /******** Features II.6 ********/
   double in_valid_word = (double)0;
   if(blob->validword)
-    in_valid_word = (double)1;
+    in_valid_word = bin_val;
   fv.push_back(in_valid_word);
 
   /******** Features II.7 ********/
   double bad_page_ = (double)0;
   if(bad_page)
-    bad_page_ = (double)1;
+    bad_page_ = bin_val;
   fv.push_back(bad_page_);
+
+  /******** Features II.8 ********/
+  double stop_word = (double)0;
+  if(blob->isstopword)
+    stop_word = bin_val;
+  fv.push_back(stop_word);
+
+  /******** Features II.9 ********/
+  //double valid_word = (double)0;
+  //if(blob->validword)
+   // valid_word = bin_val;
+  //fv.push_back(valid_word);
 
   /******** Done extracting features! ********/
   // return all the features, make sure there's the right amount

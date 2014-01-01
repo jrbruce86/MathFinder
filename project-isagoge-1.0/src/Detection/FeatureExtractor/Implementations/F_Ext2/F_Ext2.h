@@ -5,10 +5,7 @@
  * History:     Created Dec 16, 2013 10:52:43 AM
  * ------------------------------------------------------------------------
  * Description: Implements the FeatureExtractor interface. Derived from
- *              F_Ext1, this is a modification which tries a slightly different
- *              feature combination, namely it removes the height and
- *              width to height ratio features to see if false positives are
- *              reduced by this change.
+ *              F_Ext1. See F_Ext2.cpp for more details.
  * ------------------------------------------------------------------------
  * This file is part of Project Isagoge.
  *

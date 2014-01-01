@@ -28,6 +28,8 @@ AC_CONFIG_FILES([Makefile
                 src/Detection/FeatureExtractor/Implementations/Makefile
                 src/Detection/FeatureExtractor/Implementations/F_Ext1/Makefile
                 src/Detection/FeatureExtractor/Implementations/F_Ext2/Makefile
+                src/Detection/FeatureExtractor/Implementations/F_Ext3/Makefile
+                src/Detection/FeatureExtractor/Implementations/F_Ext4/Makefile
                 src/Detection/Trainer/Makefile
                 src/Segmentation/Makefile
                 src/MEDS_Trainer/Makefile

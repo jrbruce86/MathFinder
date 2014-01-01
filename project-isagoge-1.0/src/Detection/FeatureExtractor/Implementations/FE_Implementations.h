@@ -28,5 +28,7 @@
 
 #include <F_Ext1.h>
 #include <F_Ext2.h>
+#include <F_Ext3.h>
+#include <F_Ext4.h>
 
 #endif

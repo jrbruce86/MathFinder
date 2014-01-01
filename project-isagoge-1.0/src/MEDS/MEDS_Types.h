@@ -28,14 +28,17 @@
 #include <Detection.h>
 #include <Segmentation.h>
 
-// TODO: Come up with more descriptive detector names and explanations of what they do
-//       and how each one differs
+// See Detection.h for details on how the detectors work
 
 typedef MEDS<SVMDetector, Segmentor1> MEDS1;
 typedef SVMDetector MEDS1Detector;
 
-typedef MEDS<SVMDetector2, Segmentor1> MEDS2;
-typedef SVMDetector2 MEDS2Detector;
-
+// the following are slight variations of the MEDS1
+typedef MEDS<SVMDetector1, Segmentor1> MEDS2; // slightly modified detector, same segmentor
+typedef SVMDetector1 MEDS2Detector; // no valid_word feature
+typedef MEDS<SVMDetector2, Segmentor1> MEDS3; // slightly modified detector, same segmentor
+typedef SVMDetector2 MEDS3Detector; // no n-grams and no valid_row feature
+typedef MEDS<SVMDetector3, Segmentor1> MEDS4; // slightly modified detector, same segmentor
+typedef SVMDetector3 MEDS4Detector; // no italics feature
 
 #endif
