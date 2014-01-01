@@ -140,7 +140,7 @@ class Detector {
     featext->setImage(curimg);
     featext->setApi(api);
     featext->setGrid(grid);
-    featext->setDBGDir(training_set_path + "../");
+    featext->setDBGDir(training_set_path + "../../");
     featext->initFeatExtSinglePage();
     grid = featext->extractAllFeatures(grid);
     tesseract::BlobInfoGridSearch bigs(grid);

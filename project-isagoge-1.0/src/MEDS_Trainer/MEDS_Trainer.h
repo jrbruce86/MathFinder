@@ -80,7 +80,7 @@ class MEDS_Trainer {
     // the classifier during its initialization during trainDetector()
     // function which must be called in order to fully initialize the detector.
     predictor_path = top_path + (string)"predictor/" + training_set_;
-    sample_path = top_path + training_set_ + (string)"samples/";
+    sample_path = top_path + (string)"samples/" + training_set_;
     training_set_path = Basic_Utils::checkTrailingSlash(detector_path);
     always_train = always_train_;
     api_init_params = api_init_params_;
