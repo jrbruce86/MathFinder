@@ -24,10 +24,28 @@
 #ifndef SEGMENTOR1_H
 #define SEGMENTOR1_H
 
-class Segmentor1 {
+#include <BlobInfoGrid.h>
+#include <F_Ext1.h>
+
+class Segmentor1 : F_Ext1 {
  public:
   Segmentor1();
 
+  BlobInfoGrid* runSegmentation(BlobInfoGrid* grid);
+
+  inline void setDbgImg(PIX* im) {
+    dbgim = im;
+  }
+
+ protected:
+  void decideAndMerge(BLOBINFO* blob, const int& seg_id);
+  void mergeDecision(BLOBINFO* blob, Direction dir);
+  void checkIntersecting(BLOBINFO* blob);
+  void mergeOperation(BLOBINFO* merge_from, BLOBINFO* to_merge,
+      Direction merge_dir);
+
+  bool isOperator(BLOBINFO* blob);
+  bool wasAlreadyMerged(BLOBINFO* neighbot, BLOBINFO* blob);
 };
 
 #endif

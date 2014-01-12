@@ -26,4 +26,6 @@
 
 #include <ISegmentor.h>
 
+typedef ISegmentor<Segmentor1> Segmentor_1;
+
 #endif

@@ -242,6 +242,10 @@ void M_Utils::drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, LayoutEval::Color colo
   boxDestroy(&box);
 }
 
+void M_Utils::drawHlBoxRegion(BOX* box, PIX* im, LayoutEval::Color color) {
+  Lept_Utils::fillBoxForeground(im, box, color);
+}
+
 void M_Utils::dispTBoxCoords(TBOX* box) {
   cout << "int left=" << box->left() << ", top=" << box->top()
        << ", right=" << box->right() << ", bottom="

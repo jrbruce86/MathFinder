@@ -28,6 +28,31 @@
 
 #define NUM_FEATURES 22
 
+/* uncomment any of the following to enable debugging */
+//#define DBG_AVG
+//#define SHOW_ABNORMAL_ROWS
+//#define DBG_COVER_FEATURE
+//#define DBG_COVER_FEATURE_ALOT // need DBG_COVER_FEATURE enabled for this to go into effect
+//#define DBG_NESTED_FEATURE
+//#define DBG_SHOW_NESTED
+//#define DBG_SUB_SUPER
+//#define DBG_SHOW_SUB_SUPER
+//#define DBG_FEAT1
+//#define DBG_FEAT2
+//#define DBG_FEAT3
+//#define DBG_DRAW_BASELINES
+//#define DBG_SHOW_STACKED_FEATURE
+//#define DBG_STACKED_FEATURE_ALOT
+//#define DBG_SHOW_MATHWORDS
+//#define DBG_SHOW_ITALIC
+//#define DBG_CERTAINTY
+//#define DBG_SHOW_NGRAMS
+//#define DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
+//#define SHOW_STOP_WORDS
+//#define SHOW_VALID_WORDS
+
+//#define DBG_DISPLAY // turn this on to display dbg images as they are saved
+
 void F_Ext4::initFeatExtSinglePage() {
   static int imdbgnum = 1;
   string num = Basic_Utils::intToString(imdbgnum);
@@ -397,7 +422,6 @@ void F_Ext4::initFeatExtSinglePage() {
   pixDestroy(&dbgim);
   dbgim = NULL;
 #endif
-
   ++imdbgnum;
 }
 

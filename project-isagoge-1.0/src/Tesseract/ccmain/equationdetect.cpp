@@ -430,7 +430,7 @@ int EquationDetect::FindEquationParts(
 
   if (equationdetect_save_merged_image) {  // For debug.
     GetOutputTiffName("_merged", &outfile);
-    PaintColParts(outfile);
+    PaintColParts(outfile, true);
   }
 
   return 0;
@@ -1478,7 +1478,7 @@ void EquationDetect::GetOutputTiffName(const char* name,
                                        STRING* image_name) const {
   ASSERT_HOST(image_name && name);
   char page[50];
-  snprintf(page, sizeof(page), "%04d", page_count_);
+  snprintf(page, sizeof(page), "%d", page_count_); // modified to make evaluation easier (was snprintf(page, sizeof(page), "04%d", page_count_);
   *image_name = STRING(lang_tesseract_->imagebasename) + page + name + ".tif";
 }
 
@@ -1499,8 +1499,16 @@ void EquationDetect::PaintSpecialTexts(const STRING& outfile) const {
   pixDestroy(&pix);
 }
 
-void EquationDetect::PaintColParts(const STRING& outfile) const {
-  Pix *pix = pixConvertTo32(lang_tesseract_->BestPix());
+void EquationDetect::PaintColParts(const STRING& outfile, bool final_output) const {
+  // writing to file added by jake to make evaluation easier
+  // save rectange files as [im#].rect in the following format:
+  // #.ext type left top right bottom
+  static int dbg_img_index = 1;
+  std::string rectfile = intToString(dbg_img_index) + (std::string)".rect";
+  std::ofstream rectstream(rectfile.c_str(), std::ios::out); // overwrite existing
+  // end added by jake
+
+  Pix *pix = pixConvertTo32(lang_tesseract_->pix_binary()); // changed from BestPix to pix_binary by jake to help in evaluation
   ColPartitionGridSearch gsearch(part_grid_);
   gsearch.StartFullSearch();
   ColPartition* part = NULL;
@@ -1509,17 +1517,50 @@ void EquationDetect::PaintColParts(const STRING& outfile) const {
     Box *box = boxCreate(tbox.left(), pixGetHeight(pix) - tbox.top(),
                          tbox.width(), tbox.height());
     if (part->type() == PT_EQUATION) {
-      pixRenderBoxArb(pix, box, 5, 255, 0, 0);
+      if(!final_output)
+        pixRenderBoxArb(pix, box, 5, 255, 0, 0);
+      // added by jake
+      if(final_output) {
+        rectstream << dbg_img_index << ".tif displayed "
+                   << box->x << " " << box->y << " "
+                   << box->x + box->w << " " << box->y + box->h << std::endl;
+        drawHlBoxRegion(box, pix, RED);
+      }
+      // end added by jake
     } else if (part->type() == PT_INLINE_EQUATION) {
-      pixRenderBoxArb(pix, box, 5, 0, 255, 0);
+      if(!final_output)
+        pixRenderBoxArb(pix, box, 5, 0, 255, 0);
+      // added by jake
+      if(final_output) {
+        rectstream << dbg_img_index << ".tif embedded "
+                   << box->x << " " << box->y << " "
+                   << box->x + box->w << " " << box->y + box->h << std::endl;
+        drawHlBoxRegion(box, pix, BLUE);
+      }
+      // end added by jake
     } else {
-      pixRenderBoxArb(pix, box, 5, 0, 0, 255);
+      if(!final_output)
+        pixRenderBoxArb(pix, box, 5, 0, 0, 255);
     }
     boxDestroy(&box);
   }
 
-  pixWrite(outfile.string(), pix, IFF_TIFF_LZW);
+  // end added by jake
+  // added by jake
+  if(final_output)
+    pixWrite(((std::string)"merge_" + intToString(dbg_img_index)
+        + (std::string)".tif").c_str(), pix, IFF_TIFF_LZW);
+  else // end added by jake
+    pixWrite(outfile.string(), pix, IFF_TIFF_LZW);
   pixDestroy(&pix);
+
+  // added by jake
+  if(final_output) {
+    if(dbg_img_index < DATASET_SIZE)
+      ++dbg_img_index;
+    else
+      dbg_img_index = 1;
+  }
 }
 
 void EquationDetect::PrintSpecialBlobsDensity(const ColPartition* part) const {

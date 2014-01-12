@@ -25,6 +25,17 @@
 #include "genericvector.h"
 #include "unichar.h"
 
+// added by jake
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <math.h>
+enum Color {RED, BLUE};
+#define fgthresh 100   // this may need to change depending on the image..
+typedef l_int32 rgbtype;
+#define DATASET_SIZE 15
+// end added by jake
+
 class BLOBNBOX;
 class BLOB_CHOICE;
 class BLOB_CHOICE_LIST;
@@ -243,7 +254,7 @@ class EquationDetect : public EquationDetectBase {
   // Debugger function that renders ColPartitions on the input image, where:
   // parts labeled as PT_EQUATION will be painted in red, PT_INLINE_EQUATION
   // will be painted in green, and other parts will be painted in blue.
-  void PaintColParts(const STRING& outfile) const;
+  void PaintColParts(const STRING& outfile, bool final_output=false) const;
 
   // Debugger function that renders the blobs in part_grid_ over the input
   // image.
@@ -280,6 +291,91 @@ class EquationDetect : public EquationDetectBase {
 
   // The number of pages we have processed.
   int page_count_;
+
+
+  // added by jake
+  // convert integer to string
+  inline std::string intToString(int i) const {
+    char buf[digit_count(i)];
+    sprintf(buf, "%d", i);
+    return (std::string) buf;
+  }
+  // returns the number of digits in a given integer decimal number
+  inline int digit_count(int decnum) const {
+    int numdigits = 0;
+    double ddecnum = (double) decnum;
+    while (floor(ddecnum) != 0) {
+      ddecnum /= (double) 10;
+      numdigits++;
+    }
+    return numdigits;
+  }
+
+  inline void drawHlBoxRegion(BOX* box, Pix* pix, Color color) const {
+    fillBoxForeground(pix, box, color);
+  }
+
+  inline void fillBoxForeground(Pix* inputimg, BOX* bbox,
+       Color color, PIX* imread=0) const {
+    l_int32 imwidth = pixGetWidth(inputimg);
+    const l_int32 x = bbox->x;
+    const l_int32 y = bbox->y;
+    const l_int32 w = bbox->w;
+    const l_int32 h = bbox->h;
+    //set img pointer
+    l_uint32* curpixel;
+    l_uint32* startpixel;
+    if(imread) // if we're writing to a different img than we're reading
+               // ..inputimg is always the one we are writing to
+      startpixel = pixGetData(imread);
+    else
+      startpixel = pixGetData(inputimg);
+    rgbtype rgb[3];
+    // scan from left to right, top to bottom while
+    // coloring the foreground
+    for(l_uint32 k = y; k < y+h; k++) {
+      for(l_uint32 l = x; l < x+w; l++) {
+        curpixel = startpixel + k*imwidth + l;
+        getPixelRGB(curpixel, rgb);
+        if(isDark(rgb)) {
+          setPixelRGB(inputimg, curpixel, l, k, color);
+        }
+      }
+    }
+  }
+  inline void getPixelRGB(l_uint32* pixel, rgbtype* rgb) const {
+    extractRGBValues(*pixel, &rgb[0], &rgb[1], &rgb[2]);
+  }
+
+  inline bool isDark(const rgbtype* const &rgb) const {
+    rgbtype thresh = (rgbtype)fgthresh;
+    if(checkRGBLessThan(rgb, thresh, thresh, thresh))
+      return true;
+    return false;
+  }
+
+  inline bool checkRGBLessThan(const rgbtype* const &rgb,
+      rgbtype red, rgbtype green, rgbtype blue) const {
+    if((*rgb < red) && (*(rgb+1) < green) && (*(rgb+2) < blue))
+      return true;
+    return false;
+  }
+
+  inline void setPixelRGB(Pix* pix,
+      l_uint32* pixel, const l_int32& x, const l_int32& y,
+      Color color) const {
+    l_uint8 red=0, green=0, blue=0;
+    switch (color) {
+      case RED :
+        red = 255; break;
+      case BLUE :
+        blue = 255; break;
+      default : break;
+    }
+    composeRGBPixel(red, green, blue, pixel);
+    pixSetPixel(pix, x, y, *pixel);
+  }
+  // end added by jake
 };
 
 }  // namespace tesseract

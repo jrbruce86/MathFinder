@@ -119,6 +119,13 @@ BlobInfoGrid::~BlobInfoGrid() {
   freeScrollView(line_sv);
   freeScrollView(sentence_sv);
 
+  for(int i = 0; i < Segments.length(); ++i) {
+    if(Segments[i] != NULL) {
+      delete Segments[i];
+      Segments[i] = NULL;
+    }
+  }
+
   if(api != NULL) {
     delete api;
     api = NULL;
@@ -561,6 +568,9 @@ void BlobInfoGrid::findSentences() {
         continue;
       const char* wordstr = words[j]->wordstr();
       if(!sentence_found) { // looking for the start of a sentence
+        if((rows.length() == (i+1))
+                && (words.length() == (j+1)))
+          continue; // don't create an empty sentence if at the end of the page!
         if(isupper(wordstr[0]) && islower(wordstr[1])) {
           // see if the uppercase word is valid or not based on the api
           if(api->IsValidWord(wordstr)) {
@@ -587,10 +597,28 @@ void BlobInfoGrid::findSentences() {
           sentence->end_line_num = i;
           sentence->endwrd_index = j;
           copyRowTextIntoSentence(sentence);
+          if(sentence->sentence_txt == NULL) {
+            // if it's empty then get rid of it
+            int back_index = recognized_sentences.length() - 1;
+            recognized_sentences.remove(back_index);
+            delete sentence;
+            sentence = NULL;
+          }
           sentence_found = false;
         }
       }
     }
+  }
+
+  // if a sentence was started near the end of the page and followed by all null
+  // words then there'll be an empty sentence at the end of the page. if there is
+  // then delete it here
+  Sentence* lastsentence = recognized_sentences.back();
+  if(lastsentence->sentence_txt == NULL) {
+    delete lastsentence;
+    lastsentence = NULL;
+    int backindex = recognized_sentences.length() - 1;
+    recognized_sentences.remove(backindex);
   }
 
   // Done finding the sentences, optional debugging below

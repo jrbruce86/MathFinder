@@ -36,10 +36,12 @@
 #include <Detection.h>
 #include <Segmentation.h>
 
-#define DATASET_SIZE 1 // the expected number of files in a dataset
+#define DATASET_SIZE 15 // the expected number of files in a dataset
                        // specifying how to save results for debugging and evaluation
 
 //#define SHOW_GRID
+
+enum RES_TYPE {DETECTION, SEGMENTATION};
 
 namespace tesseract {
 
@@ -53,7 +55,9 @@ class MEDS : public EquationDetectBase {
  public:
 
   MEDS() : tess(NULL), blobinfogrid(NULL), img(NULL),
-  detector(NULL), segmentor(NULL), api(NULL) {}
+  detector(NULL), api(NULL) {
+    segmentor = new SegmentorType;
+  }
 
   ~MEDS() {
     reset();
@@ -98,6 +102,7 @@ class MEDS : public EquationDetectBase {
                                 ColPartitionSet** best_columns) {
     static int dbg_img_index = 1;
     img = tess->pix_binary();
+
     // I'll extract features from my own custom grid which holds both
     // information that can be gleaned from language recognition as
     // well as everything which couldn't (will hold all of the blobs
@@ -106,7 +111,7 @@ class MEDS : public EquationDetectBase {
     blobinfogrid = new BlobInfoGrid(part_grid->gridsize(), part_grid->bleft(),
         part_grid->tright());
     TessBaseAPI* api = new TessBaseAPI; // this is owned by the grid but is also used by
-                                       // the feature extractor
+                                        // the feature extractor
     blobinfogrid->setTessAPI(api);
     blobinfogrid->prepare(part_grid, best_columns, tess);
 
@@ -130,12 +135,15 @@ class MEDS : public EquationDetectBase {
     M_Utils::waitForInput();
 #endif
 
+    // now do the segmentation step
+    segmentor->setDbgImg(img); // allows for optional debugging
+    blobinfogrid = segmentor->runSegmentation(blobinfogrid);
     // Print the results of this module to user-specified directory
-    dbgPrintDetectionResults(dbg_img_index);
+    dbgPrintResults(dbg_img_index, SEGMENTATION);
 
     ++dbg_img_index;
-     if(dbg_img_index > DATASET_SIZE)
-       dbg_img_index = 1;
+    if(dbg_img_index > DATASET_SIZE)
+      dbg_img_index = 1;
 
 #ifdef SHOW_GRID
      delete gridviewer;
@@ -196,8 +204,10 @@ class MEDS : public EquationDetectBase {
     //       specific to a single image
   }
 
-  void dbgPrintDetectionResults(const int& dbg_img_index) {
-    /// save images as this: MEDS_DBG_IM_
+  void dbgPrintResults(const int& dbg_img_index, RES_TYPE res) {
+    assert(res == DETECTION || res == SEGMENTATION);
+
+    // save images as this: MEDS_DBG_IM_
     PIX* dbgimg = pixCopy(NULL, img);
     dbgimg = pixConvertTo32(dbgimg);
     string imgname = "MEDS_DBG_IM_" + Basic_Utils::intToString(dbg_img_index) + ".png";
@@ -206,27 +216,43 @@ class MEDS : public EquationDetectBase {
     // #.ext type left top right bottom
     string rectfile = Basic_Utils::intToString(dbg_img_index) + (string)".rect";
     ofstream rectstream(rectfile.c_str(), ios::out); // overwrite existing
-    BLOBINFO* blob;
-    BlobInfoGridSearch bigs(blobinfogrid);
-    bigs.StartFullSearch();
-    while((blob = bigs.NextFullSearch()) != NULL) {
-      if(blob->predicted_math) {
-        M_Utils m;
-        BOX* bbox = m.getBlobInfoBox(blob, img);
-        rectstream << dbg_img_index << ".png embedded "
-                   << bbox->x << " " << bbox->y << " "
-                   << bbox->x + bbox->w << " " << bbox->y + bbox->h << endl;
-        m.drawHlBlobInfoRegion(blob, dbgimg, LayoutEval::RED);
+
+    if(res == DETECTION) {
+      // print the detection results to both file and image
+      BLOBINFO* blob;
+      BlobInfoGridSearch bigs(blobinfogrid);
+      bigs.StartFullSearch();
+      while((blob = bigs.NextFullSearch()) != NULL) {
+        if(blob->predicted_math) {
+          BOX* bbox = M_Utils::getBlobInfoBox(blob, img);
+          rectstream << dbg_img_index << ".png embedded "
+                     << bbox->x << " " << bbox->y << " "
+                     << bbox->x + bbox->w << " " << bbox->y + bbox->h << endl;
+          M_Utils::drawHlBlobInfoRegion(blob, dbgimg, LayoutEval::RED);
+          boxDestroy(&bbox);
+        }
+      }
+    }
+    else {
+      // print the segmentation results to both file and image
+      const GenericVector<Segmentation*>& segments = blobinfogrid->Segments;
+      for(int i = 0; i < segments.length(); ++i) {
+        const Segmentation* seg = segments[i];
+        BOX* bbox = M_Utils::tessTBoxToImBox(seg->box, img);
+        const RESULT_TYPE& restype = seg->res;
+        rectstream << dbg_img_index << ".png " <<
+            ((restype == DISPLAYED) ? "displayed" : (restype == EMBEDDED)
+                ? "embedded" : "label") << " " << bbox->x << " " << bbox->y
+                << " " << bbox->x + bbox->w << " " << bbox->y + bbox->h << endl;
+        M_Utils::drawHlBoxRegion(bbox, dbgimg, ((restype == DISPLAYED) ?
+            LayoutEval::RED : (restype == EMBEDDED) ? LayoutEval::BLUE
+                : LayoutEval::GREEN));
         boxDestroy(&bbox);
       }
     }
     pixWrite(imgname.c_str(), dbgimg, IFF_PNG);
     pixDestroy(&dbgimg);
-  }
-
-  // The final results after segmentation is carried out
-  void dbgPrintSegmentationResults() {
-
+    rectstream.close();
   }
 
   inline void setDetector(DetectorType* det) {

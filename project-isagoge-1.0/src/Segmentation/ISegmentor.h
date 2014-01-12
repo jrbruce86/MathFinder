@@ -29,7 +29,16 @@
 template <typename SegType>
 class ISegmentor {
  public:
+
   ISegmentor(){}
+
+  inline BlobInfoGrid* runSegmentation(BlobInfoGrid* grid) {
+    return segmentor.runSegmentation(grid);
+  }
+
+  inline void setDbgImg(PIX* im) {
+    segmentor.setDbgImg(im);
+  }
 
  private:
   SegType segmentor;

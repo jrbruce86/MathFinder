@@ -119,6 +119,9 @@ class M_Utils {
   // draws directly on the pix, rather than making a temp copy
   static void drawHlBlobInfoRegion(BLOBINFO* bb, PIX* im, LayoutEval::Color color);
 
+  // draws the box on the given image
+  static void drawHlBoxRegion(BOX* bb, PIX* im, LayoutEval::Color color);
+
   static void dispTBoxCoords(TBOX* box);
 
   // copy contents of string into newly allocated memory

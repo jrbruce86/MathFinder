@@ -42,7 +42,7 @@ Pix* leptReadImg(string fn) {
   Pix* img = pixRead(fn.c_str());
   if (img == NULL) {
     cout << "ERROR: Could not open " << fn << endl;
-    exit (EXIT_FAILURE);
+    assert(false);
   }
   return img;
 }

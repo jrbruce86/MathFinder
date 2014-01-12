@@ -35,6 +35,7 @@ Pix* Lept_Utils::fillBoxesForeground(Pix* inputimg, BOXA* boxes, \
   for(l_uint32 i = 0; i < numboxes; i++) {
     Box* bbox = boxaGetBox(boxes, i, L_COPY);
     fillBoxForeground(inputimg, bbox, color);
+    boxDestroy(&bbox);
   }
   return inputimg;
 }

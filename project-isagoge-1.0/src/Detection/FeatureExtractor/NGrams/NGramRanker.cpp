@@ -35,16 +35,6 @@
 typedef GenericVector<NGramFrequency*> RankedNGramVec;
 typedef GenericVector<RankedNGramVec> RankedNGramVecs;
 
-
-/*// TODO: Remove this one... Don't think it is ever even used.
-NGramRanker::NGramRanker(const string& training_set_path_) : unigram_filename("uni-grams"),
-    bigram_filename("bi-grams"), trigram_filename("tri-grams"),
-    api_(NULL) {
-  readInStopWords(training_set_path_);
-  owns_stop_words = true;
-  training_set_path = training_set_path_;
-}*/
-
 NGramRanker::NGramRanker(const string& training_set_path_,
     GenericVector<char*> stopwords_) :
         unigram_filename("uni-grams"), bigram_filename("bi-grams"),
@@ -78,7 +68,7 @@ RankedNGramVecs NGramRanker::generateSentenceNGrams(Sentence* sentence) {
   // initialize the filestreams used to write ngrams to files
   ofstream ng_streams[3];
   // initialize filestructure
-  string sentence_ngramdir = training_set_path + (string)"../Cur-Sentence-NGrams/";
+  string sentence_ngramdir = training_set_path + (string)"../../Cur-Sentence-NGrams/";
   if(!Basic_Utils::existsDirectory(sentence_ngramdir))
     Basic_Utils::exec("mkdir " + sentence_ngramdir);
   else {
@@ -306,7 +296,7 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
                               // trigram 1 is: "The boy went", trigram 2
                               // is: "boy went to", etc.
     bool word_found = false;
-    for(int j = 0; j < strlen(s_txt); j++) {
+    for(int j = 0; j < strlen(s_txt); ++j) {
       if(s_txt[j] == '\0') {
         cout << "ERROR: NULL terminator found before the end of a sentence!\n";
         exit(EXIT_FAILURE);

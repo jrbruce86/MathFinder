@@ -38,3 +38,5 @@ Trained on AdvCalc1 Dataset (in AdvCalc1/ dir):
       Optimal gamma after BOBYQA:    7.65815
       TPR: 0.875365 
       TNR: 0.974371 
+  4. RBFSVM_F_Ext4
+ 

@@ -46,6 +46,8 @@ using namespace Basic_Utils;
 #define SHOW_HYP_TRACKER_FINAL
 //#define DISPLAY_ON
 
+#define DBG_MISSING_GT_SEG
+
 BipartiteGraph::BipartiteGraph(string type_, GraphInput input)
 : type(type_), typemode(true) {
   if(type == "all")
@@ -75,12 +77,12 @@ BipartiteGraph::BipartiteGraph(string type_, GraphInput input)
   gtfile.open(gtboxfilename.c_str(), ifstream::in);
   if((gtfile.rdstate() & ifstream::failbit) != 0) {
     cout << "ERROR: Could not open " << gtboxfilename << endl;
-    exit(EXIT_FAILURE);
+    assert(false);
   }
   hypfile.open(hypboxfilename.c_str(), ifstream::in);
   if((hypfile.rdstate() & std::ifstream::failbit) != 0 ) {
     cout << "ERROR: Could not open " << hypboxfilename << endl;
-    exit(EXIT_FAILURE);
+    assert(false);
   }
 
   // build and append all the vertices to the groundtruth set and
@@ -327,7 +329,7 @@ void BipartiteGraph::makeEdges(Bipartite::GraphChoice graph) {
   }
 }
 
-void BipartiteGraph::getHypothesisMetrics() {
+HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
   getGroundTruthMetrics();
   // total segmented foreground pixels in the groundtruth
   const int gt_positive_fg_pix = gtmetrics.total_seg_fg_pixels;
@@ -337,9 +339,9 @@ void BipartiteGraph::getHypothesisMetrics() {
     check_gt_positives += GroundTruth[i].pix_foreground;
   assert(check_gt_positives == gt_positive_fg_pix);
 
-
   // initialize everything
   hypmetrics.total_fg_pix = gtmetrics.total_fg_pixels;
+  hypmetrics.total_gt_regions = gtmetrics.segmentations;
   hypmetrics.correctsegmentations = 0;
   hypmetrics.total_recall = 0;
   hypmetrics.total_fallout = 0;
@@ -359,6 +361,7 @@ void BipartiteGraph::getHypothesisMetrics() {
   hypmetrics.total_false_negative_pix = 0;
   hypmetrics.total_false_positive_pix = 0;
   hypmetrics.total_true_positive_fg_pix = 0;
+  hypmetrics.res_type_name = type;
   const int gt_negative_fg_pix = gtmetrics.total_nonseg_fg_pixels;
 
   // need to sum up all the positive pixels detected in the entire
@@ -458,7 +461,12 @@ void BipartiteGraph::getHypothesisMetrics() {
       double fallout = ((double)falsepositive_pix + (double)duplicate_fp) /
           (double)gt_negative_fg_pix;
       double fallout_duplicate = (double)duplicate_fp / (double)gt_negative_fg_pix;
-      hyp_box_desc.fallout = fallout;
+      double false_discovery = ((double)falsepositive_pix + (double)duplicate_fp) /
+          (double)hyp_positive_fg_pix;
+      double false_discovery_duplicate = (double)duplicate_fp / (double)hyp_positive_fg_pix;
+      hyp_box_desc.false_discovery_duplicate = false_discovery_duplicate;
+      hyp_box_desc.false_discovery = false_discovery - false_discovery_duplicate;
+      hyp_box_desc.fallout = fallout - fallout_duplicate;
       hyp_box_desc.fallout_duplicate = fallout_duplicate;
       hypmetrics.falsepositives++;
       hyp_box_desc.false_positive_pix = falsepositive_pix;
@@ -665,6 +673,7 @@ void BipartiteGraph::getHypothesisMetrics() {
   const int total_false_neg_pix = hypmetrics.total_false_negative_pix;
   const int hyp_true_negatives = total_hyp_negative - total_false_neg_pix;
   if(hyp_true_negatives != counted_truenegatives) {
+    if(!(hypmetrics.total_positive_fg_pix == 0)) {
     cout << "ERROR: the total false negatives and true negatives "
          << "counted don't add up to the total negatives "
          << "(i.e. total_foreground - total_positive)!\n";
@@ -678,7 +687,8 @@ void BipartiteGraph::getHypothesisMetrics() {
     cout << "positives in the groundtruth: "
          << gtmetrics.total_seg_fg_pixels << endl;
     pixDisplay(hyp_tracker, 100, 100);
-    exit(EXIT_FAILURE);
+    assert(false);
+    }
   }
   hypmetrics.total_true_negative_fg_pix = hyp_true_negatives;
   const int gt_true_negatives = gtmetrics.total_nonseg_fg_pixels;
@@ -740,6 +750,20 @@ void BipartiteGraph::getHypothesisMetrics() {
   noerror:
   hypmetrics.specificity = specificity;
 
+  if((hypmetrics.total_fdr + hypmetrics.total_precision) != (double)1) {
+    if(!((hypmetrics.total_fdr == 0) && (hypmetrics.total_precision == 0))) {
+      if((double)1 - (hypmetrics.total_fdr + hypmetrics.total_precision)
+          > (double).05) {
+        cout << "ERROR: The false discovery rate and precision do not add up to 1!\n";
+        cout << "false discovery: " << hypmetrics.total_fdr << endl;
+        cout << "precision: " << hypmetrics.total_precision << endl;
+        pixDisplay(hyp_tracker, 100, 100);
+        Basic_Utils::waitForInput();
+        assert(false);
+      }
+    }
+  }
+
   // now calculate the negative predictive value (TN/TN+FN)
   double npv = (double)hyp_true_negatives/(double)total_hyp_negative;
   hypmetrics.negative_predictive_val = npv;
@@ -762,6 +786,7 @@ void BipartiteGraph::getHypothesisMetrics() {
   waitForInput();
 #endif
 #endif
+  return hypmetrics;
 }
 
 int BipartiteGraph::countTrueNegatives() {
@@ -966,6 +991,33 @@ void BipartiteGraph::getGroundTruthMetrics() {
   gtmetrics.total_seg_area = 0;
   gtmetrics.total_area = (l_int32)gtimg->w * (l_int32)gtimg->h;
   gtmetrics.area_ratio = 0;
+
+  // first make sure none of the groundtruth vertices overlap!
+  for(vector<Vertex>::iterator gt_it = GroundTruth.begin();
+      gt_it != GroundTruth.end(); gt_it++) {
+    for(vector<Vertex>::iterator other_gt_it = GroundTruth.begin();
+        other_gt_it != GroundTruth.end(); other_gt_it++) {
+      if(gt_it == other_gt_it)
+        continue;
+      Vertex cur_v = *gt_it;
+      BOX* curbox = cur_v.rect;
+      Vertex other_v = *other_gt_it;
+      BOX* otherbox = other_v.rect;
+      l_int32 intersects = 0;
+      boxIntersects(curbox, otherbox, &intersects);
+#ifdef DBG_MISSING_GT_SEG
+      if(intersects != 0) {
+        cout << "vertex at (l,t,r,b)=(" << curbox->x << ", " << curbox->y
+             << ", " << curbox->x + curbox->w << ", " << curbox->y + curbox->h << ") ";
+        cout << "overlaps vertext at (l,t,r,b)=(" << otherbox->x << ", " << otherbox->y
+            << ", " << otherbox->x + otherbox->w << ", " << otherbox->y + otherbox->h << ") ";
+      }
+#endif
+      assert(intersects == 0);
+    }
+  }
+
+
   // get all the metrics by iterating through the groundtruth
   // vertices. first need to get the totals
   for(vector<Vertex>::iterator gt_it = GroundTruth.begin();
@@ -986,6 +1038,12 @@ void BipartiteGraph::getGroundTruthMetrics() {
   gtmetrics.total_nonseg_fg_pixels = countColorPixels(fullimgbox, gtimg, color,
       gt_tracker, true, already_counted);
   boxDestroy(&fullimgbox);
+  if(already_counted != gtmetrics.total_seg_fg_pixels) {
+    cout << "already counted: " << already_counted << endl;
+    cout << "total_seg_fg_pixels: " << gtmetrics.total_seg_fg_pixels << endl;
+    cout << "there are " << GroundTruth.size() << " vertices.\n";
+    pixDisplay(gt_tracker, 100, 100);
+  }
   assert(already_counted == gtmetrics.total_seg_fg_pixels);
   gtmetrics.total_fg_pixels = gtmetrics.total_nonseg_fg_pixels
       + gtmetrics.total_seg_fg_pixels;
@@ -1019,6 +1077,7 @@ void BipartiteGraph::printMetrics(FILE* stream){
   // *****This is how a normal, non-verbose metric file is formated:
   // -----region-wide statistics:
   // [# correctly segemented regions] / [total # regions]
+  assert(hypmetrics.correctsegmentations <= gtmetrics.segmentations);
   fprintf(stream, "%d/%d\n", hypmetrics.correctsegmentations,
       gtmetrics.segmentations);
   // [# regions completely missed (fn)]

@@ -22,7 +22,7 @@ else
     echo -e "renaming $(($num)) "$( printf '%s' $ext )"'s\n";
     i=1;
     mkdir $outputdir;
-    echo -e "progress:\n";
+    echo -en "progress:\n";
     while (( $i<=$num ))
     do
         file=$(ls $inputdir/*.$ext | head -n $i | tail -n 1 | tr -d '\n');
@@ -30,14 +30,14 @@ else
         # the file number. only expects the number to be 1 or 2 digits
         number=$(echo $file | sed -e 's/.*\(.[0-9]\).*/\1/' | tr -d '\n')
         number=$(echo $number | sed -e 's/[^0-9]//')
-        echo "num: " $number
+        echo -en "num:  $(($number))\n"
 
         
 
         echo -e "\n=================filename:"$( printf '%d.%s' $(($number)) $ext )" --- originalname:"$file"=================\n" >> $outputdir"/files_info";
         #identify -verbose -ping $file >> $outputdir"/files_info";
         cp $file $outputdir"/"$( printf '%d.%s' $(($number)) $ext );
-        echo -en "$(($i)) ===> $(($num))\r"
+        #echo -en "$(($i)) ===> $(($num))\r"
         i=$(($i+1));
     done
     echo -e "\nComplete!"

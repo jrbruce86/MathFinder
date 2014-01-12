@@ -118,8 +118,10 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libSegmentation_la_LIBADD =
-am_libSegmentation_la_OBJECTS = Segmentor1.lo
+libSegmentation_la_DEPENDENCIES = ../Utils/libUtils.la \
+	../Tesseract/api/libtesseract.la ../Grid/libGrid.la \
+	../Detection/FeatureExtractor/Implementations/F_Ext1/libF_Ext1.la
+am_libSegmentation_la_OBJECTS = libSegmentation_la-Segmentor1.lo
 libSegmentation_la_OBJECTS = $(am_libSegmentation_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -327,6 +329,28 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libSegmentation.la
 libSegmentation_la_SOURCES = Segmentation.h ISegmentor.h Segmentor1.h Segmentor1.cpp
+libSegmentation_la_LIBADD = ../Utils/libUtils.la \
+../Tesseract/api/libtesseract.la ../Grid/libGrid.la \
+../Detection/FeatureExtractor/Implementations/F_Ext1/libF_Ext1.la
+
+libSegmentation_la_CPPFLAGS = -I../Utils -I../Grid \
+-I../Tesseract/api \
+-I../Tesseract/ccmain -I../Tesseract/ccstruct \
+-I../Tesseract/ccutil -I../Tesseract/classify \
+-I../Tesseract/config -I../Tesseract/contrib \
+-I../Tesseract/cube -I../Tesseract/cutil \
+-I../Tesseract/dict -I../Tesseract/doc \
+-I../Tesseract/image -I../Tesseract/java \
+-I../Tesseract/m4 -I../Tesseract/neural_networks \
+-I../Tesseract/po -I../Tesseract/tessdata \
+-I../Tesseract/testing -I../Tesseract/textord \
+-I../Tesseract/training -I../Tesseract/viewer \
+-I../Tesseract/wordrec -I../Tesseract \
+-I../Detection/FeatureExtractor/NGrams \
+-I../Detection/FeatureExtractor/NGrams/NGProfileGen \
+-I../Detection/FeatureExtractor/Sentence \
+-I../Detection/FeatureExtractor/Implementations/F_Ext1
+
 all: all-am
 
 .SUFFIXES:
@@ -406,7 +430,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Segmentor1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libSegmentation_la-Segmentor1.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -428,6 +452,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
+libSegmentation_la-Segmentor1.lo: Segmentor1.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libSegmentation_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libSegmentation_la-Segmentor1.lo -MD -MP -MF $(DEPDIR)/libSegmentation_la-Segmentor1.Tpo -c -o libSegmentation_la-Segmentor1.lo `test -f 'Segmentor1.cpp' || echo '$(srcdir)/'`Segmentor1.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libSegmentation_la-Segmentor1.Tpo $(DEPDIR)/libSegmentation_la-Segmentor1.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='Segmentor1.cpp' object='libSegmentation_la-Segmentor1.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libSegmentation_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libSegmentation_la-Segmentor1.lo `test -f 'Segmentor1.cpp' || echo '$(srcdir)/'`Segmentor1.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo

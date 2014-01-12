@@ -33,7 +33,7 @@
 
 using namespace tesseract;
 
-enum Direction {LEFT, RIGHT, UP, DOWN};
+enum Direction {LEFT, RIGHT, UP, DOWN, INTERSECT};
 enum SubSuperScript {SUB, SUPER};
 
 class F_Ext1 {
@@ -81,9 +81,9 @@ class F_Ext1 {
   typedef GenericVector<NGramFrequency*> RankedNGramVec; // holds counts for just uni/bi/tri gram
   typedef GenericVector<RankedNGramVec> RankedNGramVecs; // holds counts for uni, bi and tri grams
   // cover feature
-  int countCoveredBlobs(BLOBINFO* blob, Direction dir);
+  int countCoveredBlobs(BLOBINFO* blob, Direction dir, bool segmode=false);
   bool isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir,
-      bool indbg, bool& dbgdontcare);
+      bool indbg, bool& dbgdontcare, bool seg_mode);
 
   // nested feature
   int countNestedBlobs(BLOBINFO* blob);
@@ -102,7 +102,7 @@ class F_Ext1 {
   // non-null then uses the same distance as with curblob but instead uses
   // dimblob's dimensions for the thresholding.
   bool isAdjacent(BLOBINFO* neighbor, BLOBINFO* curblob, Direction dir,
-      BLOBINFO* dimblob=NULL);
+      bool seg_mode, TBOX* dimblob=NULL);
 
   // average ocr confidence
   double avg_confidence;

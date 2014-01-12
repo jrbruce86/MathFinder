@@ -146,17 +146,20 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   *                                     res1lst1 res1lst2  res2lst1 res2lst2
   * arg1 - relative path to root of directory structure
   * arg2 - name of the subdirectory within both input and output dirs
-  * arg3- the image extension (i.e. png, jpg, etc). all should be the same
+  * arg3 - name of the training_set used, this distinguishes results of the same predictor
+  *        trained on different data
+  * arg4- the image extension (i.e. png, jpg, etc). all should be the same
   *        in a given subdir
   *
   * Assumes all images in the input dir are named 1.ext,2.ext,3.ext,.....
   * (i.e. they start from 1 not 0)
   **************************************************************************/
-  void setFileStructure(string topdir_, string dataset_, string ext_){
+  void setFileStructure(string topdir_, string dataset_, string train_set_, string ext_){
     // organize the directory structure (and add directories in
     // case they may not exist yet)
     topdir = checkTrailingSlash(topdir_);
     subdir = checkTrailingSlash(dataset_);
+    train_set = train_set_;
     ext = ext_;
     exec((string)"mkdir " + topdir + (string)"groundtruth/");
     groundtruthdir = topdir + (string)"groundtruth/" + subdir;
@@ -167,12 +170,14 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     gt_blobsdir = groundtruthdir + (string)"colorblobs/";
     exec((string)"mkdir " + gt_blobsdir);
     inputdir = topdir + (string)"input/" + subdir;
-    exec((string)"mkdir " + topdir + (string)"output/", false);
-    outputdir = topdir + (string)"output/" + subdir;
-    numfiles = 1;//fileCount(inputdir);
+    exec((string)"mkdir " + topdir + (string)"output/");
+    outputdir = topdir + (string)"output/" + checkTrailingSlash(train_set);
+    numfiles = fileCount(inputdir);
     layoutruns = 0;
     assert(numfiles == DATASET_SIZE);
-    exec((string)"mkdir " + outputdir, false);
+    exec((string)"mkdir " + outputdir);
+    outputdir = outputdir + subdir;
+    exec((string)"mkdir " + outputdir);
   }
 
   /**********************************************************
@@ -280,6 +285,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   *          look there to find it!!
   *************************************************************************/
   void runTessLayout(string out_res_subdir, bool layout_alreadydone=false) {
+    layoutruns = 0;
     out_res_subdir = checkTrailingSlash(out_res_subdir);
     string out_res_dir = outputdir + out_res_subdir;
     if(!layout_alreadydone) {
@@ -308,43 +314,50 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     string outputfile_path; // path to the output for a given input file
 
     if(!layout_alreadydone) {
-    for (int i = 1; i <= numfiles; i++) {
-      // set paths
-      inputfile_name = intToString(i) + ext;
-      inputfile_path = inputdir + inputfile_name;
-      outputfile_path = all_results_dir + inputfile_name + "/";
-      exec((string)"mkdir " + outputfile_path);
-      cout << "out filepath: " << outputfile_path << endl;
+      for (int i = 1; i <= numfiles; i++) {
+        // set paths
+        inputfile_name = intToString(i) + ext;
+        inputfile_path = inputdir + inputfile_name;
+        outputfile_path = all_results_dir + inputfile_name + "/";
+        exec((string)"mkdir " + outputfile_path);
+        cout << "out filepath: " << outputfile_path << endl;
 
-      // read image and run layout analysis
-      Pix* img = leptReadImg(inputfile_path);
-      api->SetImage(img); // set the image
-      api->AnalyseLayout(); // Run Tesseract's layout analysis
-      pixDestroy(&img); // destroy finished image
+        // read image and run layout analysis
+        Pix* img = leptReadImg(inputfile_path);
+        api->SetImage(img); // set the image
+        api->AnalyseLayout(); // Run Tesseract's layout analysis
+        pixDestroy(&img); // destroy finished image
 
-      // move all the output images to a directory
-      exec((string) "mv *.png " + outputfile_path);
-      exec((string) "mv *.tif " + outputfile_path);
-      if(eval_default)
-        exec((string) "cp " + outputfile_path + "*merge*" + " "
-            + out_res_dir); // move all the relevent stuff up a directory
-      else {
-        exec((string) "cp " + outputfile_path + "*MEDS_DBG_IM_*" + " "
-            + out_res_dir);
-        exec((string) "mv " + "*.rect" + " "
-            + out_res_dir);
+        // move all the output images to a directory
+        exec((string) "mv *.png " + outputfile_path);
+        exec((string) "mv *.tif " + outputfile_path);
+        if(eval_default) {
+          exec((string) "cp " + outputfile_path + "*merge*" + " "
+              + out_res_dir); // move all the relevent stuff up a directory
+          exec((string) "mv " + "*.rect" + " "
+              + out_res_dir);
+        }
+        else {
+          exec((string) "cp " + outputfile_path + "*MEDS_DBG_IM_*" + " "
+              + out_res_dir);
+          exec((string) "mv " + "*.rect" + " "
+              + out_res_dir);
+        }
+        cout << "Ran layout analysis on file " << i << " of " << numfiles << "\n";
+        layoutruns++;
       }
-      cout << "Ran layout analysis on file " << i << " of " << numfiles << "\n";
-    }
     }
     // mathresdir is
     // [topdir]/output/[subdir]/[out_res_subdir]/math_results/
     string mathresdir = out_res_dir + (string)"math_results/";
  //   if(!layout_alreadydone) {
       exec((string)"mkdir " + mathresdir); // make if not already made
-      if(eval_default)
+      if(eval_default) {
         exec((string)"mv " + out_res_dir + "*merge*" +
             " " + mathresdir); // move all relevant outputs to mathdir
+        exec((string)"mv " + out_res_dir + "*.rect" + " "
+          + mathresdir);
+      }
       else {
         exec((string)"mv " + out_res_dir + "*MEDS_DBG_IM_*" + " "
             + mathresdir);
@@ -382,14 +395,13 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     // Green bounding boxes. Blue ones can be ignored.
     // --This also writes all the bounding boxes of the colored regions
     // to a file.
-    if(eval_default) {
+   /* if(eval_default) {
       vector<LayoutEval::Color> significantcolors;
       significantcolors.push_back(LayoutEval::RED);
       significantcolors.push_back(LayoutEval::GREEN);
       colorFoundBlobs(mathresdir, inputdir, 5,
           significantcolors, (string)".tif");
-    }
-    layoutruns++;
+    }*/
   }
 
   /********************************************************************************
@@ -437,7 +449,8 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   *                                  for this test will be placed. The test is    *
   *                                  run on the images in the                     *
   ********************************************************************************/
-  void evalTessLayout(string testname_, bool layoutdone=false) {
+  vector<vector<HypothesisMetrics> > evalTessLayout(string testname_,
+      bool layoutdone=false) {
     const string testname = checkTrailingSlash(testname_);
     if(!layoutdone) {
       if(layoutruns != numfiles) {
@@ -487,11 +500,11 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     const string results_type = "math_results/";
     const string colorblobs = "colorblobs/";
     string eval_dir_;
-    if(eval_default)
-      eval_dir_ = outputdir + testname + results_type
-        + colorblobs;
-    else
-      eval_dir_ = outputdir + testname + results_type;
+  //  if(eval_default)
+   //   eval_dir_ = outputdir + testname + results_type
+   //     + colorblobs;
+  //  else
+    eval_dir_ = outputdir + testname + results_type;
     const string evaldir = eval_dir_;
     const string hypboxfile = evaldir + (string)"Rectangles.dat";
     if(!existsDirectory(evaldir)) {
@@ -501,21 +514,21 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     bool readyfortest = true;
     string tmp;
     for(int i = 1; i <= numfiles; ++i) {
-      tmp = evaldir + intToString(i) + ext;
+      tmp = evaldir + intToString(i) + (eval_default ? (string)".tif" : ext);
       if(!existsFile(tmp)) {
         readyfortest = false;
         break;
       }
     }
     if(readyfortest) {
-      if(eval_default) {
+    //  if(eval_default) {
         // make sure the Rectangles.dat file is where it should be
-        if(!existsFile(hypboxfile)) {
-          cout << "ERROR: the file " << hypboxfile << ", couldn't be found!\n";
-          exit(EXIT_FAILURE);
-        }
-      }
-      else {
+   //     if(!existsFile(hypboxfile)) {
+   //       cout << "ERROR: the file " << hypboxfile << ", couldn't be found!\n";
+   //       exit(EXIT_FAILURE);
+   //     }
+  //    }
+  //    else {
         // move all the contents in the .rect files to the Rectangles.dat
         exec((string)"rm " + hypboxfile); // start anew
         ofstream hboxstream(hypboxfile.c_str());
@@ -548,31 +561,44 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
         // write to file
         for(int i = 0; i < rects.size(); ++i)
           hboxstream << rects[i] << endl;
-      }
+   //   }
     }
     if(!readyfortest) {
       cout << "ERROR: The following file, " << tmp << " is missing!\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
 
     // Now we are ready to carry out the evaluation!
+    vector<vector<HypothesisMetrics> > all_page_metrics;
     for(int i = 1; i <= numfiles; i++) {
+      // page metrics can be separated out by the type of element being evaluated
+      // or all combined together. in the former case there will be multiple metrics
+      // per page and in the latter just one per page.
+      vector<HypothesisMetrics> page_metrics;
       if(type_eval) {
         // evaluate each type separately
-        getEvaluationMetrics(testname_, results_type, (string)"displayed",
-            i, hypboxfile);
-        getEvaluationMetrics(testname_, results_type, (string)"embedded",
-            i, hypboxfile);
-        getEvaluationMetrics(testname_, results_type, (string)"label",
-            i, hypboxfile);
+        HypothesisMetrics disp_metrics = getEvaluationMetrics(testname_,
+            results_type, (string)"displayed", i, hypboxfile);
+        page_metrics.push_back(disp_metrics);
+        HypothesisMetrics emb_metrics = getEvaluationMetrics(testname_, results_type,
+            (string)"embedded", i, hypboxfile);
+        page_metrics.push_back(emb_metrics);
+        HypothesisMetrics label_metrics = getEvaluationMetrics(testname_,
+            results_type, (string)"label", i, hypboxfile);
+        page_metrics.push_back(label_metrics);
       }
       else {
         // evaluate all of the above types (considering them all the same)
-        getEvaluationMetrics(testname_, results_type, (string)"all",
-            i, hypboxfile);
+        HypothesisMetrics all_metrics = getEvaluationMetrics(testname_,
+            results_type, (string)"all", i, hypboxfile);
+        page_metrics.push_back(all_metrics);
       }
+      all_page_metrics.push_back(page_metrics);
     }
+    assert(all_page_metrics.size() == numfiles);
     cout << "Finished with evalTessLayout()\n";
+    // return the metrics for each page of the dataset being evaluated
+    return all_page_metrics;
   }
 
   /*************************************************************************
@@ -718,7 +744,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   // is being evaluated here. The hypboxfile is the full path and name
   // of the file in the colorblobs directory which holds all of the
   // rectangles detected for the hypothesis being evaluated.
-  void getEvaluationMetrics(string testname, string results_type,
+  HypothesisMetrics getEvaluationMetrics(string testname, string results_type,
       string typenamespec, int filenum, string hypboxfile) {
     // set the name of the files we'll output the results to
     testname = checkTrailingSlash(testname);
@@ -752,30 +778,30 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     }
     const string colorblobs  = "colorblobs/";
     string evaldir_;
-    if(eval_default)
-      evaldir_ = checkTrailingSlash(outputdir +
-        testname + results_type + colorblobs);
-    else
+  //  if(eval_default)
+   //   evaldir_ = checkTrailingSlash(outputdir +
+   //     testname + results_type + colorblobs);
+   // else
       evaldir_ = checkTrailingSlash(outputdir + testname + results_type);
     const string evaldir = evaldir_;
 
     // The first step is to create the bipartite graph data structure
     // for the image
-    string filename = intToString(filenum) + ext;
+    string filename = intToString(filenum);
     GraphInput gi;
     gi.gtboxfile = groundtruthtxt;
-    gi.gtimg = leptReadImg(gt_blobsdir + filename);
-    gi.hypboxfile = hypboxfile;
-    gi.hypimg = leptReadImg(evaldir + filename);
+    gi.gtimg = leptReadImg(gt_blobsdir + filename + ext);
+    gi.hypboxfile = hypboxfile;;
+    gi.hypimg = leptReadImg(evaldir + filename  + (eval_default ? (string)".tif" : ext));
     gi.imgname = filename;
     gi.dbgdir = this_dbgdir;
-    Pix* inimg = leptReadImg(inputdir + filename);
+    Pix* inimg = leptReadImg(inputdir + filename + ext);
     inimg = pixConvertTo32(inimg);
     gi.inimg = inimg;
     BipartiteGraph pixelGraph(typenamespec, gi);
 
     // Now get and print the metrics
-    pixelGraph.getHypothesisMetrics();
+    HypothesisMetrics metrics = pixelGraph.getHypothesisMetrics();
     // move the dbg image to its dir
    // exec((string)"cp " + (string)"Eval_DBG_" + typenamespec +
    //     (string)"* " + checkTrailingSlash(dbgdir)); // TODO: Remove this
@@ -787,6 +813,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     fclose(out);
     cout << "Finished evaluating " << typenamespec << " type of "
         << results_type << " for image " << filename << endl;
+    return metrics;
   }
 
   // ----------------colorFoundBlobs--------------------------
@@ -1625,7 +1652,8 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   string groundtruthtxt; // this points to [topdir]/groundtruth/[subdir]/[*.dat]
   string gt_blobsdir; // points to [topdir]/groundtruth/[subdir]/colorblobs/
   string inputdir; // this points to [topdir]/input/[subdir]/
-  string outputdir; // this points to [topdir]/output/[subdir]/
+  string outputdir; // this points to [topdir]/output/[train_set]/[subdir]/
+  string train_set; // this is the name of the training data that was used to train the predictor being evaluated
   vector<string> output_result_dirs; // this is the name of the full
                                // path to the current test results
                                // [topdir]/output/[subdir]/[test]. The [subdir]

@@ -182,6 +182,36 @@ private:
 };
 
 
+struct MergeInfo {
+  MergeInfo() : is_processed(false), processed_seg_area(-1),
+      seg_id(-1), segment_box(NULL) {}
+  bool is_processed;
+  inT32 processed_seg_area; // the segment area for when the blob was processed
+                          // blob may need to be reprocessed if this area differs
+                          // when the same blob is reached multiple times
+  int seg_id; // unique identifier for each segment
+  GenericVector<BLOBINFO*> left;
+  GenericVector<BLOBINFO*> right;
+  GenericVector<BLOBINFO*> up;
+  GenericVector<BLOBINFO*> down;
+  GenericVector<BLOBINFO*> intersecting;
+  TBOX* segment_box; // stored in the BlobInfoGrid class's "Segments" GenericVector
+};
+
+enum RESULT_TYPE {DISPLAYED, EMBEDDED, LABEL};
+
+struct Segmentation {
+  TBOX* box;
+  RESULT_TYPE res;
+  ~Segmentation() {
+    if(box != NULL) {
+      delete box;
+      box = NULL;
+    }
+  }
+};
+
+
 // Each blobinfo object has the following:
 // 1. A pointer to the original ColPartition in which the blob is contained after
 //    all previous document layout analysis.
@@ -221,7 +251,7 @@ class BLOBINFO:public ELIST_LINK {
            row_index(-1), block_index(-1), has_sup(false), has_sub(false), is_sup(false),
            is_sub(false), row_has_valid(false), wordinfo(NULL),
            cosbabp(0), cosbabp_processed(false), ismathword(false),
-           is_italic(false), rhabc((double)0), uvabc((double)0), dvabc((double)0),
+           is_italic(false), rhabc((double)0), uvabc((double)0), dvabc((double)0), lhabc(double(0)),
            has_nested(false), certainty((double)-20), features_extracted(false),
            dist_above_baseline((double)0), predicted_math(false), nestedcount(0),
            row_no_word(NULL), isstopword(false) {}
@@ -384,9 +414,15 @@ class BLOBINFO:public ELIST_LINK {
   bool is_italic;
 
   // the "covered" neighbor features
+  double lhabc; // leftward horizontally adjacent blobs covered (this one not used by F_Ext1)
+  GenericVector<BLOBINFO*> lhabc_blobs;
   double rhabc; // righward horizontally adjacent blobs covered
+  GenericVector<BLOBINFO*> rhabc_blobs;
   double uvabc; // upward vertically adjacent blobs covered
+  GenericVector<BLOBINFO*> uvabc_blobs;
   double dvabc; // downward vertically adjacent blobs covered
+  GenericVector<BLOBINFO*> dvabc_blobs;
+
 
   // subscript/superscript features
   bool has_sup; // true if this blob has a superscript
@@ -400,6 +436,7 @@ class BLOBINFO:public ELIST_LINK {
   // count of stacked blobs at blob position (cosbabp) feature
   int cosbabp;
   bool cosbabp_processed;
+  GenericVector<BLOBINFO*> stacked_blobs;
 
   // true if this blob is on a row with at least one valid word
   bool row_has_valid;
@@ -448,6 +485,10 @@ class BLOBINFO:public ELIST_LINK {
 
   bool reinserted; // true if the blob was inserted after initial page recognition
   bool dbgjustadded;
+
+  // below are all of the variables used during the segmentation step
+  MergeInfo merge; // information on what segment this blob is a part of after and while segmentation is carriedo ut
+
 
  private:
   TBOX box; // The bounding box (in Tesseract coordinates
@@ -621,6 +662,8 @@ class BlobInfoGrid : public BBGrid<BLOBINFO, BLOBINFO_CLIST, BLOBINFO_C_IT> {
 
   // the ratio of non-italicized blobs to total blobs on the page
   double non_ital_ratio;
+
+  GenericVector<Segmentation*> Segments; // results of segmentation! owned here in grid
 
  private:
   // allocates ROW_INFO corresponding to the given ROW_RES. Appends the

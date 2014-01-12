@@ -135,6 +135,7 @@ struct RegionDescription {
   double false_discovery; // total false positive pixels detected in the
                           // region divided by all of the positive pixels
                           // in the hypothesis
+  double false_discovery_duplicate;
   int true_positive_pix;
   int false_positive_pix;
   int false_positive_pix_duplicate; // to avoid double-counts
@@ -169,6 +170,7 @@ struct HypothesisMetrics {
                             // with all of the foreground pixels
                             // in the groundtruth box with which
                             // the region is overlapping
+  int total_gt_regions; // the # of groundtruth regions on the page
   double total_recall; // the summation of the recalls for each
                        // region detected in the hypothesis
   double total_fallout; // the summation of the fallouts for each
@@ -179,17 +181,23 @@ struct HypothesisMetrics {
                     // for each region detected in the hypothesis
   int oversegmentations; // whenever a box in the groundtruth has more
                          // than one intersection in the hypothesis then
-                         // this counts as an oversegmentation
+                         // this counts as an oversegmentation. this is the
+                         // total number of hypothesis regions contributing to
+                         // all the oversegmentations on the page
   double avg_oversegmentations_perbox; // avg number of hyptothesis boxes
                                        // greater than one corresponding to
-                                       // a groundtruth box
+                                       // a groundtruth box (i.e., average
+                                       // severity of oversegmentations on the page
   int undersegmentations; // whenever a box in the hypothesis has more than
                           // one intersection in the groundtruth then this
-                          // counts as an undersegmentation
+                          // counts as an undersegmentation. These are the total groundtruth
+                          // regions that contribute to all the undersegmentations on the page.
   double avg_undersegmentations_perbox; // avg number of groundtruth boxes
                                         // greater than one corresponding
                                         // to a box in the hypothesis
-  int oversegmentedcomponents; // number of oversegmented rectangles
+                                        // (i.e., average severity of undersegmenations
+                                        // on the page)
+  int oversegmentedcomponents; // number of oversegmented groundtruth rectangles
   int undersegmentedcomponents; // number of undersegmented (merged) rects
   int falsenegatives; // number of completely missed regions
   int falsepositives; // number of entirely falsely detected regions
@@ -213,6 +221,8 @@ struct HypothesisMetrics {
                              // as negative in the hypothesis (TN+FN)
   vector<RegionDescription> boxes; // metrics on each hypothesis rectangle
   vector<OverlappingGTRegion> overlapgts;
+
+  string res_type_name; // the type of page results being evaluated (type of layout analyzed)
 };
 
 /**********************************************************************
@@ -276,7 +286,7 @@ public:
 
   ~BipartiteGraph();
 
-  void getHypothesisMetrics();
+  HypothesisMetrics getHypothesisMetrics();
 
   // Prints the image-wide metrics
   void printMetrics(FILE* stream);
@@ -287,6 +297,7 @@ public:
 
   // for debugging
   void printSet(Bipartite::GraphChoice graph);
+
 
   void clear();
 

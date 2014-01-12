@@ -111,7 +111,6 @@ void F_Ext1::initFeatExtSinglePage() {
   // search initialization
   BlobInfoGridSearch bigs(grid);
   BLOBINFO* blob = NULL;
-
   grid->setFeatExtFormat(training_set_path, "F_Ext1", (int)NUM_FEATURES);
 
   // Determine the average height and width/height ratio of normal text on the page
@@ -357,7 +356,6 @@ void F_Ext1::initFeatExtSinglePage() {
   }
   assert(grid->non_ital_ratio == -1);
   grid->non_ital_ratio = (double)non_ital_blobs / (double)total_blobs;
-
 #ifdef DBG_SHOW_ITALIC
   bigs.StartFullSearch();
   PIX* boldital_img = pixCopy(NULL, curimg);
@@ -389,7 +387,6 @@ void F_Ext1::initFeatExtSinglePage() {
     }
   }
   avg_confidence /= validblobcount;
-
 #ifdef DBG_CERTAINTY
   cout << "Average valid word certainty: " << avg_confidence << endl;
 #endif
@@ -401,6 +398,10 @@ void F_Ext1::initFeatExtSinglePage() {
   ng.setTessAPI(api);
   for(int i = 0; i < page_sentences.length(); ++i) {
     Sentence* cursentence = page_sentences[i];
+    if(cursentence->sentence_txt == NULL) {
+      cout << "in null sentence at sentence " << i+1 << " of " << page_sentences.length() << endl;
+    }
+    assert(cursentence->sentence_txt != NULL); // shouldn't have been added in the first place if empty
     RankedNGramVecs* sentence_ngrams = new RankedNGramVecs;
     *sentence_ngrams = ng.generateSentenceNGrams(cursentence);
     cursentence->ngrams = sentence_ngrams; // store the n-grams in the sentence struct
@@ -421,7 +422,6 @@ void F_Ext1::initFeatExtSinglePage() {
       ng_features->push_back(getNGFeature(cursentence, j+1));
     cursentence->ngram_features = ng_features;
   }
-
 
   // Find out which blobs belong to stop words
   bigs.StartFullSearch();
@@ -712,10 +712,35 @@ vector<double> F_Ext1::extractFeatures(tesseract::BLOBINFO* blob) {
   return fv;
 }
 
-int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
+int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir, bool seg_mode) {
   BlobInfoGridSearch bigs(grid);
   GenericVector<BLOBINFO*> covered_blobs;
   GenericVector<BLOBINFO*> noncovered_blobs;
+
+  TBOX* blob_box; // this could either be the blob itself or the blob's segmentation depending on
+                  // whether seg_mode is turned off or on respectively.
+  TBOX bbox = blob->bounding_box();
+  TBOX* segbox = blob->merge.segment_box;
+  if(seg_mode) {
+    assert(segbox != NULL);
+    // if in segmentation mode, then the blob may already have
+    // covered blobs that were previously found, go ahead and add these to start with
+    if(dir == UP)
+      covered_blobs = blob->uvabc_blobs;
+    else if(dir == DOWN)
+      covered_blobs = blob->dvabc_blobs;
+    else if(dir == LEFT)
+      covered_blobs = blob->lhabc_blobs;
+    else if(dir == RIGHT)
+      covered_blobs = blob->rhabc_blobs;
+    else
+      assert(false);
+    blob_box = segbox;
+  }
+  else
+    blob_box = &bbox;
+  assert(blob_box != NULL);
+
   int count = 0;
   bool indbg = false;
 #ifdef DBG_COVER_FEATURE
@@ -743,47 +768,48 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
   // I discard it immediately, unless it belongs to an "abnormal row"
   // in which case the feature is still found. see findAllRowCharacteristics() method
   // of the BlobInfoGrid for what factors that are used to determine this. This feature
-  // really isn't too effective for normal
-  if(blob->validword && blob->onRowNormal())
+  // really isn't too effective for normal rows
+  if(blob->validword && blob->onRowNormal() /*&& !seg_mode*/)
     return 0;
   int range;
-  if(dir == RIGHT) {
-    range = blob->height();
-  }
+  if(dir == RIGHT || dir == LEFT)
+    range = blob_box->height();
   else if(dir == UP || dir == DOWN) {
-    range = blob->width();
+    range = blob_box->width();
   }
   else {
     cout << "ERROR: countCoveredBlobs only "
-         << "supports upward, downward, and rightward searches\n";
+         << "supports upward, downward, leftward, and rightward searches\n";
     assert(false);
   }
 
   // do beam searches to look for covered blobs
   // TO consider: For increased efficiency do fewer searches (come up with reasonable empirical
   //       way of dividing the current blob so enough searches are done but it isn't excessive
-  for(int i = 0; i < range; i++) {
-    BLOBINFO* n = NULL;
-    if(dir == RIGHT) {
-      bigs.StartSideSearch(blob->right() + 1, blob->bottom()+i, blob->bottom()+i+1);
-      n = bigs.NextSideSearch(false); // this starts with the current blob
+  for(int i = 0; i < range; ++i) {
+    BLOBINFO* n = NULL; // the neighbor
+    if(dir == RIGHT || dir == LEFT) {
+      bigs.StartSideSearch((dir == RIGHT) ? blob_box->right() : blob_box->left(),
+          blob_box->bottom()+i, blob_box->bottom()+i+1);
+      n = bigs.NextSideSearch((dir == RIGHT) ? false : true); // this starts with the current blob
     }
     else {
-      bigs.StartVerticalSearch(blob->left()+i, blob->left()+i+1,
-          (dir == UP) ? blob->top() : blob->bottom());
+      bigs.StartVerticalSearch(blob_box->left()+i, blob_box->left()+i+1,
+          (dir == UP) ? blob_box->top() : blob_box->bottom());
       n = bigs.NextVerticalSearch((dir == UP) ? false : true);
     }
     if(n == NULL)
       continue;
     bool nothing = false;
     BLOBINFO* previous_neighbor_ptr = NULL;
-    while(n->bounding_box() == blob->bounding_box()
-        || ((dir == RIGHT) ? (n->left() <= blob->right())
-            : ((dir == UP) ? n->bottom() <= blob->top()
-                : n->top() >= blob->bottom()))
+    while(n->bounding_box() == *blob_box
+        || ((dir == RIGHT) ? (n->left() <= blob_box->right())
+            : ((dir == LEFT) ? (n->right() >= blob_box->left())
+              : ((dir == UP) ? n->bottom() <= blob_box->top()
+                : n->top() >= blob_box->bottom())))
                   || noncovered_blobs.bool_binary_search(n)) {
-      if(dir == RIGHT)
-        n = bigs.NextSideSearch(false);
+      if(dir == RIGHT || dir == LEFT)
+        n = bigs.NextSideSearch(dir == RIGHT ? false : true);
       else
         n = bigs.NextVerticalSearch(dir == UP ? false : true);
       if(n == NULL) {
@@ -809,7 +835,7 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
     // then add it to the list (in ascending order)
     bool dbgdontcare = false;
     if(!covered_blobs.bool_binary_search(n) && n != blob) {
-      if(isNeighborCovered(n, blob, dir, indbg, dbgdontcare)) {
+      if(isNeighborCovered(n, blob, dir, indbg, dbgdontcare, seg_mode)) {
 #ifdef DBG_COVER_FEATURE
         if(indbg)
           was_added = true;
@@ -857,45 +883,72 @@ int F_Ext1::countCoveredBlobs(BLOBINFO* blob, Direction dir) {
 #endif
   }
 #endif
+  if(dir == UP)
+    blob->uvabc_blobs = covered_blobs;
+  else if(dir == DOWN)
+    blob->dvabc_blobs = covered_blobs;
+  else if(dir == RIGHT)
+    blob->rhabc_blobs = covered_blobs;
+  else if (dir == LEFT)
+    blob->lhabc_blobs = covered_blobs;
+  else
+    assert(false);
   return count;
 }
 
 // TODO: Tried filtering out neighbors that are on "normal rows", try the other way
 bool F_Ext1::isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir,
-    bool indbg, bool& dbgdontcare) {
+    bool indbg, bool& dbgdontcare, bool seg_mode) {
   if(neighbor->onRowNormal())
     return false;
+  TBOX* segbox = blob->merge.segment_box;
+  TBOX bbox = blob->bounding_box();
+  TBOX* blob_box; // this could either be the blob itself or the blob's segmentation depending on
+                  // whether seg_mode is turned off or on respectively.
+  if(!seg_mode) {
+    blob_box = &bbox;
+  }
+  else {
+    assert(segbox != NULL);
+    blob_box = segbox;
+  }
+  assert(blob_box != NULL);
+
   inT16 neighbor_dist;
   inT16 blob_upper;
   inT16 blob_lower;
   inT16 neighbor_center;
+  double dist_thresh_param = (double)2;
+  if(seg_mode)
+    dist_thresh_param = (double)4;
   double dist_threshold;
   double area_thresh;
   double dist_to_size_thresh = (double)2;
-  if(dir == RIGHT) {
-    blob_lower = blob->bottom();
-    blob_upper = blob->top();
-    dist_threshold = blob->height() / 2;
+  if(dir == RIGHT || dir == LEFT) {
+    blob_lower = blob_box->bottom();
+    blob_upper = blob_box->top();
+    dist_threshold = (double)blob_box->height() / (double)2; // TODO: tweak for seg_mode!!!
+    neighbor_dist = (dir == RIGHT) ? neighbor->left() - blob_box->right()
+        : blob_box->left() - neighbor->right();
+    area_thresh = (double)(blob_box->height()) / (double)32;
     neighbor_center = neighbor->centery();
-    neighbor_dist = neighbor->left() - blob->right();
-    area_thresh = (double)(blob->height()) / (double)32;
   }
   else if(dir == UP || dir == DOWN) {
-    blob_lower = blob->left();
-    blob_upper = blob->right();
-    dist_threshold = (double)(blob->width()) / (double)2;
-    area_thresh = (double)(blob->width()) / (double)32;
-    neighbor_center = neighbor->centerx();
+    blob_lower = blob_box->left();
+    blob_upper = blob_box->right();
+    dist_threshold = (double)(blob_box->width()) / dist_thresh_param; // TODO: tweak for seg_mode!!!
     if(dir == UP)
-      neighbor_dist = neighbor->bottom() - blob->top();
+      neighbor_dist = neighbor->bottom() - blob_box->top();
     else
-      neighbor_dist = blob->bottom() - neighbor->top();
+      neighbor_dist = blob_box->bottom() - neighbor->top();
+    area_thresh = (double)(blob_box->width()) / (double)32;
+    neighbor_center = neighbor->centerx();
   }
   else {
     cout << "ERROR: isNeighborCovered only supports RIGHT, UP, and DOWN directions\n";
     assert(false);
   }
-  // it the neighbor covered?
+  // is the neighbor covered?
   if(neighbor_center >= blob_lower && neighbor_center <= blob_upper) {
     // is the neighbor adjacent?
     if(neighbor_dist <= dist_threshold) {
@@ -903,7 +956,7 @@ bool F_Ext1::isNeighborCovered(BLOBINFO* neighbor, BLOBINFO* blob, Direction dir
       if(area > area_thresh) {
         TBOX neighbor_tb = neighbor->bounding_box();
         double blobsize = (neighbor_tb.height() >= neighbor_tb.width())
-            ? neighbor_tb.height() : neighbor_tb.width();
+            ? (double)(neighbor_tb.height()) : (double)(neighbor_tb.width());
         double dist_to_size_ratio = (double)neighbor_dist /
             blobsize;
         if(dist_to_size_ratio < dist_to_size_thresh) {
@@ -1128,6 +1181,8 @@ int F_Ext1::countStacked(BLOBINFO* blob, Direction dir) {
   vsearch.StartVerticalSearch(blob->left(), blob->right(),
       (dir == UP) ? blob->top() : blob->bottom());
   BLOBINFO* central_blob = blob;
+  GenericVector<BLOBINFO*>& stacked_blobs = blob->stacked_blobs;
+  //assert(stacked_blobs.empty());
   BLOBINFO* stacked_blob;
   BLOBINFO* prev_stacked_blob = central_blob;
   stacked_blob = vsearch.NextVerticalSearch((dir == UP) ? false : true);
@@ -1136,7 +1191,8 @@ int F_Ext1::countStacked(BLOBINFO* blob, Direction dir) {
         || ((dir == UP) ? (stacked_blob->bottom() < prev_stacked_blob->top())
             : (stacked_blob->top() > prev_stacked_blob->bottom()))
         || stacked_blob->left() >= prev_stacked_blob->right()
-        || stacked_blob->right() <= prev_stacked_blob->left()) {
+        || stacked_blob->right() <= prev_stacked_blob->left()
+        || stacked_blobs.binary_search(stacked_blob)) {
       stacked_blob = vsearch.NextVerticalSearch((dir == UP) ? false : true);
       if(stacked_blob == NULL)
         break;
@@ -1163,7 +1219,8 @@ int F_Ext1::countStacked(BLOBINFO* blob, Direction dir) {
 #endif
       return count;
     }
-    if(isAdjacent(stacked_blob, prev_stacked_blob, dir, central_blob)) {
+    TBOX central_bb = central_blob->bounding_box();
+    if(isAdjacent(stacked_blob, prev_stacked_blob, dir, false, &central_bb)) {
 #ifdef DBG_STACKED_FEATURE_ALOT
       int dbgall = false;
       if(blob->bounding_box() == box || dbgall) {
@@ -1182,6 +1239,8 @@ int F_Ext1::countStacked(BLOBINFO* blob, Direction dir) {
       ++count;
       prev_stacked_blob = stacked_blob;
       assert(prev_stacked_blob->bounding_box() == stacked_blob->bounding_box());
+      stacked_blobs.push_back(stacked_blob);
+      stacked_blobs.sort();
     }
     else {
 #ifdef DBG_STACKED_FEATURE_ALOT
@@ -1199,17 +1258,21 @@ int F_Ext1::countStacked(BLOBINFO* blob, Direction dir) {
 }
 
 bool F_Ext1::isAdjacent(BLOBINFO* neighbor, BLOBINFO* curblob,
-    Direction dir, BLOBINFO* dimblob) {
+    Direction dir, bool seg_mode, TBOX* dimblob) {
+  TBOX cb_boundbox = curblob->bounding_box();
   if(dimblob == NULL)
-    dimblob = curblob;
-  double cutoff = (double)dimblob->bounding_box().area() / (double)16;
+    dimblob = &cb_boundbox;
+  double cutoff = (double)dimblob->area() / (double)16;
   if((double)(neighbor->bounding_box().area()) < cutoff)
     return false;
   bool vert = (dir == UP || dir == DOWN) ? true : false;
   bool ascending = (vert ? ((dir == UP) ? true : false)
       : ((dir == RIGHT) ? true : false));
   double dist_thresh = (double)(vert ? dimblob->height() : dimblob->width());
-  dist_thresh /= 2;
+  double thresh_param = 2;
+//  if(seg_mode)
+//    thresh_param = 4;
+  dist_thresh /= thresh_param;
   double distop1, distop2; // dist = distop1 - distop2
   if(vert) {
     distop1 = ascending ? (double)neighbor->bottom() : (double)curblob->bottom();
@@ -1219,6 +1282,7 @@ bool F_Ext1::isAdjacent(BLOBINFO* neighbor, BLOBINFO* curblob,
     distop1 = ascending ? (double)neighbor->left() : (double)curblob->left();
     distop2 = ascending ? (double)curblob->right() : (double)neighbor->right();
   }
+  assert(distop1 >= distop2);
   double dist = distop1 - distop2;
   if(dist <= dist_thresh)
     return true;

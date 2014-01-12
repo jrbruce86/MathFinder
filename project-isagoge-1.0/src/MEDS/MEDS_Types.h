@@ -30,15 +30,15 @@
 
 // See Detection.h for details on how the detectors work
 
-typedef MEDS<SVMDetector, Segmentor1> MEDS1;
+typedef MEDS<SVMDetector, Segmentor_1> MEDS1;
 typedef SVMDetector MEDS1Detector;
 
 // the following are slight variations of the MEDS1
-typedef MEDS<SVMDetector1, Segmentor1> MEDS2; // slightly modified detector, same segmentor
+typedef MEDS<SVMDetector1, Segmentor_1> MEDS2; // slightly modified detector, same segmentor
 typedef SVMDetector1 MEDS2Detector; // no valid_word feature
-typedef MEDS<SVMDetector2, Segmentor1> MEDS3; // slightly modified detector, same segmentor
+typedef MEDS<SVMDetector2, Segmentor_1> MEDS3; // slightly modified detector, same segmentor
 typedef SVMDetector2 MEDS3Detector; // no n-grams and no valid_row feature
-typedef MEDS<SVMDetector3, Segmentor1> MEDS4; // slightly modified detector, same segmentor
+typedef MEDS<SVMDetector3, Segmentor_1> MEDS4; // slightly modified detector, same segmentor
 typedef SVMDetector3 MEDS4Detector; // no italics feature
 
 #endif
