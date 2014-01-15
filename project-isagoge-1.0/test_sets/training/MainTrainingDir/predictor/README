@@ -39,4 +39,7 @@ Trained on AdvCalc1 Dataset (in AdvCalc1/ dir):
       TPR: 0.875365 
       TNR: 0.974371 
   4. RBFSVM_F_Ext4
- 
+    Best 10-fold CV Results:         16.5129
+      Optimal C after BOBYQA:        2.66315
+      TPR: 0.897912
+      TNR: 0.974963 

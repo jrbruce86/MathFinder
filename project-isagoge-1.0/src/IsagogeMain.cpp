@@ -40,8 +40,8 @@ using namespace std;
  *************************************************************************/
 //#define MEDS1TEST
 //#define MEDS2TEST
-#define MEDS3TEST
-//#define MEDS4TEST
+//#define MEDS3TEST
+#define MEDS4TEST
 //#define TESSERACT
 
 #ifdef MEDS1TEST
