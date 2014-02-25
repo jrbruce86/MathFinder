@@ -276,16 +276,16 @@ void NGramRanker::writeNGramFiles(const GenericVector<Sentence*>& sentences,
 // TODO: Abstract n-gram detection functionality here away from this function so writing
 //       to the file is optional, not required. For now I'm just always writing to a file
 //       since it makes it easier to debug when debugging is necessary.
-void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sentences,
+void NGramRanker::writeNGramFile(const int& gram, const GenericVector<Sentence*>& sentences,
     const string& path, ofstream* stream) {
   string filename = getNGramFileName(gram);
   string filepath = path + filename;
   stream->open(filepath.c_str(), ios_base::app);
   if(!stream->is_open()) {
     cout << "ERROR: Could not open " << filepath << " for writing!\n";
-    exit(EXIT_FAILURE);
+    assert(false);
   }
-  for(int i = 0; i < sentences.length(); i++) {
+  for(int i = 0; i < sentences.length(); ++i) {
     char* s_txt = sentences[i]->sentence_txt;
     GenericVector<char*> ngram; // holds 1, 2, or 3 strings
     int wrdstart = 0;
@@ -297,10 +297,7 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
                               // is: "boy went to", etc.
     bool word_found = false;
     for(int j = 0; j < strlen(s_txt); ++j) {
-      if(s_txt[j] == '\0') {
-        cout << "ERROR: NULL terminator found before the end of a sentence!\n";
-        exit(EXIT_FAILURE);
-      }
+      assert(s_txt[j] != '\0');
       if(!word_found) { // looking for a word start
         if(s_txt[j] == ' ' || s_txt[j] == '\n')
           continue; // keep looking
@@ -316,9 +313,9 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
           int wrdlen = j - wrdstart; // this excludes the last character (space or newline)
           // include last character if on the last in the string and its not space or newline
           if(j+1 == strlen(s_txt) && s_txt[j] != ' ' && s_txt[j] != '\n')
-            wrdlen++;
+            ++wrdlen;
           char* word = new char[wrdlen + 1]; // +1 for null terminator
-          for(int k = 0; k < wrdlen; k++)
+          for(int k = 0; k < wrdlen; ++k)
             word[k] = s_txt[wrdstart + k];
           word[wrdlen] = '\0';
           ngram.push_back(word);
@@ -326,11 +323,11 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
           if(numgrams == gram) {
             // first check all the words on the n-gram to make sure they are valid
             // and also to convert all uppercase characters to lowercase
-            for(int k = 0; k < numgrams; k++) {
+            for(int k = 0; k < numgrams; ++k) {
               word = ngram[k];
               wrdlen = strlen(word);
               // convert all uppercase letters in the word to lower-case!
-              for(int l = 0; l < wrdlen; l++) {
+              for(int l = 0; l < wrdlen; ++l) {
                 char char_ = word[l];
                 if(isupper((int)char_))
                   word[l] = (char)tolower((int)char_);
@@ -339,16 +336,16 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
               // punctuation/numbers then discard the whole word
               char* original_wrd = Basic_Utils::strCopy(word);
               int chars_removed = 0;
-              for(int l = 0; l < wrdlen; l++) {
-                char char_ = original_wrd[l];
-                if(isalpha((int)char_) == 0) {
-                  if(!(wrdlen == 1 && gram == 1 && (Basic_Utils::stringCompare(word, "=")
-                  || Basic_Utils::stringCompare(word, "+")
-                  || Basic_Utils::stringCompare(word, "-")
-                  || Basic_Utils::stringCompare(word, "*")
-                  || Basic_Utils::stringCompare(word, "/")))) {
+              if(!(wrdlen == 1 && gram == 1 && (Basic_Utils::stringCompare(word, "=")
+              || Basic_Utils::stringCompare(word, "+")
+              || Basic_Utils::stringCompare(word, "-")
+              || Basic_Utils::stringCompare(word, "*")
+              || Basic_Utils::stringCompare(word, "/")))) {
+                for(int l = 0; l < wrdlen; ++l) {
+                  char char_ = original_wrd[l];
+                  if(isalpha((int)char_) == 0) {
                     word = Basic_Utils::strRemoveChar(word, l - chars_removed);
-                    chars_removed++;
+                    ++chars_removed;
                   }
                 }
               }
@@ -369,7 +366,7 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
             }
             // make sure the ngram is still valid (invalid words would have been discarded)
             bool ngram_ok = true;
-            for(int k = 0; k < numgrams; k++) {
+            for(int k = 0; k < numgrams; ++k) {
               if(ngram[k] == NULL) {
                 ngram_ok = false;
                 break;
@@ -377,24 +374,25 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
             }
             // ready to write the n-gram to the file (assuming it is valid)
             if(ngram_ok) {
-              for(int k = 0; k < ngram.length(); k++)
+              for(int k = 0; k < ngram.length(); ++k)
                 *stream << ngram[k]
                         << ((k+1) != ngram.length() ? " " : "\n");
             }
-            for(int k = 0; k < ngram.length(); k++) {
+            for(int k = 0; k < ngram.length(); ++k) {
               char* w = ngram[k];
               Basic_Utils::destroyStr(w);
             }
             ngram.clear();
-            if(ngram_next_index > 0)
+            if(gram != 1) {
+              assert(ngram_next_index > 0);
               j = ngram_next_index; // go back to start of next ngram
-                                    // (if we're doing unigrams this isn't applicable)
+            }
           }
           else if(numgrams == 1)
             ngram_next_index = j; // will go back to this once ngram is done
           else if(numgrams > gram) {
             cout << "ERROR: Too many words were written to an n-gram!\n";
-            exit(EXIT_FAILURE);
+            assert(false);
           }
           word_found = false;
         }
@@ -402,7 +400,7 @@ void NGramRanker::writeNGramFile(int gram, const GenericVector<Sentence*>& sente
     }
     // get rid of any left overs (i.e. if sentence ended while looking for more
     // words for the n-gram which just get rid of the remainder).
-    for(int j = 0; j < ngram.length(); j++) {
+    for(int j = 0; j < ngram.length(); ++j) {
       char* w = ngram[j];
       delete [] w;
       w = NULL;

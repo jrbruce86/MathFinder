@@ -776,9 +776,13 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
   assert(p+n == hypmetrics.total_fg_pix);
   double accuracy = ((double)tp+(double)tn)/((double)p+(double)n);
   hypmetrics.accuracy = accuracy;
+
+  // draw the segmentations onto the tracker image
+  trackerDrawSegmentations();
+
 #ifdef SHOW_HYP_TRACKER_FINAL
   string final_tracker_im = tracker_dir + (string)"hyp_tracker_final.png";
-  cout << "Displaying the final hypothesis tracker image and saving it to "
+  cout << "Displaying the final hypothesis tracker image and/or saving it to "
        << final_tracker_im << endl;
   pixWrite(final_tracker_im.c_str(), hyp_tracker, IFF_PNG);
 #ifdef DISPLAY_ON
@@ -981,6 +985,14 @@ void BipartiteGraph::countAndTrackPixel(l_int32 x, l_int32 y, int& count,
   }
   else
     ++duplicate_cnt;
+}
+
+void BipartiteGraph::trackerDrawSegmentations() {
+  // simply draws the bounding boxes of the hypothesis vertices in white
+  for(int i = 0; i < Hypothesis.size(); ++i) {
+    const Vertex& vert = Hypothesis[i];
+    Lept_Utils::drawBox(hyp_tracker, vert.rect, LayoutEval::WHITE, 7);
+  }
 }
 
 void BipartiteGraph::getGroundTruthMetrics() {

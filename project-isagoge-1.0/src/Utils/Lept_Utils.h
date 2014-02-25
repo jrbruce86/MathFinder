@@ -80,7 +80,7 @@ public:
   static inline void drawAtXY(PIX* im, int x, int y, LayoutEval::Color color, int thickness=5) {
     if(thickness < 1) {
       cout << "ERROR: Cannot draw a point less than 1 pixel thick >:-(\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     if(!(thickness % 2))
       ++thickness; // needs to be odd
@@ -95,6 +95,30 @@ public:
         setPixelRGB(im, curpix, j, i, color);
       }
     }
+  }
+
+  // draws horizontal line on the given image with provided color and thickness
+  static inline void drawHLine(PIX* im, int x1, int x2, int y, LayoutEval::Color color, int thickness) {
+    for(int i = x1; i <= x2; ++i)
+      drawAtXY(im, i, y, color, thickness);
+  }
+
+  // draws vertical line on the given image with provided color and thickness
+  static inline void drawVLine(PIX* im, int y1, int y2, int x, LayoutEval::Color color, int thickness) {
+    for(int i = y1; i <= y2; ++i)
+      drawAtXY(im, x, i, color, thickness);
+  }
+
+  // draws the box on the image with the provided color and thickness
+  static inline void drawBox(PIX* im, BOX* box, LayoutEval::Color color, int thickness) {
+    const int left = box->x;
+    const int right = left + box->w;
+    const int top = box->y;
+    const int bottom = top + box->h;
+    drawHLine(im, left, right, top, color, thickness);
+    drawVLine(im, top, bottom, right, color, thickness);
+    drawHLine(im, left, right, bottom, color, thickness);
+    drawVLine(im, top, bottom, left, color, thickness);
   }
 
   static int colorPixCount(PIX* im, LayoutEval::Color color);

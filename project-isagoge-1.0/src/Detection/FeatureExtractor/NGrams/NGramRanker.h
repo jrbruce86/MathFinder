@@ -141,7 +141,7 @@ class NGramRanker {
  private:
   // writes just one ngram file (either uni, bi, or tri depending
   // on first argument
-  void writeNGramFile(int gram, const GenericVector<Sentence*>& sentences,
+  void writeNGramFile(const int& gram, const GenericVector<Sentence*>& sentences,
       const string& path, ofstream* stream);
 
   // returns true if gram == 1 (unigram) and the word is a

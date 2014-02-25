@@ -364,7 +364,10 @@ private:
   static void countAndTrackPixel(l_int32 x, l_int32 y, int& count, PIX* tracker,
       LayoutEval::Color colorcode, int& duplicate_cnt);
 
-
+  // draws the bounding boxes for segmentations in white on the tracker image
+  // so that the segmentation results are viewable along with the pixel accurate
+  // evaluation results.
+  void trackerDrawSegmentations();
 
   string type; // the type of rectangle to look for in the txt file
   LayoutEval::Color color; // the color associated with the type
