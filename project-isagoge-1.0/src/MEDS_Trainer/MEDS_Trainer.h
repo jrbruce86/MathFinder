@@ -62,7 +62,8 @@ class MEDS_Trainer {
   //                      otherwise only gets samples if file hasn't already
   //                      been written. If not doing training this argument
   //                      has no effect.
-  // 5. ext (optional) - The extension expected for all document images
+  // 5. api_init_params - Parameters specifying how Tesseract will be initialized for training purposes.
+  // 6. ext (optional)  - The extension expected for all document images
   //                     (.png by default)
   MEDS_Trainer(bool always_train_, const string& detector_path, string training_set_,
       bool get_new_samples_, vector<string> api_init_params_,
@@ -162,8 +163,8 @@ class MEDS_Trainer {
     // do training only if necessary (i.e. if always_train is turned on
     // or it's not turned on and there is no trained predictor available
     // in the predictor_path)
-    //   this should determine the full predictor path as well as where the samples
-    //   are stored for the given classifier
+    // this should determine the full predictor path as well as where the samples
+    // are stored for the given classifier
     detector->initClassifier(predictor_path, sample_path);
     predictor_path = detector->getPredictorPath(); // change it to the full path
     sample_path = detector->getSamplePath();

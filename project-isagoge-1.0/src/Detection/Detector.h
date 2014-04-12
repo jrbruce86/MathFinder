@@ -11,7 +11,7 @@
  *              is to get as many true positives as possible while avoiding
  *              false positives to the greatest extent possible. It is considered
  *              better to have a false negative than a false positive in
- *              general at this stage, since it is much easier to correct the
+ *              general at this stage, since it is much more difficult to correct the
  *              latter during segmentation.
  *
  *              This module is designed to cover both the training and 

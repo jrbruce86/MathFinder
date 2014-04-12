@@ -50,7 +50,7 @@
 // training and prediction (See thesis for more details on each feature):
 //   1.  Rightward horizontally adjacent blobs covered (rhabc)
 //   2.  Upward vertically adjacent blobs covered (uvabc)
-//   3.  Downard vertically adjacent blobs covered (dvabc)
+//   3.  Downward vertically adjacent blobs covered (dvabc)
 //   4.  Number of completely nested characters (cn)
 //   5.  Has a superscript
 //   6.  Has a subscript

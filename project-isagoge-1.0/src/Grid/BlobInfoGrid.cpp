@@ -218,6 +218,7 @@ void BlobInfoGrid::recognizePage() {
   // from the api before this class's destruction to avoid dangling pointer issues!
   // run the language-specific OCR on the entire page
   api->Init(tess->datadir.string(), tess->lang.string());
+
   // need to tell it to save the blob choices so I have access
   api->SetVariable("save_blob_choices", "true");
   api->SetImage(img);

@@ -41,8 +41,8 @@ using namespace std;
 //#define MEDS1TEST
 //#define MEDS2TEST
 //#define MEDS3TEST
-//#define MEDS4TEST
-#define TESSERACT
+#define MEDS4TEST
+//#define TESSERACT
 
 #ifdef MEDS1TEST
 typedef MEDS1 MEDSType;
@@ -202,14 +202,85 @@ getDatasetAverages(const vector<vector<vector<HypothesisMetrics> > >&);
 // for each result type that was evaluated.
 vector<DatasetMetrics> getFullAverage(const vector<vector<DatasetMetrics> >&);
 
-// Runs evaluation test on the given detector for the given dataset
-// which should be within the "topdir" specified (if detector is null
-// then uses Tesseract's default one. The testname is the name of
-// the test to be run on the dataset and the name of directory
-// wherein the test results will be held (this name should be indicative
-// of which equation detector is being used). if the bool argument, type_eval
-// is turned off then only math/non-math is evaluated, if it is turned on then
-// displayed, embedded, and labels are evaluated seperately.
+// evaluateDataSets():
+// Runs evaluation test on the given detector for the given datasets.
+// Arguments:
+// 1. detector  -> This is the Mathematical Expression Detection and Segmentation (MEDS) module
+//                 being evaluated.
+// 2. topdir    -> This is the root of the directory structure used for training and evaluation.
+//                 It contains the following directories at the top level: "input/", "groundtruth/",
+//                 "output/", and "training/". More details on the directory structure can be found
+//                 below.
+// 3. datasets  -> The names associated with the datasets the MEDS module is being evaluated on.
+//                 Each dataset contains a finite number of document images which are fed into the
+//                 MEDS system to produce final detection and segmentation results. These results are
+//                 then evaluated for accuracy.
+// 4. train_set -> A name which describes the images used to train the MEDS system being evaluated.
+//                 This distinguishes results from otherwise similar MEDS detector/segmentation
+//                 combinations who only differ in terms of which images were used to train them.
+// 5. testname  -> This is the name of the detector/segmentor combination (i.e. MEDS module) being
+//                 evaluated.
+// 6. type_eval -> A flag which specifies whether or not specific zones are going to be evaluated. If
+//                 this flag is turned on then specific math zones like displayed expressions, embedded
+//                 expressions, and expression labels will all be evaluated seperately. Thus the
+//                 evaluator would be run multiple times on each image to test the results for each
+//                 individual zone type. If this flag is turned off then the evaluator is run just once
+//                 on each image to evaluate the accuracy of detection and segmentation for all math
+//                 zones. Thus if an embedded expression was mislabeled as a displayed one then the
+//                 evaluator with the type_eval flag turned off will count it as correct whereas an
+//                 evaluator with the flag turned on will see the region as incorrect.
+// 7. extension -> All images being fed as input to the MEDS module being evaluated must have this
+//                 extension.
+// The file structure is highly functional albeit a bit convoluted. I'll illustrate it here (the
+// ellipsis is used here to indicate a finite continuance of the pattern that can be found on a
+// directory's left sibling at the given hierarchy level of the directory structure):
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//                                                                   topdir/
+//                   __________________________________________________|______________________________________________________________
+//                  /                                                  |                                                              \
+//             groundtruth/                                          input/                                                         output
+//     _____________|____________________________________           ___|_______            ____________________________________________|__________________________________
+//    /                                      |           \         /           \          /                                                                     |         \
+// datasets[0]/                           datasets[1]/   ...   datasets[0]/   ...     train_set[0]                                                        train_set[1]    ...
+//     |______________________               |                     |__________            |_________________________________________________________            |
+//    /                       \             ...                   /      |    \          /                                                  |       \          ...
+// colorblobs/           datasets[0].dat                        1.png  2.png  ...     datasets[0]                                      datasets[1]  ...
+// 1.png 2.png 3.png ...                                                                |___________________________________                |
+//                                                                                     /                         |          \              ...
+//                                                                                 testname[0]               testname[1]    ...
+//                                                                                    |_____________             |
+//                                                                                   /              \           ...
+//                                                                              allresults      mathresults
+//                                                                               |_______        ____|_______________________________
+//                                                                              /        \      /        |        |      |      |    \
+//                                                                            1.png/     ...   all/     1.png  1.rect  2.png 2.rect  ...
+//                                                                             |                |__________________________________________________________________
+//                                                                      (contents vary)        /                                    |           |          |       \
+//                                                                                            dbg/                               verbose/   1_metrics  2_metrics   ...
+//                                                                                             |______________________             /
+//                                                                                            /                |      \           |______________________________________
+//                                                                                           1/                2/     ...        /                       |               \
+//                                                                                           |                 |              1_metrics_verbose   2_metrics_verbose     ...
+//                                                                                    hyp_tracker_final.png   ...
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// *** colorblobs/ subdirectory in groundtruth/ contains the dataset images with the foreground pixels
+//     colored based on the correct document zone types as indicated by the corresponding .dat file
+// *** The hyp_tracker_final.png files give color coded representations of evaluation results: white
+//     rectangles show segmentation results and pixels are colored differently based on whether they
+//     are true positive, false positive, true negative, or false negative.
+// *** The #.rect files in the mathresults/ directory are text files where the segmentation results of
+//     the MEDS module for numbered images are stored. The #.png images are the input images with the
+//     pixels colored based on the segmentation results found in the corresponding #.rect file. Note that
+//     these have nothing to do with evaluation, this is simply where the MEDS results are stored. These
+//     results are what end up being evaluated. Evaluation results for the illustration above go into the
+//     all/ directory as described next.
+// *** The all/ subdirectory within the mathresults/ directory represents the type of document zone being
+//     evaluated. In the above illustration the type is "all" because all of the math zones are being
+//     evaluated together (i.e. the MEDS module is only being tested for its accuracy of discriminating
+//     math from non-math). This represents the case when the type_eval flag is false. If the type_eval
+//     flag were to be true then the all/ subdirectory would be replaced by the following three
+//     subdirectories for the zones to be evaluated: displayed/, embedded/, label/. See the code at the
+//     bottom of evalTessLayout() in DocumentLayoutTest.h for where this is implemented.
 vector<vector<vector<HypothesisMetrics> > >
 evaluateDataSets(EquationDetectBase*& detector, string topdir,
     vector<string> datasets, string train_set, string testname, bool type_eval=true,
@@ -217,8 +288,10 @@ evaluateDataSets(EquationDetectBase*& detector, string topdir,
 
 // prints the metrics for each result type of each image of each dataset
 void printAllMetrics(const vector<vector<vector<HypothesisMetrics> > >&);
+
 // prints the average metrics for each result type of each dataset
 void printAvgMetrics(const vector<vector<DatasetMetrics> >&);
+
 // prints the average for each result type over all the datasets
 void printOverallAvg(const vector<DatasetMetrics>&);
 

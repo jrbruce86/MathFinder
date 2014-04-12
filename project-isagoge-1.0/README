@@ -11,4 +11,15 @@ files.
 
 Before running ./configure, first run ./autogen.sh. 
 
+Tesseract won't be able to find the language information (stored in the
+tessdata/ directory) unless you either place tessdata/ in /usr/local/share/
+directory or if you put it in any other directory but make the environmental
+variable TESSDATA_PREFIX point to it. The tessdata/ directory should contain
+the language information that can be found at
+https://code.google.com/p/tesseract-ocr/downloads/list. This work has only been tested on English currently but could also be tested on other languages potentially.
+
+To use the scrollview for debugging you need to run make in the Tesseract 
+java directory and also set the SCROLLVIEW_PATH environment variable to
+point to the path of that directory. 
+
 See INSTALL for further build instructions

@@ -74,7 +74,8 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   * This is designed to be used for a single evaluation only.
   * Comparing the results of two tests involves passing in
   * results of the two corresponding instantiations of this
-  * class into the comparison algorithm.
+  * class into some sort of comparison algorithm (or just visual
+  * comparison of the results at the very least).
   **********************************************************/
   DocumentLayoutTester(EquationDetectBase* equ_detect) : layoutruns(0) {
     // set the equation detector (or just stick to the default)
@@ -273,7 +274,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   * Run either the modified version of Tesseract (I am overriding the equation
   * detection module in order to improve it) or the default version on all of
   * the images that are in the [topdir]/input/[subdir]/ and put the results in
-  * [topdir]/output/[subdir]/[output_results_subdir_]/. The
+  * [topdir]/output/[train_set]/[subdir]/[output_results_subdir_]/. The
   * output_results_subdir_ is specified as an argument to this method.
   * The method can be run any number of times so that multiple modified versions
   * of Tesseract may be tested, however the same name cannot be used for the
@@ -294,7 +295,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
           cout << "ERROR: Duplicate test output directory detected.\n"
               << "       Cannot use the same output directory name without\n"
               << "       overriding previous results!\n";
-          exit(EXIT_FAILURE);
+          assert(false);
         }
       }
       output_result_dirs.push_back(out_res_dir);
@@ -302,7 +303,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
       exec((string)"mkdir " + out_res_dir); // make anew
     }
     // all_results_dir is located at
-    // [topdir]/output/[subdir]/[out_res_subdir]
+    // [topdir]/output/[train_set]/[subdir]/[out_res_subdir]
     // allresults dir holds all images output by the layout analysis
     // module, even ones which may not be relevant
     string all_results_dir = out_res_dir + (string)"allresults/";
@@ -348,7 +349,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
       }
     }
     // mathresdir is
-    // [topdir]/output/[subdir]/[out_res_subdir]/math_results/
+    // [topdir]/output/[train_set]/[subdir]/[out_res_subdir]/math_results/
     string mathresdir = out_res_dir + (string)"math_results/";
  //   if(!layout_alreadydone) {
       exec((string)"mkdir " + mathresdir); // make if not already made
@@ -458,7 +459,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
             << " be done in advance on all " << numfiles << " of the "
             << "input files for the current test. Layout analysis has been done "
             << "for " << layoutruns << " of them.\n";
-        exit(EXIT_FAILURE);
+        assert(false);
       }
     }
     // make sure the groundtruth is ready by making sure there is a
@@ -476,7 +477,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
       if(!existsFile(groundtruthtxt)) {
         cout << "ERROR: a file ending with the .dat extension is required in "
              << groundtruthdir << endl;
-        exit(EXIT_FAILURE);
+        assert(false);
       }
     }
     if(!groundtruthready) {
@@ -488,7 +489,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
       if(answer[0] == 'n') {
         cout << "Cannot continue evaluation without preparing the "
              << "Groundtruth images. Exiting now!\n";
-        exit(EXIT_FAILURE);
+        assert(false);
       }
       else {
         cout << "Preparing the Groundtruth images...\n";
@@ -509,7 +510,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
     const string hypboxfile = evaldir + (string)"Rectangles.dat";
     if(!existsDirectory(evaldir)) {
       cout << "ERROR: The directory, " + evaldir << ", doesn't exist!\n";
-      exit(EXIT_FAILURE);
+      assert(false);
     }
     bool readyfortest = true;
     string tmp;
@@ -538,7 +539,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
           ifstream s(curboxfile.c_str());
           if(!s.is_open()) {
             cout << "ERROR: Could not open boxfile " << curboxfile << endl;
-            exit(EXIT_FAILURE);
+            assert(false);
           }
           int maxlen = 100;
           char ln[maxlen];
@@ -684,7 +685,7 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
         color = LayoutEval::GREEN;
       else {
         cout << "ERROR: Rectangle of unknown type in GroundTruth.dat!\n";
-        exit(EXIT_FAILURE);
+        assert(false);
       }
       fillBoxForeground(curimg, box, color);
       boxDestroy(&box);
@@ -1656,15 +1657,17 @@ class DocumentLayoutTester : public Lept_Utils, TessBaseAPI {
   string train_set; // this is the name of the training data that was used to train the predictor being evaluated
   vector<string> output_result_dirs; // this is the name of the full
                                // path to the current test results
-                               // [topdir]/output/[subdir]/[test]. The [subdir]
+                               // [topdir]/output/[train_set]/[subdir]/[test]. The [train_set]
+                               // specifies what training images the detector to be evaluated
+                               // was trained with. The [subdir]
                                // specifies what data the test is being on run
                                // (multiple tests can be run on the same data)
-                               // and the [test] dir specifies the specific test
-                               // currently being run. The same test can be run
+                               // and the [test] dir specifies the specific MEDS module
+                               // currently being run and evaluated. The same test can be run
                                // on multiple datasets in which case the results
-                               // for each test will occur in the [test] directory
-                               // inside multiple [subdir] directories corresponding
-                               // to each test. This list is kept to ensure that a
+                               // for a test will occur in the [test] directory
+                               // inside a different [subdir] directory corresponding
+                               // to the different dataset. This list is kept to ensure that a
                                // result dir is not overwritten during a single test
                                // run which may include tests on multiple datasets.
   int numfiles; // this is the number of files in the [topdir]/input/[subdir]/
