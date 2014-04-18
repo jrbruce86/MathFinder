@@ -160,36 +160,36 @@ struct DatasetMetrics {
     avg_false_regions /= denom;
   }
 
-  inline void printMetrics(const int& numspaces) const {
+  inline void printMetrics(const int& numspaces, ofstream& fout) const {
     const int typenamespaces = numspaces;
     const int metricspaces = numspaces + 2;
-    printSpaces(typenamespaces); cout << "Result Type: " << res_type_name << endl;
-    printSpaces(metricspaces); cout << "TPR: " << TPR << endl;
-    printSpaces(metricspaces); cout << "FPR: " << FPR << endl;
-    printSpaces(metricspaces); cout << "ACC: " << ACC << endl;
-    printSpaces(metricspaces); cout << "TNR: " << TNR << endl;
-    printSpaces(metricspaces); cout << "PPV: " << PPV << endl;
-    printSpaces(metricspaces); cout << "FDR: " << FDR << endl;
-    printSpaces(metricspaces); cout << "NPV: " << NPV << endl;
-    printSpaces(metricspaces);
-    cout << "Average Oversegmentations: " << avg_overseg << endl;
-    printSpaces(metricspaces);
-    cout << "Average Oversegmentation Severity: " << overseg_severity << endl;
-    printSpaces(metricspaces);
-    cout << "Average Undersegmentations: " << avg_underseg << endl;
-    printSpaces(metricspaces);
-    cout << "Average Undersegmentation Severity: " << underseg_severity << endl;
-    printSpaces(metricspaces);
-    cout << "Average Correctly Segmented Ratio: " << avg_correct_ratio << endl;
-    printSpaces(metricspaces);
-    cout << "Average Completely Missed Region Ratio: " << avg_missed_ratio << endl;
-    printSpaces(metricspaces);
-    cout << "Average Falsely Detected Region Count: " << avg_false_regions << endl;
+    printSpaces(typenamespaces, fout); fout << "Result Type: " << res_type_name << endl;
+    printSpaces(metricspaces, fout); fout << "TPR: " << TPR << endl;
+    printSpaces(metricspaces, fout); fout << "FPR: " << FPR << endl;
+    printSpaces(metricspaces, fout); fout << "ACC: " << ACC << endl;
+    printSpaces(metricspaces, fout); fout << "TNR: " << TNR << endl;
+    printSpaces(metricspaces, fout); fout << "PPV: " << PPV << endl;
+    printSpaces(metricspaces, fout); fout << "FDR: " << FDR << endl;
+    printSpaces(metricspaces, fout); fout << "NPV: " << NPV << endl;
+    printSpaces(metricspaces, fout);
+    fout << "Average Oversegmentations: " << avg_overseg << endl;
+    printSpaces(metricspaces, fout);
+    fout << "Average Oversegmentation Severity: " << overseg_severity << endl;
+    printSpaces(metricspaces, fout);
+    fout << "Average Undersegmentations: " << avg_underseg << endl;
+    printSpaces(metricspaces, fout);
+    fout << "Average Undersegmentation Severity: " << underseg_severity << endl;
+    printSpaces(metricspaces, fout);
+    fout << "Average Correctly Segmented Ratio: " << avg_correct_ratio << endl;
+    printSpaces(metricspaces, fout);
+    fout << "Average Completely Missed Region Ratio: " << avg_missed_ratio << endl;
+    printSpaces(metricspaces, fout);
+    fout << "Average Falsely Detected Region Count: " << avg_false_regions << endl;
   }
 
-  inline void printSpaces(const int& numspaces) const {
+  inline void printSpaces(const int& numspaces, ofstream& fout) const {
     for(int i = 0; i < numspaces; ++i)
-      cout << " ";
+      fout << " ";
   }
 };
 // takes the results for all images in all the datasets, computes the average for each dataset.
@@ -287,13 +287,13 @@ evaluateDataSets(EquationDetectBase*& detector, string topdir,
     string extension=(string)".png");
 
 // prints the metrics for each result type of each image of each dataset
-void printAllMetrics(const vector<vector<vector<HypothesisMetrics> > >&);
+void printAllMetrics(const vector<vector<vector<HypothesisMetrics> > >&, ofstream&);
 
 // prints the average metrics for each result type of each dataset
-void printAvgMetrics(const vector<vector<DatasetMetrics> >&);
+void printAvgMetrics(const vector<vector<DatasetMetrics> >&, ofstream&);
 
 // prints the average for each result type over all the datasets
-void printOverallAvg(const vector<DatasetMetrics>&);
+void printOverallAvg(const vector<DatasetMetrics>&, ofstream&);
 
 int main() {
   string topdir = "../test_sets/";
@@ -337,28 +337,46 @@ int main() {
     string dataset_ = dataset + intToString(i+1);
     datasets.push_back(dataset_);
   }
+
 #ifndef TESSERACT
   int testnum_ = MEDSNUM;
-  string testnum = intToString(testnum_);
+  string testname = "myMEDS" + intToString(testnum_);
+#endif
+#ifdef TESSERACT
+  string testname = "default";
 #endif
   cout << "About to run evaluation.\n";
   vector<vector<vector<HypothesisMetrics> > > all_dataset_metrics =
-      evaluateDataSets(meds, topdir, datasets, train_set,
-#ifdef TESSERACT
-          "default",
-#endif
-#ifndef TESSERACT
-          "myMEDS" + testnum,
-#endif
+      evaluateDataSets(meds, topdir, datasets, train_set, testname,
           false);
   vector<vector<DatasetMetrics> > avg_dataset_metrics = getDatasetAverages(all_dataset_metrics);
   vector<DatasetMetrics> overall_averages = getFullAverage(avg_dataset_metrics);
 
-  printAllMetrics(all_dataset_metrics);
-  cout << "-----------------------------------------\n";
-  printAvgMetrics(avg_dataset_metrics);
-  cout << "-----------------------------------------\n";
-  printOverallAvg(overall_averages);
+  // print all the metrics to a file in the final_results/ dir
+  string final_res_dir = topdir + "../final_results/";
+  exec("mkdir " + final_res_dir);
+  final_res_dir += (testname + "/");
+  exec("rm -r " + final_res_dir); // make anew
+  exec("mkdir " + final_res_dir);
+  string final_res_file = final_res_dir + "metrics";
+  ofstream metric_stream(final_res_file.c_str());
+  printAllMetrics(all_dataset_metrics, metric_stream);
+  metric_stream << "-----------------------------------------\n";
+  printAvgMetrics(avg_dataset_metrics, metric_stream);
+  metric_stream << "-----------------------------------------\n";
+  printOverallAvg(overall_averages, metric_stream);
+  cout << "Final metrics were printed to " << final_res_file << endl;
+
+  // Grab all of the pixel tracker images from the evaluation and then move
+  // them to the same directory where the metric file is stored
+  string test_set_dir = topdir + "output/" + train_set + "/";
+  string script = test_set_dir + "grab_dbg_imgs"; // path to bash script which grabs the images
+  exec("cp " + script + " ."); // move a copy to the current directory
+  exec("chmod +x grab_dbg_imgs");
+  exec("./grab_dbg_imgs " + testname + " " + intToString(DATASET_SIZE) + " " + test_set_dir, true);
+  exec("rm grab_dbg_imgs");
+  exec("mv *.png " + final_res_dir);
+  cout << "The pixel tracking images from evaluation were placed in " << final_res_dir << endl;
   return 0;
 }
 
@@ -377,9 +395,9 @@ vector<vector<vector<HypothesisMetrics> > > evaluateDataSets(EquationDetectBase*
   for(int i = 0; i < datasets.size(); ++i) {
     string dataset = datasets[i];
     test.setFileStructure(topdir, dataset, train_set, extension);
-    test.runTessLayout(testname, false);
+    test.runTessLayout(testname);
     vector<vector<HypothesisMetrics> > dataset_metrics =
-        test.evalTessLayout(testname, false);
+        test.evalTessLayout(testname);
     all_dataset_metrics.push_back(dataset_metrics);
   }
   // return the metrics for each dataset
@@ -459,45 +477,57 @@ vector<DatasetMetrics> getFullAverage(const vector<vector<DatasetMetrics> >& all
   return full_average;
 }
 
-void printAllMetrics(const vector<vector<vector<HypothesisMetrics> > >& allmetrics) {
+void printAllMetrics(const vector<vector<vector<HypothesisMetrics> > >& allmetrics,
+    ofstream& fout) {
   for(int i = 0; i < allmetrics.size(); ++i) {
     const vector<vector<HypothesisMetrics> >& dataset_metrics = allmetrics[i];
-    cout << "Metrics for dataset " << i << ":\n";
+    fout << "Metrics for dataset " << i << ":\n";
     for(int j = 0; j < dataset_metrics.size(); ++j) {
-      cout << "  Page " << j << ":\n";
+      fout << "  Page " << j << ":\n";
       const vector<HypothesisMetrics>& page_metrics = dataset_metrics[j];
       for(int k = 0; k < page_metrics.size(); ++k) {
         const HypothesisMetrics& page_type_metrics = page_metrics[k];
-        cout << "    Result type '" << page_type_metrics.res_type_name << "' metrics:\n";
-        cout << "      TPR: " << page_type_metrics.total_recall << endl;
-        cout << "      FPR: " << page_type_metrics.total_fallout << endl;
-        cout << "      ACC: " << page_type_metrics.accuracy << endl;
-        cout << "      TNR: " << page_type_metrics.specificity << endl;
-        cout << "      PPV: " << page_type_metrics.total_precision << endl;
-        cout << "      FDR: " << page_type_metrics.total_fdr << endl;
-        cout << "      NPV: " << page_type_metrics.negative_predictive_val << endl;
-        // TODO: Add oversegmentation/undersegmentation metrics
+        fout << "    Result type '" << page_type_metrics.res_type_name << "' metrics:\n";
+        fout << "      TPR: " << page_type_metrics.total_recall << endl;
+        fout << "      FPR: " << page_type_metrics.total_fallout << endl;
+        fout << "      ACC: " << page_type_metrics.accuracy << endl;
+        fout << "      TNR: " << page_type_metrics.specificity << endl;
+        fout << "      PPV: " << page_type_metrics.total_precision << endl;
+        fout << "      FDR: " << page_type_metrics.total_fdr << endl;
+        fout << "      NPV: " << page_type_metrics.negative_predictive_val << endl;
+        fout << "      Oversegmentations: " << page_type_metrics.oversegmentedcomponents << endl;
+        fout << "      Oversegmentation Severity: " << page_type_metrics.avg_oversegmentations_perbox << endl;
+        fout << "      Undersegmentations: " << page_type_metrics.undersegmentedcomponents << endl;
+        fout << "      Undersegmentation Severity: " << page_type_metrics.avg_undersegmentations_perbox << endl;
+        fout << "      Correctly Segmented Ratio: "
+             << ((double)(page_type_metrics.correctsegmentations)
+                 / (double)(page_type_metrics.total_gt_regions)) << endl;
+        fout << "      Completely Missed Region Ratio: "
+             << ((double)page_type_metrics.falsenegatives
+                 / (double)(page_type_metrics.total_gt_regions)) << endl;
+        fout << "      Falsely Detected Region Count: " << page_type_metrics.falsepositives << endl;
       }
     }
   }
 }
 
-void printAvgMetrics(const vector<vector<DatasetMetrics> >& average_metrics) {
+void printAvgMetrics(const vector<vector<DatasetMetrics> >& average_metrics,
+    ofstream& fout) {
   for(int i = 0; i < average_metrics.size(); ++i) {
     const vector<DatasetMetrics>& average_dataset_metrics = average_metrics[i];
-    cout << "Average Metrics for Dataset " << i << ":\n";
+    fout << "Average Metrics for Dataset " << i << ":\n";
     for(int j = 0; j < average_dataset_metrics.size(); ++j) {
       const DatasetMetrics& average_dataset_type_metrics = average_dataset_metrics[j];
-      average_dataset_type_metrics.printMetrics(2);
+      average_dataset_type_metrics.printMetrics(2, fout);
     }
   }
 }
 
-void printOverallAvg(const vector<DatasetMetrics>& overall_avg) {
+void printOverallAvg(const vector<DatasetMetrics>& overall_avg, ofstream& fout) {
   const int num_res_types = overall_avg.size();
-  cout << "The overall averages for all datasets evaluated:\n";
+  fout << "The overall averages for all datasets evaluated:\n";
   for(int i = 0; i < num_res_types; ++i) {
     const DatasetMetrics& res_type_avg = overall_avg[i];
-    res_type_avg.printMetrics(2);
+    res_type_avg.printMetrics(2, fout);
   }
 }

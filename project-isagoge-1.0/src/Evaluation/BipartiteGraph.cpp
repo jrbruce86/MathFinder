@@ -42,8 +42,9 @@ using namespace Basic_Utils;
 //#define SHOW_HYP_VERTICES
 //#define SHOW_VERTICES
 //#define SHOW_TRUE_NEGATIVES
+//#define SHOW_CORRECT_SEGMENTATIONS
 // saves the tracker to a file, optionally displays as well if DISPLAY_ON is turned on
-#define SHOW_HYP_TRACKER_FINAL
+//#define SHOW_HYP_TRACKER_FINAL
 //#define DISPLAY_ON
 
 #define DBG_MISSING_GT_SEG
@@ -368,10 +369,11 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
   // hypothesis set so we can make the precision and false discovery
   // rate calculations later
   int hyp_positive_fg_pix_tmp = 0;
-  for(vector<Vertex>::iterator hyp_it = Hypothesis.begin(); \
+  for(vector<Vertex>::iterator hyp_it = Hypothesis.begin();
       hyp_it != Hypothesis.end(); hyp_it++)
     hyp_positive_fg_pix_tmp += hyp_it->pix_foreground;
   const int hyp_positive_fg_pix = hyp_positive_fg_pix_tmp;
+
   // make sure that the number of positive pixels counted here is the same as the
   // number of positive ones (color-coded white) in the hyp_tracker image.
   int hyp_positives = 0;
@@ -386,7 +388,7 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
 
   // if there aren't any segmented regions in the groundtruth
   // then there can't be any correct segmentations and
-  // we already know that all of the segemented pixels in the
+  // we already know that all of the segmented pixels in the
   // hypothesis are false positives! If that's the case we'll
   // go ahead and set a flag to avoid any confusion later
   bool all_false_positives = false;
@@ -602,8 +604,27 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
       int fn_duplicates = 0;
       int falsenegatives = countFalseNegatives(gtbox, hypboxes,
           fn_duplicates);
-      if(falsenegatives == 0 && fn_duplicates == 0)
-        hypmetrics.correctsegmentations++;
+      if(falsenegatives == 0 && fn_duplicates == 0 && numedges == 1) {
+        // should only be a correct segmentation if the groundtruth and hypothesis both have
+        // the same number of connected components
+        Box* hypbox = hypboxes[0];
+        assert(hypboxes.size() == 1); // can't be an oversegmentation
+        if(countCCs(hypbox) == countCCs(gtbox)) {
+          hypmetrics.correctsegmentations++;
+#ifdef SHOW_CORRECT_SEGMENTATIONS
+          cout << "Displayed is a groundtruth region that was marked as correctly segmented by the hypothesis\n";
+          cout << "This is correct segmentation #: " << hypmetrics.correctsegmentations << endl;
+          Lept_Utils::dispHLBoxRegion(gtbox, inimg);
+          Lept_Utils::dispRegion(gtbox, gtimg);
+          waitForInput();
+          cout << "The displayed hypothesis vertex was what was counted as correct segmentation # "
+               << hypmetrics.correctsegmentations << endl;
+          Lept_Utils::dispHLBoxRegion(hypbox, inimg);
+          Lept_Utils::dispRegion(hypbox, hypimg);
+          waitForInput();
+#endif
+        }
+      }
       overlapgt.falsenegativepix = falsenegatives;
       overlapgt.falsenegativepix_duplicates = fn_duplicates;
       overlapgt.box = gtbox;

@@ -364,6 +364,16 @@ private:
   static void countAndTrackPixel(l_int32 x, l_int32 y, int& count, PIX* tracker,
       LayoutEval::Color colorcode, int& duplicate_cnt);
 
+  // counts the connected components for the given box in the input image
+  inline int countCCs(Box* box) {
+    int cc = 0;
+    Pix* gtpixs = pixClipRectangle(inimg, box, NULL);
+    Pix* gtpixs_gray = pixConvertRGBToLuminance(gtpixs);
+    Pix* gtpixs_bin = pixThresholdToBinary(gtpixs_gray, 250);
+    assert(pixCountConnComp(gtpixs_bin, 8, &cc) == 0);
+    return cc;
+  }
+
   // draws the bounding boxes for segmentations in white on the tracker image
   // so that the segmentation results are viewable along with the pixel accurate
   // evaluation results.

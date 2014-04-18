@@ -18,7 +18,7 @@ else
         j=1;
         while(( $j<=$numimgs ))
         do
-            cp $testname/$MEDS/math_results/all/dbg/$numimgs/hyp_tracker_final.png $MEDS"_testset_"$i"_dbgim"$j".png";
+            cp $testname/$MEDS/math_results/all/dbg/$j/hyp_tracker_final.png $MEDS"_testset_"$i"_dbgim"$j".png";
             j=$(($j+1))
         done
         i=$(($i+1))
