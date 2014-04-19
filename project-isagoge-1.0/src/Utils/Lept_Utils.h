@@ -220,7 +220,7 @@ public:
 
   // Fills the foreground pixels for a single box
   static void fillBoxForeground(Pix* inputimg, BOX* box, LayoutEval::Color color,
-      PIX* imread=0);
+      PIX* imread=0, bool write_input_only=false);
 
   inline LayoutEval::Color getRGBAbove(const l_uint32& row, \
       const l_uint32* const &pixel, const l_uint32& width) {

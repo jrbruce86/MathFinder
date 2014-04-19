@@ -41,7 +41,7 @@ Pix* Lept_Utils::fillBoxesForeground(Pix* inputimg, BOXA* boxes, \
 }
 
 void Lept_Utils::fillBoxForeground(Pix* inputimg, BOX* bbox, \
-    LayoutEval::Color color, PIX* imread) {
+    LayoutEval::Color color, PIX* imread, bool write_input_only) {
   l_int32 imwidth = pixGetWidth(inputimg);
   const l_int32 x = bbox->x;
   const l_int32 y = bbox->y;
@@ -51,7 +51,6 @@ void Lept_Utils::fillBoxForeground(Pix* inputimg, BOX* bbox, \
   l_uint32* curpixel;
   l_uint32* startpixel;
   if(imread) // if we're writing to a different img than we're reading
-             // ..inputimg is always the one we are writing to
     startpixel = pixGetData(imread);
   else
     startpixel = pixGetData(inputimg);
@@ -63,7 +62,10 @@ void Lept_Utils::fillBoxForeground(Pix* inputimg, BOX* bbox, \
       curpixel = startpixel + k*imwidth + l;
       getPixelRGB(curpixel, rgb);
       if(isDark(rgb)) {
-        setPixelRGB(inputimg, curpixel, l, k, color);
+        l_uint32* readpix = curpixel;
+        if(write_input_only)
+          readpix = pixGetData(inputimg) + k*imwidth + l;
+        setPixelRGB(inputimg, readpix, l, k, color);
       }
     }
   }

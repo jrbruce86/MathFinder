@@ -43,9 +43,11 @@ using namespace Basic_Utils;
 //#define SHOW_VERTICES
 //#define SHOW_TRUE_NEGATIVES
 //#define SHOW_CORRECT_SEGMENTATIONS
+//#define SHOW_OVERSEGMENTATIONS
+//#define SHOW_UNDERSEGMENTATIONS
 // saves the tracker to a file, optionally displays as well if DISPLAY_ON is turned on
-//#define SHOW_HYP_TRACKER_FINAL
-//#define DISPLAY_ON
+#define SHOW_HYP_TRACKER_FINAL
+#define DISPLAY_ON
 
 #define DBG_MISSING_GT_SEG
 
@@ -482,6 +484,22 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
       if(num_edges > 1) {
         hypmetrics.undersegmentations += num_edges;
         hypmetrics.undersegmentedcomponents++;
+#ifdef SHOW_UNDERSEGMENTATIONS
+        cout << "Displayed is a hypothesis region that was undersegmented\n";
+        cout << "This is undersegmented component # " << hypmetrics.oversegmentedcomponents << endl;
+        cout << "The severity of the undersegmentation is " << num_edges << endl;
+        Lept_Utils::dispHLBoxRegion(hyp_box, inimg);
+        waitForInput();
+        int sev = 1;
+        for(vector<Edge>::iterator edgeit = edges.begin(); edgeit != edges.end();
+            ++edgeit) {
+          Box* gtbox = edgeit->vertexptr->rect;
+          cout << "Displayed is oversegmented component " << hypmetrics.oversegmentedcomponents
+               << "'s oversegmentation # " << sev++ << endl;
+          Lept_Utils::dispRegion(gtbox, gtimg);
+          waitForInput();
+        }
+#endif
       }
 
       // first count all the false positive pixels
@@ -594,7 +612,7 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
       missedregion.false_positive_pix = 0;
       missedregion.num_gt_overlap = 0;
       missedregion.false_negative_pix = gt_fg_pix;
-      Lept_Utils::fillBoxForeground(hyp_tracker, gt_it->rect, LayoutEval::GREEN, inimg);
+      Lept_Utils::fillBoxForeground(hyp_tracker, gt_it->rect, LayoutEval::GREEN, inimg, true);
       hypmetrics.boxes.push_back(missedregion);
       hypmetrics.falsenegatives++;
     }
@@ -633,6 +651,22 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
       if(numedges > 1){
         hypmetrics.oversegmentations += numedges;
         hypmetrics.oversegmentedcomponents++;
+#ifdef SHOW_OVERSEGMENTATIONS
+        cout << "Displayed is a groundtruth region that was oversegmented by the hypothesis\n";
+        cout << "This is oversegmented component # " << hypmetrics.oversegmentedcomponents << endl;
+        cout << "The severity of the oversegmentation is " << numedges << endl;
+        Lept_Utils::dispHLBoxRegion(gtbox, inimg);
+        waitForInput();
+        int sev = 1;
+        for(vector<Box*>::iterator hypboxit = hypboxes.begin(); hypboxit != hypboxes.end();
+            ++hypboxit) {
+          Box* hbox = *hypboxit;
+          cout << "Displayed is oversegmented component " << hypmetrics.oversegmentedcomponents
+               << "'s oversegmentation # " << sev++ << endl;
+          Lept_Utils::dispRegion(hbox, gtimg);
+          waitForInput();
+        }
+#endif
       }
       overlappingregions.push_back(overlapgt);
     }
