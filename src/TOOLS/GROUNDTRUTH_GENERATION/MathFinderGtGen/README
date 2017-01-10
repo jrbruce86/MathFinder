@@ -1,0 +1,12 @@
+    
+Equation_Labeler
+
+- GUI developed in Qt, which allows user to manually label the bounding boxes of 
+  expression regions in images, and have the labels automatically appended to 
+  a file.Originally from OSR project at http://sourceforge.net/projects/osr/. 
+
+- Requires Qt. If you have Qt installed run qbuild script to compile
+
+- GroundTruth.rect (outputfile) format:
+ddd.png embedded/displayed/label topleft_x topleft_y bottomright_x bottomright_y 
+

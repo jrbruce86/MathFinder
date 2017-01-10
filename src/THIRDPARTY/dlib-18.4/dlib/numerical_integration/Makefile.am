@@ -1,0 +1,3 @@
+lib_LTLIBRARIES = libnumerical_integration.la
+libnumerical_integration_la_SOURCES = integrate_function_adapt_simpson.h \
+ifa_simpson_abstract.h

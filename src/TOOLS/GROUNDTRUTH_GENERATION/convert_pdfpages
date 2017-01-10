@@ -1,0 +1,13 @@
+#! /bin/bash
+
+# usage: convert_pdfpages <pdfname> <imgname> <startpage> <endpage> <res>
+if [ $# -ne  5 ]; then
+    echo "usage: convert_pdfpages <pdfname> <imgname> <startpage> <endpage> <res>";
+else  
+    for (( i=$3; i<$4; i++ ))
+    do
+        imname=$2"_00"$( printf '%03d' $i )".png";
+        convert -verbose -density $5 $1\[$( printf '%d' $i )\] -quality 100 $imname;
+    done
+fi
+

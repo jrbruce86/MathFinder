@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo -e "\nusage: writefilenames inputdir outputdir";
+    echo -e "\ninputdir - directory containing png's which were already renamed by rename_pngs";
+    echo "outputdir - directory which rename_pngs copied renamed .png's into." 
+    echo "This script simply outputs a file to that directory which, for each png, gives the pdf name and page number";
+else    
+    curdir=$(pwd | tr -d '\n');
+    inputdir=$1;
+    cd $inputdir;
+    outputdir=$2;
+    num=$(ls *.png | wc -l);
+    echo "renaming $(($num+1)) png's";
+    i=1;
+    echo "progress:"
+    while (( $i<=$num ))
+    do
+        file=$(ls *.png | head -n $i | tail -n 1 | tr -d '\n');
+        echo -e "filename:"$( printf '%03d' $(($i-1)) )".png == orignalname:"$file >> $outputdir"/filenames";
+        echo -en "$(($i-1)) ===> $(($num-1))\r"        
+        i=$(($i+1));
+    done
+    echo -e "\nComplete!"
+fi    
+

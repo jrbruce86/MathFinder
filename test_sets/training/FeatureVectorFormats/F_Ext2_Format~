@@ -1,0 +1,20 @@
+Rightward horizontally adjacent blobs covered (rhabc)
+Upward vertically adjacent blobs covered (uvabc)
+Downard vertically adjacent blobs covered (dvabc)
+Number of completely nested characters (cn)
+Has a superscript
+Has a subscript
+Is a superscript
+Is a subscript
+Vertical distance above row baseline (vdarb)
+Count of stacked blobs at blob position (cosbabp)
+Is blob in math word (imw)
+Italicized text (is_italic)
+OCR confidence rating (ocr_conf)
+Unigram Feature (unigram)
+Bigram Feature (bigram)
+Trigram Feature (trigram)
+Blob belongs to row with normal text (in_valid_row)
+Blob belongs to normal text (in_valid_word)
+Page Doesn't Have Normal Text (bad_page)
+

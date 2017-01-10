@@ -1,0 +1,21 @@
+#! /bin/sh
+
+echo "WARNING: You are about to clear all of the inputs, groundtruths, and test results."
+echo "Make sure you have an extra copy of all of the groundtruths and inputs somewhere else before proceeding!"
+while true; do
+    read -p "Are you sure you want to continue (y/n)?" yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+echo "Deleting groundtruths"
+cd groundtruth
+rm -r *
+echo "Deleting inputs"
+cd ../input
+rm -r *
+echo "Deleting outputs"
+cd ../output
+rm -r *

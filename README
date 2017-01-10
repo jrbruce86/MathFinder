@@ -1,0 +1,23 @@
+This project requires Qt and Leptonica to be pre-installed.
+
+To compile this project, run the following commands from this directory:
+
+autoreconf -vfi
+./configure
+make
+sudo make install
+
+-----------------------------------------------------------------
+
+To run this project, run the following command from this directory after compiling (TODO update this with instructions on how to run and command line inputs):
+
+MathFinder [path to directory or image on which to run]
+
+
+To run the project for training, evaluation, or to print information run with interactive menu as follows:
+
+MathFinder -m
+
+-----------------------------------------------------------------
+
+
