@@ -1,3 +1,0 @@
-lib_LTLIBRARIES = libcpp_pretty_printer.la
-libcpp_pretty_printer_la_SOURCES = cpp_pretty_printer_kernel_1.h \
-cpp_pretty_printer_kernel_2.h cpp_pretty_printer_kernel_abstract.h

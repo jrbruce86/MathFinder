@@ -1,8 +1,0 @@
-PROJECT ISAGOGE NEWS
-
-3/6/13 
--  Added full Tesseract package to a subdirectory within the project so that
-   project can directly implement the BaseEquationDetect interface. This 
-   interface is part of Tesseract's internal Textord module.
-
--  First successful compilation using GNU Autotools Framework

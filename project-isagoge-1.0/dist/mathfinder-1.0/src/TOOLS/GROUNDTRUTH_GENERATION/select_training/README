@@ -1,5 +1,0 @@
-select_training
-
-- Randomly selects a desired subset of the images from select_random assuming they 
-  have already been renamed by rename_pngs and placed in a separate directory.
-  Places these randomly selected training images in a chosen directory

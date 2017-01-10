@@ -1,5 +1,0 @@
-lib_LTLIBRARIES = libentropy_decoder_model.la
-libentropy_decoder_model_la_SOURCES = entropy_decoder_model_kernel_1.h \
-entropy_decoder_model_kernel_2.h entropy_decoder_model_kernel_3.h \
-entropy_decoder_model_kernel_4.h entropy_decoder_model_kernel_5.h \
-entropy_decoder_model_kernel_6.h entropy_decoder_model_kernel_abstract.h
