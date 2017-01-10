@@ -1,5 +1,0 @@
-lib_LTLIBRARIES = libconditioning_class.la
-libconditioning_class_la_SOURCES = conditioning_class_kernel_1.h \
-conditioning_class_kernel_2.h conditioning_class_kernel_3.h \
-conditioning_class_kernel_4.h conditioning_class_kernel_abstract.h \
-conditioning_class_kernel_c.h

@@ -1,4 +1,0 @@
-lib_LTLIBRARIES = libbinary_search_tree.la
-libbinary_search_tree_la_SOURCES = binary_search_tree_kernel_1.h \
-binary_search_tree_kernel_2.h binary_search_tree_kernel_abstract.h \
-binary_search_tree_kernel_c.h
