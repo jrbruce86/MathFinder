@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo -e "\nusage: rename_pngs inputdir outputdir";
+    echo -e "\ninputdir - directory containing png's to be renamed";
+    echo "outputdir - directory to copy renamed .png's into";
+    echo "renames and copies all pngs in inputdir into outputdir.";
+    echo -e "*doesn't change names of originals*\n";
+else
+    
+    curdir=$(pwd | tr -d '\n');
+    inputdir=$1;
+    cd $inputdir;
+    outputdir=$2;
+    num=$(ls *.png | wc -l);
+    echo "renaming $(($num+1)) png's";
+    i=1;
+    mkdir $outputdir;
+    echo "progress:"
+    while (( $i<=$num ))
+    do
+        file=$(ls *.png | head -n $i | tail -n 1 | tr -d '\n');
+        echo -e "\n=================filename:"$( printf '%03d' $(($i-1)) )".png --- originalname:"$file"=================\n" >> $outputdir"/files_info";
+        identify -verbose -ping $file >> $outputdir"/files_info";
+        cp $inputdir"/"$file $outputdir"/"$( printf '%03d' $(($i-1)) )".png";
+        echo -en "$(($i-1)) ===> $(($num-1))\r"
+        i=$(($i+1));
+    done
+    echo -e "\nComplete!"
+fi    
+
+        

@@ -1,0 +1,3 @@
+lib_LTLIBRARIES = libbound_function_pointer.la
+libbound_function_pointer_la_SOURCES = bound_function_pointer_kernel_1.h \
+bfp_kernel_abstract.h

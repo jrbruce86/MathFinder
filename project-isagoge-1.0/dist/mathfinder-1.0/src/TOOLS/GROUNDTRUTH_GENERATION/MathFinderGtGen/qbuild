@@ -1,0 +1,9 @@
+#! /bin/bash
+
+if hash qmake; then
+    qmake
+else
+    qmake-qt4
+fi
+make
+
