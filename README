@@ -1,4 +1,4 @@
-This project requires Qt and Leptonica to be pre-installed.
+This project requires Qt, Leptonica (http://www.leptonica.com/), and libpng-dev to be pre-installed and on the system path.
 
 To compile this project, run the following commands from this directory:
 
@@ -9,12 +9,12 @@ sudo make install
 
 -----------------------------------------------------------------
 
-To run this project, run the following command from this directory after compiling (TODO update this with instructions on how to run and command line inputs):
+To run this project, run the following command after compiling:
 
 MathFinder [path to directory or image on which to run]
 
 
-To run the project for training, evaluation, or to print information run with interactive menu as follows:
+To run the project for training, evaluation, or to print information, run with interactive menu as follows:
 
 MathFinder -m
 
