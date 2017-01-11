@@ -14,16 +14,16 @@ else
     outputdir=$2;
     num=$(ls *.png | wc -l);
     echo "renaming $(($num+1)) png's";
-    i=1;
+    i=0;
     mkdir $outputdir;
     echo "progress:"
-    while (( $i<=$num ))
+    while (( $i<$num ))
     do
-        file=$(ls *.png | head -n $i | tail -n 1 | tr -d '\n');
-        echo -e "\n=================filename:"$( printf '%03d' $(($i-1)) )".png --- originalname:"$file"=================\n" >> $outputdir"/files_info";
-        identify -verbose -ping $file >> $outputdir"/files_info";
-        cp $inputdir"/"$file $outputdir"/"$( printf '%03d' $(($i-1)) )".png";
-        echo -en "$(($i-1)) ===> $(($num-1))\r"
+        file=$(ls *.png | head -n $(($i+1)) | tail -n 1 | tr -d '\n');
+        echo -e "\n=================filename:"$( printf '%03d' $(($i)) )".png --- originalname:"$file"=================\n" >> $outputdir"/files_info";
+        #identify -verbose -ping $file >> $outputdir"/files_info";
+        cp $inputdir"/"$file $outputdir"/"$( printf '%03d' $(($i)) )".png";
+        echo -en "$(($i)) ===> $(($num-1))\r"
         i=$(($i+1));
     done
     echo -e "\nComplete!"
