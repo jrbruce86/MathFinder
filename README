@@ -7,6 +7,8 @@ autoreconf -vfi
 make
 sudo make install
 
+----------------------------------------------------------------
+
 You'll have to also set the TESSDATA_PREFIX enviornment variable to /usr/local/share (the install script unpacks it there). 
 To do so, run the following:
 
