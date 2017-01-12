@@ -9,12 +9,13 @@ sudo make install
 
 ----------------------------------------------------------------
 
-You'll have to also set the TESSDATA_PREFIX enviornment variable to /usr/local/share (the install script unpacks it there). 
-To do so, run the following:
+You'll have to also set the TESSDATA_PREFIX and SCROLLVIEW_PATH enviornment variables in order to run Tesseract and view 
+results respectively. Run the following commands to do so (the install script installs them in the following directories):
 
 export TESSDATA_PREFIX=/usr/local/share
+export SCROLLVIEW_PATH=/usr/local/share/scrollview
 
-And then add the above line to your ~.bashrc file to persist the change.
+And then copy and paste the above lines to your ~.bashrc file to persist the changes.
 
 -----------------------------------------------------------------
 
