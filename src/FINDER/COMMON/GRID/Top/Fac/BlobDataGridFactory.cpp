@@ -66,9 +66,9 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
    * component at later stages.
    */
   // Grab the connected components (as images)
-  Pixa** blobImagesPtr;
-  Boxa* blobCoords = tessBaseApi->GetConnectedComponents(blobImagesPtr);
-  Pixa* blobImages = *blobImagesPtr;
+
+  Pixa* blobImages = pixaCreate(0);
+  Boxa* blobCoords = tessBaseApi->GetConnectedComponents(&blobImages);
   assert(blobImages->n == blobCoords->n); // should be the same.. don't see why not...
 
   // Create a grid containing an entry for each connected component which includes
@@ -83,18 +83,21 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
 #endif
   for(int i = 0; i < blobImages->n; ++i) {
     Box* box = blobCoords->box[i];
-    Pix* image = blobImages->pix[i];
-    BlobData* blobData = new BlobData(M_Utils::lBoxToTBox(box), image, blobDataGrid);
+    Pix* blobImage = blobImages->pix[i];
+    BlobData* blobData =
+        new BlobData(M_Utils::LeptBoxToTessBox(box, image),
+            blobImage, blobDataGrid);
     blobDataGrid->InsertBBox(true, true, blobData);
+    ++total_blobs_grid;
   }
 #ifdef DBG_INFO_GRID
   {
-  std::cout << "total blobs in grid: " << total_blobs_grid << std::endl; // debug
-  ScrollView* sv = blobDataGrid->MakeWindow(100, 100,
-      "Deep copied BLOBNBOX Grid");
-  blobDataGrid->DisplayBoxes(sv);
-  M_Utils::waitForInput();
-  delete sv;
+    std::cout << "total blobs in grid: " << total_blobs_grid << std::endl; // debug
+    ScrollView* sv = blobDataGrid->MakeWindow(image->w, image->h,
+        "Grid");
+    blobDataGrid->DisplayBoxes(sv);
+    M_Utils::waitForInput();
+    delete sv;
   }
 #endif
 

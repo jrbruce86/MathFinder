@@ -106,6 +106,12 @@ BOX* M_Utils::getCBlobImCoords(C_BLOB* blob, PIX* im) {
   return boxCreate(left, top, right-left, bottom-top);
 }
 
+/**
+ * Leptonica uses a coordinate system with origin at the top-left
+ * and with y increasing downwards. Tesseract uses a coordinate
+ * system with the bottom left as the origina and y and increasing
+ * upwards. Both increase x from left to right.
+ */
 BOX* M_Utils::tessTBoxToImBox(TBOX* box, PIX* im) {
   l_int32 height = (l_int32)im->h;
   l_int32 left = (l_int32)box->left();
@@ -113,6 +119,21 @@ BOX* M_Utils::tessTBoxToImBox(TBOX* box, PIX* im) {
   l_int32 right = (l_int32)box->right();
   l_int32 bottom = height - (l_int32)box->bottom();
   return boxCreate(left, top, right-left, bottom-top);
+}
+
+/**
+ * Leptonica uses a coordinate system with origin at the top-left
+ * and with y increasing downwards. Tesseract uses a coordinate
+ * system with the bottom left as the origina and y and increasing
+ * upwards. Both increase x from left to right.
+ */
+TBOX M_Utils::LeptBoxToTessBox(BOX* box, PIX* im) {
+  int height = im->h;
+  int left = box->x;
+  int right = box->x + box->w;
+  int top = height - box->y;
+  int bottom = height - (box->y + box->h);
+  return TBOX(left, bottom, right, top);
 }
 
 BOX* M_Utils::getBlobDataBox(BlobData* b, PIX* im) {
@@ -317,13 +338,5 @@ inT16 M_Utils::centery(const TBOX& box){
   inT16 b = box.bottom();
   return b + (h / 2);
 }
-
-TBOX M_Utils::lBoxToTBox(Box* const lBox) {
-  return TBOX(lBox->x,
-      lBox->y + lBox->h,
-      lBox->x + lBox->w,
-      lBox->y);
-}
-
 
 //} // end namespace tesseract

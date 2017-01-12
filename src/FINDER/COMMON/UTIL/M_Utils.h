@@ -63,9 +63,24 @@ class M_Utils {
   // to find the coordinates in reference to.
   static BOX* getCBlobImCoords(C_BLOB* blob, PIX* im);
 
-  // Convert a TBox which is in tesseract coordinates to
-  // a BOX in image coordinates.
+  /**
+   * Convert a Tesseract box to a Leptonica one.
+   * Leptonica uses a coordinate system with origin at the top-left
+   * and with y increasing downwards. Tesseract uses a coordinate
+   * system with the bottom left as the origina and y and increasing
+   * upwards. Both increase x from left to right.
+   */
   static BOX* tessTBoxToImBox(TBOX* box, PIX* im);
+
+  /**
+   * Convert a Leptonica box to a Tesseract one.
+   * Leptonica uses a coordinate system with origin at the top-left
+   * and with y increasing downwards. Tesseract uses a coordinate
+   * system with the bottom left as the origina and y and increasing
+   * upwards. Both increase x from left to right.
+   */
+  static TBOX LeptBoxToTessBox(BOX* box, PIX* im);
+
 
   // Returns the image coordinate bounding box for the
   // given element
@@ -147,7 +162,6 @@ class M_Utils {
    */
   static inT16 centery(const TBOX& box);
 
-  static TBOX lBoxToTBox(Box* const lBox);
 };
 
 //} // end namespace tesseract
