@@ -26,3 +26,14 @@ select_random
 select_training
 .cproject
 .project
+tesseract
+tesseract-ocr
+ambiguous_words
+classifier_tester
+cntraining
+combine_tessdata
+dawg2wordlist
+mftraining
+shapeclustering
+unicharset_extractor
+wordlist2dawg
