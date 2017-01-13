@@ -26,6 +26,7 @@ class FinderTrainingPaths {
       const std::string sampleFilePath);
 
   static std::string getTrainingRoot();
+  static std::string getTrainedFinderRoot();
   static std::string getGroundtruthRoot();
 
   /**

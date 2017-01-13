@@ -58,7 +58,7 @@ OtherRecognitionFeatureExtractor
 void OtherRecognitionFeatureExtractor::doTrainerInitialization() {
   // Read in the "math words" from the file
   std::string mathWordsFileName =
-      Utils::checkTrailingSlash(FinderTrainingPaths::getTrainingRoot()) + (std::string)"mathwords";
+      Utils::checkTrailingSlash(FinderTrainingPaths::getTrainedFinderRoot()) + (std::string)"mathwords";
   std::ifstream mathwordstream;
   mathwordstream.open(mathWordsFileName.c_str());
   if(!mathwordstream.is_open()) {

@@ -25,7 +25,7 @@ std::string FinderInfoMenu::getName() const {
 }
 
 void FinderInfoMenu::doTask() {
-  std::vector<std::string> trainedFinders = Utils::getFileList(FinderTrainingPaths::getTrainingRoot());
+  std::vector<std::string> trainedFinders = Utils::getFileList(FinderTrainingPaths::getTrainedFinderRoot());
   if(trainedFinders.empty()) {
     std::cout << "There are currently no trained finders on the system. To train a new one select the training menu.\n";
     return;

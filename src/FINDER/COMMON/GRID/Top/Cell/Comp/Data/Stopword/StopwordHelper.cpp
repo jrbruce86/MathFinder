@@ -28,7 +28,7 @@ GenericVector<std::string> StopwordFileReader::getStopwords() {
   if(!stpwrdfs.is_open()) {
     std::cout << "ERROR: Could not open the stopword file at " << stopwordFileName
         << std::endl << "Check to make sure the stopword file is located at "
-        << stopwordFileName << std::endl;
+        << stopwordFileName << ". If not you may need to reinstall." << std::endl;
     assert(false);
   }
   std::string line;

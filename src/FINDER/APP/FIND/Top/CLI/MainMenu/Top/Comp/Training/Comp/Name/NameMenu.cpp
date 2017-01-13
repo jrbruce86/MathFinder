@@ -32,7 +32,7 @@ void NameSelectionMenu::promptSetFinderName() {
     if(this->finderName.empty() || enterNew) {
       this->finderName = Utils::promptForValueNotOnList(
           "Enter a name for this finder: ",
-          Utils::getFileList(FinderTrainingPaths::getTrainingRoot()));
+          Utils::getFileList(FinderTrainingPaths::getTrainedFinderRoot()));
     }
     std::cout << "You have selected '" << this->finderName << "' as the name. This ok? ";
     enterNew = !Utils::promptYesNo();

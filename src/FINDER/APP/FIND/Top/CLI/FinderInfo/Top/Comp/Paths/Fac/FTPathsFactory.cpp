@@ -20,7 +20,7 @@ FinderTrainingPaths* FinderTrainingPathsFactory::FinderTrainingPathsFactory
 ::createFinderTrainingPaths(std::string finderName) {
 
   const std::string finderTrainingRoot =
-      Utils::checkTrailingSlash(FinderTrainingPaths::getTrainingRoot()) + finderName + "/";
+      Utils::checkTrailingSlash(FinderTrainingPaths::getTrainedFinderRoot()) + finderName + "/";
 
   return new FinderTrainingPaths(
       finderTrainingRoot,

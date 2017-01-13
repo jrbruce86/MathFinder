@@ -53,9 +53,12 @@ bool FinderTrainingPaths::printPathMissingError(const std::string& path) {
 std::string FinderTrainingPaths::getGroundtruthRoot() {
   return "~/.mathfinder/groundtruth/";
 }
-
 std::string FinderTrainingPaths::getTrainingRoot() {
   return "~/.mathfinder/training/";
+}
+
+std::string FinderTrainingPaths::getTrainedFinderRoot() {
+  return "~/.mathfinder/training/Finders";
 }
 
 /**

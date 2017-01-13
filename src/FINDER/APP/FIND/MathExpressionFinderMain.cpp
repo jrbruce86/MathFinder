@@ -32,6 +32,14 @@
  */
 int main(int argc, char* argv[]) {
 
+//  {
+//    TessBaseAPI api;
+//    Pix* p = Utils::leptReadImg("/home/jake/Desktop/a/0.png");
+//    BlobDataGrid* g =
+//        BlobDataGridFactory().createBlobDataGrid(p, &api, "0.png");
+//
+//  }
+
   if(argc == 2) {
     if(std::string(argv[1]) == std::string("-menu")) { // interactive menu
       runInteractiveMenu();
@@ -54,7 +62,11 @@ void runInteractiveMenu() {
 
 void runFinder(char* path) {
 
-  std::vector<std::string> trainedFinders = Utils::getFileList(FinderTrainingPaths::getTrainingRoot());
+  const std::string trainedFinderPath =
+      FinderTrainingPaths::getTrainedFinderRoot();
+  Utils::exec(std::string("mkdir -p ") + trainedFinderPath, true);
+  std::vector<std::string> trainedFinders =
+      Utils::getFileList(trainedFinderPath);
   if(trainedFinders.empty()) {
     std::cout << "There is currently no trained MathFinder available on the system. "
         << "Loading the interactive menu.\n";
