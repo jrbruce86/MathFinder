@@ -19,14 +19,6 @@
 
 #include <string>
 
-
-// TODO: IMPORTANT: MAKE SURE THAT THE INSTALL FOR THIS APPLICATION
-//       CREATES A SUBDIR IN /usr/bin and adds that subdir to the path
-//       in ~/.bashrc. Also make sure to add in the tesserct stuff to
-//       ~/.bashrc. This should all be automated. The subdir should include
-//       the equation_labeler executable among anything else, maybe tesseract
-//       too might as well...
-
 /**
  * Application point of entry
  */
@@ -41,7 +33,7 @@ int main(int argc, char* argv[]) {
 //  }
 
   if(argc == 2) {
-    if(std::string(argv[1]) == std::string("-menu")) { // interactive menu
+    if(std::string(argv[1]) == std::string("-m")) { // interactive menu
       runInteractiveMenu();
     } else {
       runFinder(argv[1]);
