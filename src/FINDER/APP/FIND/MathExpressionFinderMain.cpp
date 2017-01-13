@@ -67,6 +67,7 @@ void runFinder(char* path) {
   Utils::exec(std::string("mkdir -p ") + trainedFinderPath, true);
   std::vector<std::string> trainedFinders =
       Utils::getFileList(trainedFinderPath);
+
   if(trainedFinders.empty()) {
     std::cout << "There is currently no trained MathFinder available on the system. "
         << "Loading the interactive menu.\n";
@@ -77,7 +78,7 @@ void runFinder(char* path) {
   if(trainedFinders.size() > 1) {
     std::cout << "More than one MathFinder has been trained on this system. Select one of the following."
         << " To see more information run this program in the interactive menu mode (i.e., MathFinder -menu):\n";
-    finderName = trainedFinders[Utils::promptSelectStrFromLabeledMatrix(trainedFinders, 3)];
+    finderName = trainedFinders[Utils::promptSelectStrFromLabeledMatrix(trainedFinders, 2)];
   } else {
     finderName = trainedFinders[0];
   }

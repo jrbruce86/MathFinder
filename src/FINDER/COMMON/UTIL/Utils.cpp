@@ -115,6 +115,12 @@ std::vector<std::string> Utils::stringSplit(std::string str, char delimiter) {
       }
     }
   }
+  // Don't really care about performance and am strapped for time.. so yeah..
+  for(int i = stringlist.size() - 1; i > -1; --i) {
+    if(stringlist[i].size() == 0) {
+      stringlist.erase(stringlist.begin() + i); // delete empties
+    }
+  }
   return stringlist;
 }
 
