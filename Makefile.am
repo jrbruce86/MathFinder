@@ -24,6 +24,7 @@ install-exec-hook:
 	cd src/THIRDPARTY/Tesseract/java; make ScrollView.jar; chmod 755 ScrollView.jar; \
   mkdir $(shareDir)/scrollview; cp *.jar $(shareDir)/scrollview; \
 	cd ..; tar -xzvf tesseract-ocr-3.02.eng.tar.gz; cd tesseract-ocr; cp tessdata /usr/local/share -R;
+	mkdir -p ~/.mathfinder/training; cp training/* ~/.mathfinder/training -R
 	
 # Get rid of my stuff, Deciding to leave tessdata in case its been updated or used for other purposes
 uninstall-hook:
