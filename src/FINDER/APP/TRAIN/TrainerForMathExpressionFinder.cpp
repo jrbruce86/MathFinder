@@ -66,7 +66,7 @@ void TrainerForMathExpressionFinder::trainDetector() {
     std::cout << "ERROR: The groundtruth directory at " << finderInfo->getGroundtruthDirPath()
             << " appears to be corrupted. Cannot move forward with training without a valid groundtruth path.\n";
     std::cout << "Run the application with the -menu option to see more options.\n";
-    assert(false);
+    return;
   }
 
   // first get all of the binary labeled samples using the chosen feature extractors

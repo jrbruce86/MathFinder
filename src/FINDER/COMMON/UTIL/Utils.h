@@ -70,6 +70,9 @@ namespace Utils {
   // takes a string and converts it to a double
   double strToDouble(const std::string& str);
 
+  // Removes any trailing new line if it exists
+  std::string chop(std::string str);
+
   // splits txt into separate lines
   // (TAKEN OUT BECAUSE IT'S BUGGY... SEE M_UTILS.H FOR REPLACEMENT!!!)
   //vector<char*> lineSplit(const char* txt);
@@ -137,11 +140,12 @@ namespace Utils {
   // return true if file exists
   bool existsFile(const std::string& filename);
 
+  std::string getHomeDir();
+
   // pulls out the name from the full path which includes an extension
   // so for instance, passing in "/home/bob/imname.jpg" would output
   // "imname".
   std::string getNameFromPath(const std::string& path);
-
 
   /*****************************************
    * Console interface utilities           *

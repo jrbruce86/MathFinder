@@ -74,7 +74,7 @@ void DatasetSelectionMenu::doTask() {
   } else {
     if(!groundtruthDirPathIsGood(groundtruthDirPath)) {
       std::cout << "ERROR: The groundtruth directory at '" << groundtruthDirPath <<
-          "' appears to be corrupted. It may need to be cleaned up or deleted. Returning to "
+          "' appears to be corrupted. Returning to "
           << "previous menu for more options. Try again with an updated or new directory.\n";
       groundtruthDirPath.clear();
       return;
@@ -134,7 +134,7 @@ std::string DatasetSelectionMenu::promptSelectExistingGroundtruth() {
     std::cout << "Would you like to use one of them? ";
     if(Utils::promptYesNo()) {
       const int index = Utils::promptSelectStrFromLabeledMatrix(dirs, 4);
-      return FinderTrainingPaths::getGroundtruthRoot() + dirs[index];
+      return Utils::checkTrailingSlash(FinderTrainingPaths::getGroundtruthRoot() + dirs[index]);
     }
   }
   return "";
@@ -147,8 +147,10 @@ std::string DatasetSelectionMenu::promptNewDatasetDirPath() {
         << "as well as a file with the extension of '.rect' which contains the groundtruth bounding boxes "
         "for where the math regions are in the images. The images should be named as follows assuming "
         << "they are in .png format (images in most any format are supported): 0.png, 1.png, 2.png, etc...: ";
-    std::cin.ignore();
+//    std::cin.ignore();
     getline( std::cin, datasetDirPath);
+    std::cout << "Did it skip?? Shouldn't have. no Residual line. Remove this if not. TODO\n";
+    Utils::waitForInput();
     std::cout << std::endl;
 
     if(groundtruthDirPathIsGood(Utils::checkTrailingSlash(datasetDirPath))) {

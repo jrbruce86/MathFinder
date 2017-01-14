@@ -237,6 +237,14 @@ char* Utils::strAppend(char* str1, char* str2) {
   return newstr;
 }
 
+std::string Utils::chop(std::string str) {
+  const int last = str.size() - 1;
+  if(str.at(last) == '\n') {
+    str.erase(last);
+  }
+  return str;
+}
+
 char* Utils::strRemoveChar(char*& str, int index) {
   if(str == NULL)
     return NULL;
@@ -399,6 +407,10 @@ bool Utils::existsFile(const std::string& filename) {
   if (exists == (std::string) "exist\n")
     return true;
   return false;
+}
+
+std::string Utils::getHomeDir() {
+  return chop(exec("echo ~"));
 }
 
 std::string Utils::getNameFromPath(const std::string& path) {

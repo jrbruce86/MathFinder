@@ -96,12 +96,12 @@ void FeatureSelectionMenuBase::doTask() {
         if(selectedOption == selectToUse) {
           for(int i = 0; i < selectedIndexes.size(); ++i) {
             const int selectedIndex = selectedIndexes[i];
-            addFactoryToSelection(allFactories[selectedIndex], &selectedFactories);
+            promptToAddFactoryToSelection(allFactories[selectedIndex], &selectedFactories);
           }
         } else if(selectedOption == selectNotToUse) {
           for(int i = 0; i < allFactories.size(); ++i) {
             if(!selectedIndexes.contains(i)) {
-              addFactoryToSelection(allFactories[i], &selectedFactories);
+              promptToAddFactoryToSelection(allFactories[i], &selectedFactories);
             }
           }
         }
@@ -120,7 +120,7 @@ void FeatureSelectionMenuBase::doTask() {
   }
 }
 
-void FeatureSelectionMenuBase::addFactoryToSelection(
+void FeatureSelectionMenuBase::promptToAddFactoryToSelection(
     BlobFeatureExtractorFactory* const factoryToAdd,
     std::vector<BlobFeatureExtractorFactory*>* const selection) {
 
@@ -141,6 +141,18 @@ void FeatureSelectionMenuBase::addFactoryToSelection(
       factoryToAdd->getSelectedFlags().push_back(
           allFlagDescriptions[selectedIndexes[i]]);
     }
+  }
+
+  selection->push_back(factoryToAdd);
+}
+
+void FeatureSelectionMenuBase::addFactoryToSelection(
+    BlobFeatureExtractorFactory* const factoryToAdd,
+    std::vector<BlobFeatureExtractorFactory*>* const selection) {
+
+  std::vector<FeatureExtractorFlagDescription*> flags = factoryToAdd->getDescription()->getFlagDescriptions();
+  for(int i = 0; i < flags.size(); ++i) {
+    factoryToAdd->getSelectedFlags().push_back(flags[i]);
   }
 
   selection->push_back(factoryToAdd);

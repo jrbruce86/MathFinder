@@ -34,6 +34,12 @@ class FeatureSelectionMenuBase : public virtual MenuBase {
 
  private:
 
+  // Add factory to selection after prompting for flags
+  void promptToAddFactoryToSelection(
+      BlobFeatureExtractorFactory* const factoryToAdd,
+      std::vector<BlobFeatureExtractorFactory*>* const selection);
+
+  // Add the factory to the selection with all flags enabled
   void addFactoryToSelection(
       BlobFeatureExtractorFactory* const factoryToAdd,
       std::vector<BlobFeatureExtractorFactory*>* const selection);

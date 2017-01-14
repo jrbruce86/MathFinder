@@ -37,3 +37,10 @@ mftraining
 shapeclustering
 unicharset_extractor
 wordlist2dawg
+compile
+config.guess
+config.sub
+depcomp
+install-sh
+ltmain.sh
+missing
