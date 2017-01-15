@@ -56,6 +56,10 @@ std::string DetectorSelectionMenu::getSelectedDetectorName() {
   return selectedDetectorName;
 }
 
+void DetectorSelectionMenu::setToDefault() {
+  this->selectedDetectorName = getDefaultDetectorName();
+}
+
 std::string DetectorSelectionMenu::getDefaultDetectorName() {
   return MathExpressionDetectorFactory().getSupportedDetectorNames()[0];
 }

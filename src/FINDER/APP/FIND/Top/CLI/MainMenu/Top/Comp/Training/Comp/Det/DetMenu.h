@@ -26,6 +26,8 @@ class DetectorSelectionMenu: public MenuBase {
 
   std::string getDefaultDetectorName();
 
+  void setToDefault();
+
  private:
 
   std::string selectedDetectorName;

@@ -75,6 +75,17 @@ void DoTrainingMenu::doTask() {
          <<   "returning to the previous menu and selecting features to use. \n";
     return;
   }
+  if(detectorSelection->getSelectedDetectorName() == "" &&
+      segmentorSelection->getSelectedSegmentorName() == "") {
+    std::cout << "Detector and segmentor haven't been chosen yet. " <<
+        "Use the defaults (" << detectorSelection->getDefaultDetectorName()
+        << " for detection and " << segmentorSelection->getDefaultSegmentorName()
+        << " for segmentation)? ";
+    if(Utils::promptYesNo()) {
+      detectorSelection->setToDefault();
+      segmentorSelection->setToDefault();
+    }
+  }
   if(detectorSelection->getSelectedDetectorName() == "") {
     detectorSelection->doTask();
     detectorName = detectorSelection->getSelectedDetectorName();
