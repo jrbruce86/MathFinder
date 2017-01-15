@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Converts all pngs in the current directory to binary and puts the output
+# in a subdirectory of the current directory called out/. Does not modify the 
+# images in the current directory just copies them and converts the copy to
+# binary.
+curdir=$(pwd | tr -d '\n');
+num=$(ls *.png | wc -l);
+i=0;
+mkdir out
+while (( $i<$num ))
+do
+	file=$(ls *.png | head -n $(($i+1)) | tail -n 1 | tr -d '\n');
+	convert $file -type Bilevel out/$file 
+	echo -en "$(($i)) ===> $(($num-1))\r"
+	i=$(($i+1));
+done
+
+

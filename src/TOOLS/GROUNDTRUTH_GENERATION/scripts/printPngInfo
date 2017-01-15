@@ -1,0 +1,14 @@
+#!/bin/bash
+
+curdir=$(pwd | tr -d '\n');
+num=$(ls *.png | wc -l);
+i=0;
+while (( $i<$num ))
+do
+	file=$(ls *.png | head -n $(($i+1)) | tail -n 1 | tr -d '\n');
+	identify -verbose -ping $file >> info_
+	echo -en "$(($i)) ===> $(($num-1))\r"
+	i=$(($i+1));
+done
+
+

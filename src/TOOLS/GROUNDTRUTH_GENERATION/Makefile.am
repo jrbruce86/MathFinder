@@ -1,5 +1,4 @@
 
-EXTRA_DIST = README convert_pdfpages removealpha rename_pngs writefilenames MathFinderGtGen
+EXTRA_DIST = README scripts MathFinderGtGen
 
-bin_SCRIPTS = convert_pdfpages removealpha rename_pngs writefilenames MathFinderGtGen/qbuild
-
+bin_SCRIPTS = scripts/convert_pdfpages scripts/removealpha scripts/rename_pngs scripts/writefilenames MathFinderGtGen/qbuild scripts/convertPngsToBinary scripts/printPngInfo
