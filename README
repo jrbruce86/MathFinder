@@ -1,4 +1,7 @@
-This project requires Qt, Leptonica (http://www.leptonica.com/), and libpng-dev to be pre-installed and on the system path.
+This project requires Qt, libpng-dev, libjpeg-dev, and Leptonica 
+(http://www.leptonica.com/) to be pre-installed and on the system path. Need 
+to install the png and jpeg libraries before Leptonica for it to be able to 
+read/write png and jpeg images. 
 
 To compile this project, run the following commands from this directory:
 
@@ -9,22 +12,26 @@ sudo make install
 
 ----------------------------------------------------------------
 
-You'll have to also set the TESSDATA_PREFIX and SCROLLVIEW_PATH enviornment variables in order to run Tesseract and view 
-results respectively. Run the following commands to do so (the install script installs them in the following directories):
+The TESSDATA_PREFIX and SCROLLVIEW_PATH environment variables also need to be 
+set in order to run Tesseract and view results respectively. This is because 
+Tesseract only looks on those specific paths and won't look on the system 
+path. This can be done by running the following commands:
 
 export TESSDATA_PREFIX=/usr/local/share
 export SCROLLVIEW_PATH=/usr/local/share/scrollview
 
-And then copy and paste the above lines to your ~.bashrc file to persist the changes.
+And then copying and pasting the above lines to the ~/.bashrc file to persist 
+the changes.
 
 -----------------------------------------------------------------
 
-To run this project, run the following command after compiling:
+The following commands will run the application:
 
 MathFinder [path to directory or image on which to run]
 
 
-To run the project for training, evaluation, or to print information, run with interactive menu as follows:
+To run the project for training, evaluation, or to print information, run with
+interactive menu as follows:
 
 MathFinder -m
 
