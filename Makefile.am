@@ -17,10 +17,12 @@ install-exec-hook:
 	cp $(toolsSrcDir)/MathFinderGtGen/MathFinderGtGen $(toolsDestDir)/MathFinderGtGen; \
 	cp $(toolsSrcDir)/select_random/select_random $(toolsDestDir)/MathFinderselect_random; \
 	cp $(toolsSrcDir)/select_training/select_training $(toolsDestDir)/MathFinderselect_training; \
-	cp $(toolsSrcDir)/convert_pdfpages $(toolsDestDir)/MathFinderconvert_pdfpages; \
-	cp $(toolsSrcDir)/removealpha $(toolsDestDir)/MathFinderremovealpha; \
-	cp $(toolsSrcDir)/rename_pngs $(toolsDestDir)/MathFinderrename_pngs; \
-	cp $(toolsSrcDir)/writefilenames $(toolsDestDir)/MathFinderwritefilenames; \
+	cp $(toolsSrcDir)/scripts/convert_pdfpages $(toolsDestDir)/MathFinderconvert_pdfpages; \
+	cp $(toolsSrcDir)/scripts/removealpha $(toolsDestDir)/MathFinderremovealpha; \
+	cp $(toolsSrcDir)/scripts/rename_pngs $(toolsDestDir)/MathFinderrename_pngs; \
+	cp $(toolsSrcDir)/scripts/writefilenames $(toolsDestDir)/MathFinderwritefilenames; \
+	cp $(toolsSrcDir)/scripts/convertPngsToBinary $(toolsDestDir)/MathFinderconvertPngsToBinary; \
+	cp $(toolsSrcDir)/scripts/printPngInfo $(toolsDestDir)/MathFinderprintPngInfo;
 	cd src/THIRDPARTY/Tesseract/java; make ScrollView.jar; chmod 755 ScrollView.jar; \
   mkdir $(shareDir)/scrollview; cp *.jar $(shareDir)/scrollview; \
 	cd ..; tar -xzvf tesseract-ocr-3.02.eng.tar.gz; cd tesseract-ocr; cp tessdata /usr/local/share -R;

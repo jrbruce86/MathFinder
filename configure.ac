@@ -21,14 +21,23 @@ AC_CONFIG_FILES([Makefile
                 src/TOOLS/GROUNDTRUTH_GENERATION/select_training/Makefile
                 src/TOOLS/GROUNDTRUTH_GENERATION/Makefile])
 
-AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/removealpha:src/TOOLS/GROUNDTRUTH_GENERATION/removealpha], \
-[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/removealpha])
+AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha], \
+[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha])
 
-AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/rename_pngs:src/TOOLS/GROUNDTRUTH_GENERATION/rename_pngs], \
-[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/rename_pngs])
+AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/rename_pngs:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/rename_pngs], \
+[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/rename_pngs])
 
-AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/convert_pdfpages:src/TOOLS/GROUNDTRUTH_GENERATION/convert_pdfpages], \
-[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/convert_pdfpages])
+AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convert_pdfpages:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convert_pdfpages], \
+[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convert_pdfpages])
+
+AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/writefilenames:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/writefilenames], \
+[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/writefilenames])
+
+AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/printPngInfo:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/printPngInfo], \
+[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/printPngInfo])
+
+AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convertPngsToBinary:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convertPngsToBinary], \
+[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convertPngsToBinary])
 
 # Go ahead and attempt to build the qt dependency
 AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/MathFinderGtGen/qbuild:src/TOOLS/GROUNDTRUTH_GENERATION/MathFinderGtGen/qbuild], \
