@@ -99,10 +99,9 @@ void DoTrainingMenu::doTask() {
   bool descriptionDone = false;
   std::string description = "";
   while(true) {
-    std::cout << "Type in an optional brief description on the math expression finder being trained and press enter when finished (or just press enter if description N/A): \n";
-    std::cin.ignore();
+    std::cout << "Type in an optional brief description on the math expression finder being trained and press enter when finished (or just press enter if description N/A): ";
     std::getline(std::cin, description);
-    if(description == "") {
+    if(description == "" || description == "\n") {
       break;
     }
     std::cout << "The description you entered shown below will be stored with other info on the Math Finder being trained.\n" <<
@@ -126,7 +125,12 @@ void DoTrainingMenu::doTask() {
       ->setGroundtruthImagePaths(groundtruthImagePaths)
       ->build();
 
-  TrainingInfoFileParser().writeInfoToFile(finderInfo);
+  if(!TrainingInfoFileParser().writeInfoToFile(finderInfo)) {
+    std::cout << "Could not write the trainer info to a the file at "
+        << finderInfo->getFinderTrainingPaths()->getInfoFilePath()
+        << ". Returning to previous menu." << std::endl;
+    return;
+  }
 
   // Build the trainer (let the trainer own the finder info, the feature extractor,
   // the detector, and the segmentor and destroy them all when done)

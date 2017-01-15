@@ -348,7 +348,7 @@ bool Utils::promptYesNo() {
   std::string input = "";
   while(input != "y" && input != "Y"
       && input != "n" && input != "N") {
-      std::cout << "Please answer y/Y or n/N. ";
+      std::cout << "(y/n)? ";
     std::cin >> input;
     std::cout << std::endl;
   }
@@ -425,6 +425,15 @@ std::string Utils::getNameFromPath(const std::string& path) {
   }
   return path;
 }
+
+// wrapper around cin getline to avoid annoying \n issue.
+void Utils::getline(std::string& str) {
+  while((char)(std::cin.peek()) == '\n') {
+    std::cin.ignore();
+  }
+  getline(std::cin, str);
+}
+
 
 void Utils::waitForInput() {
   char c = 'a';

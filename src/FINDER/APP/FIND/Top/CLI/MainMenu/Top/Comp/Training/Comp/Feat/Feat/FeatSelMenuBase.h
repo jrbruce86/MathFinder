@@ -15,6 +15,7 @@
 class FeatureSelectionMenuMain;
 class BlobFeatureExtractorCategory;
 class BlobFeatureExtractorFactory;
+class FeatureExtractorFlagDescription;
 
 class FeatureSelectionMenuBase : public virtual MenuBase {
 
@@ -25,6 +26,9 @@ class FeatureSelectionMenuBase : public virtual MenuBase {
   virtual std::string getName() const = 0;
 
   void doTask();
+
+  // Selects all of the factories
+  void selectAllFactories();
 
  protected:
 
@@ -40,9 +44,19 @@ class FeatureSelectionMenuBase : public virtual MenuBase {
       std::vector<BlobFeatureExtractorFactory*>* const selection);
 
   // Add the factory to the selection with all flags enabled
+  void addFactoryToSelectionWithAllFlags(
+      BlobFeatureExtractorFactory* const factoryToAdd,
+      std::vector<BlobFeatureExtractorFactory*>* const selection);
+
+  // Add factory to selection if it hasn't been added yet
   void addFactoryToSelection(
       BlobFeatureExtractorFactory* const factoryToAdd,
       std::vector<BlobFeatureExtractorFactory*>* const selection);
+
+  // Adds the flag to the fatory if it hasn't been added yet
+  void addFlagToFactory(
+      FeatureExtractorFlagDescription* const flag,
+      BlobFeatureExtractorFactory* const factory);
 };
 
 

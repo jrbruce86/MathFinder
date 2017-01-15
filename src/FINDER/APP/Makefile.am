@@ -42,6 +42,7 @@ FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Train/DoTrainingMenu.h \
 FIND/Top/MathFind/Top/Comp/Det/Top/Imp/SvmDet/SvmDetector.h \
 FIND/Top/MathFind/Top/Comp/Seg/Top/Imp/HeuristicMerge/HeuristicMerge.h \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/About/AboutFeatMenu.h \
+FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/All/AllFeatMenu.h \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat/FeatSelMenuBase.h \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat/Rec/RecMenu.h \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat/Spatial/SpatialMenu.h \
@@ -112,6 +113,7 @@ FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Train/DoTrainingMenu.cpp \
 FIND/Top/MathFind/Top/Comp/Det/Top/Imp/SvmDet/SvmDetector.cpp \
 FIND/Top/MathFind/Top/Comp/Seg/Top/Imp/HeuristicMerge/HeuristicMerge.cpp \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/About/AboutFeatMenu.cpp \
+FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/All/AllFeatMenu.cpp \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat/FeatSelMenuBase.cpp \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat/Rec/RecMenu.cpp \
 FIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat/Spatial/SpatialMenu.cpp \
@@ -200,6 +202,7 @@ MathFinder_CPPFLAGS = -IEVAL \
 -IFIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat \
 -IFIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/Feat/Rec \
 -IFIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/About \
+-IFIND/Top/CLI/MainMenu/Top/Comp/Training/Comp/Feat/All \
 -IFIND/Top/MathFind/Top/Comp/FeatExt/Top/Comp/Imp/Geo/Aligned/Top/Fac \
 -IFIND/Top/MathFind/Top/Comp/FeatExt/Top/Comp/Imp/Geo/Nested/Top/Fac \
 -IFIND/Top/MathFind/Top/Comp/FeatExt/Top/Comp/Imp/Geo/Nested \

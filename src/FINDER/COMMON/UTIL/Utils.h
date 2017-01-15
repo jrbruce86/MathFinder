@@ -276,7 +276,10 @@ namespace Utils {
     return selections;
   }
 
-  // Debugging:::::
+  // wrapper around cin getline to avoid annoying /n issue.
+  void getline(std::string& str);
+
+  // wait for user input
   void waitForInput();
 }
 

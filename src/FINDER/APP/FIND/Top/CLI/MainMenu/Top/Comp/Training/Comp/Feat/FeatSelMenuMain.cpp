@@ -11,6 +11,7 @@
 #include <SpatialMenu.h>
 #include <RecMenu.h>
 #include <AboutFeatMenu.h>
+#include <AllFeatMenu.h>
 
 #include <BlobFeatExtFac.h>
 
@@ -21,8 +22,11 @@ FeatureSelectionMenuMain::FeatureSelectionMenuMain(
     TrainingMenu* trainingMain) {
   this->spatialMenu = new SpatialFeatureMenu(this);
   this->recognitionMenu = new RecognitionFeatureMenu(this);
-
   this->subMenus.push_back(new AboutFeatureMenu(this));
+  this->subMenus.push_back(
+      new AllFeatMenu(this->spatialMenu,
+          this->recognitionMenu,
+          this)),
   this->subMenus.push_back(this->spatialMenu);
   this->subMenus.push_back(this->recognitionMenu);
   this->subMenus.push_back(trainingMain);

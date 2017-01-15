@@ -63,7 +63,7 @@ class BlobFeatureExtractorDescription {
       uniqueName.append(parentCategory->getName()).append(".");
       parentCategory = parentCategory->getParentCategory();
     }
-    return uniqueName.append(".").append(getName());
+    return uniqueName.append(getName());
   }
 };
 

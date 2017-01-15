@@ -27,7 +27,7 @@ class TrainingInfoFileParser {
    */
   FinderInfo* readInfoFromFile(std::string finderName);
 
-  void writeInfoToFile(FinderInfo* const finderInfo);
+  bool writeInfoToFile(FinderInfo* const finderInfo);
 
   static std::string FlagDelimiter();
 

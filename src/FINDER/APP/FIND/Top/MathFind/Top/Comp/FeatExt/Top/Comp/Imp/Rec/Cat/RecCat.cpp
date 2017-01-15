@@ -25,7 +25,7 @@ RecognitionBasedExtractorCategory::RecognitionBasedExtractorCategory() {
 }
 
 std::string RecognitionBasedExtractorCategory::getName() {
-  return "recognition-based features";
+  return "recognition";
 }
 
 std::string RecognitionBasedExtractorCategory::getDescription() {

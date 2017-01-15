@@ -26,7 +26,7 @@ TrainingInfoFileParser::TrainingInfoFileParser()
   featureExtractorsKey("Feature extractors"),
   groundtruthImagePathsKey("GroundtruthImagePaths") {}
 
-void TrainingInfoFileParser::writeInfoToFile(FinderInfo* const finderInfo) {
+bool TrainingInfoFileParser::writeInfoToFile(FinderInfo* const finderInfo) {
 
   // Create the directories indicated by file info
   //(except the groundtruth one, which should already be created)
@@ -46,7 +46,11 @@ void TrainingInfoFileParser::writeInfoToFile(FinderInfo* const finderInfo) {
   // Write the info to the file
   std::ofstream outStream;
   outStream.open(finderTrainingPaths->getInfoFilePath().c_str(),
-      std::ofstream::trunc | std::ofstream::out);
+      std::ofstream::out);
+  if(!outStream.is_open()) {
+    std::cout << "ERROR: Could not open file at " << finderTrainingPaths->getInfoFilePath() << std::endl;
+    return false;
+  }
   outStream << finderNameKey << ": " << finderInfo->getFinderName() << std::endl;
   outStream << descriptionKey << ": " << finderInfo->getDescription() << std::endl;
   outStream << detectorNameKey << ": " << finderInfo->getDetectorName() << std::endl;
@@ -64,6 +68,8 @@ void TrainingInfoFileParser::writeInfoToFile(FinderInfo* const finderInfo) {
     outStream << finderInfo->getFeatureExtractorUniqueNames()[i] << " ";
   }
   outStream << std::endl;
+  outStream.close();
+  return true;
 }
 
 /**

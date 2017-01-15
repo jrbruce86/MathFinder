@@ -25,12 +25,27 @@
 int main(int argc, char* argv[]) {
 
 //  {
+//    std::string datasetDirPath;
+//    std::cout << "\nDerp\n";
+//    std::cin >> datasetDirPath;
+//    std::cout << "got " << datasetDirPath << std::endl;
+//    datasetDirPath = "";
+//    std::cout << "\nEnter the full path to a directory containing the images you would like to train on "
+//        << "as well as a file with the extension of '.rect' which contains the groundtruth bounding boxes "
+//        "for where the math regions are in the images. The images should be named as follows assuming "
+//        << "they are in .png format (images in most any format are supported): 0.png, 1.png, 2.png, etc...: \n\n" << std::endl;
+//    Utils::getline(datasetDirPath);
+//    std::cout << "The line I got " << datasetDirPath << std::endl;
+
+
 //    TessBaseAPI api;
-//    Pix* p = Utils::leptReadImg("/home/jake/Desktop/a/0.png");
+//    Pix* p = Utils::leptReadImg(FinderTrainingPaths::getGroundtruthRoot() + std::string("advcalc1/0.png"));
+//    pixDisplay(p, 100, 100);
+//    M_Utils::waitForInput();
 //    BlobDataGrid* g =
 //        BlobDataGridFactory().createBlobDataGrid(p, &api, "0.png");
-//
-//  }
+
+  }
 
   if(argc == 2) {
     if(std::string(argv[1]) == std::string("-m")) { // interactive menu

@@ -9,6 +9,7 @@
 
 #include <TrainingMenu.h>
 #include <Utils.h>
+#include <M_Utils.h>
 #include <FinderTrainingPaths.h>
 
 #include <baseapi.h>
@@ -147,8 +148,8 @@ std::string DatasetSelectionMenu::promptNewDatasetDirPath() {
         << "as well as a file with the extension of '.rect' which contains the groundtruth bounding boxes "
         "for where the math regions are in the images. The images should be named as follows assuming "
         << "they are in .png format (images in most any format are supported): 0.png, 1.png, 2.png, etc...: ";
-//    std::cin.ignore();
-    getline( std::cin, datasetDirPath);
+    Utils::getline(datasetDirPath);
+    std::cout << "The line I got " << datasetDirPath << std::endl;
     std::cout << "Did it skip?? Shouldn't have. no Residual line. Remove this if not. TODO\n";
     Utils::waitForInput();
     std::cout << std::endl;

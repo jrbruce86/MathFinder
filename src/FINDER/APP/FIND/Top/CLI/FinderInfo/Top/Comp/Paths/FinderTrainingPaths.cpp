@@ -54,11 +54,11 @@ std::string FinderTrainingPaths::getGroundtruthRoot() {
   return Utils::checkTrailingSlash(Utils::getHomeDir()) + ".mathfinder/groundtruth/";
 }
 std::string FinderTrainingPaths::getTrainingRoot() {
-  return "~/.mathfinder/training/";
+  return Utils::checkTrailingSlash(Utils::getHomeDir()) + ".mathfinder/training/";
 }
 
 std::string FinderTrainingPaths::getTrainedFinderRoot() {
-  return "~/.mathfinder/training/Finders";
+  return Utils::checkTrailingSlash(getTrainingRoot()) + "Finders/";
 }
 
 /**

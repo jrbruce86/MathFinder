@@ -85,7 +85,7 @@ void FeatureSelectionMenuBase::doTask() {
         selectedFactories.clear();
       } else if(selectedOption == selectAll) {
         for(int i = 0; i < allFactories.size(); ++i) {
-          addFactoryToSelection(allFactories[i], &selectedFactories);
+          addFactoryToSelectionWithAllFlags(allFactories[i], &selectedFactories);
         }
       } else {
         std::cout << selectedOption << " by typing in one or more of the below indexes "
@@ -120,6 +120,15 @@ void FeatureSelectionMenuBase::doTask() {
   }
 }
 
+void FeatureSelectionMenuBase::selectAllFactories() {
+  const std::vector<BlobFeatureExtractorFactory*>& allFactories =
+      getCategory()->getFeatureExtractorFactories();
+  std::vector<BlobFeatureExtractorFactory*>& selectedFactories = getSelectedFactories();
+  for(int i = 0; i < allFactories.size(); ++i) {
+    addFactoryToSelectionWithAllFlags(allFactories[i], &selectedFactories);
+  }
+}
+
 void FeatureSelectionMenuBase::promptToAddFactoryToSelection(
     BlobFeatureExtractorFactory* const factoryToAdd,
     std::vector<BlobFeatureExtractorFactory*>* const selection) {
@@ -146,15 +155,37 @@ void FeatureSelectionMenuBase::promptToAddFactoryToSelection(
   selection->push_back(factoryToAdd);
 }
 
+void FeatureSelectionMenuBase::addFactoryToSelectionWithAllFlags(
+    BlobFeatureExtractorFactory* const factoryToAdd,
+    std::vector<BlobFeatureExtractorFactory*>* const selection) {
+  addFactoryToSelection(factoryToAdd, selection); // add if not already added yet
+  std::vector<FeatureExtractorFlagDescription*> flags = factoryToAdd->getDescription()->getFlagDescriptions();
+  for(int i = 0; i < flags.size(); ++i) {
+    addFlagToFactory(flags[i], factoryToAdd); // add if not already added yet
+  }
+}
+
 void FeatureSelectionMenuBase::addFactoryToSelection(
     BlobFeatureExtractorFactory* const factoryToAdd,
     std::vector<BlobFeatureExtractorFactory*>* const selection) {
-
-  std::vector<FeatureExtractorFlagDescription*> flags = factoryToAdd->getDescription()->getFlagDescriptions();
-  for(int i = 0; i < flags.size(); ++i) {
-    factoryToAdd->getSelectedFlags().push_back(flags[i]);
+  for(int i = 0; i < selection->size(); ++i) {
+    if(selection->at(i) == factoryToAdd) {
+      return;
+    }
   }
-
   selection->push_back(factoryToAdd);
+}
+
+void FeatureSelectionMenuBase::addFlagToFactory(
+    FeatureExtractorFlagDescription* const flag,
+    BlobFeatureExtractorFactory* const factory) {
+  const std::vector<FeatureExtractorFlagDescription*>& selectedFlags =
+      factory->getSelectedFlags();
+  for(int i = 0; i < selectedFlags.size(); ++i) {
+    if(flag == selectedFlags[i]) {
+      return;
+    }
+  }
+  factory->getSelectedFlags().push_back(flag);
 }
 

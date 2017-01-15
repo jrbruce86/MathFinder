@@ -27,7 +27,7 @@ GeometryBasedExtractorCategory::GeometryBasedExtractorCategory() {
 
 std::string GeometryBasedExtractorCategory
 ::getName() {
-  return "spatial-based features";
+  return "spatial";
 }
 
 std::string GeometryBasedExtractorCategory

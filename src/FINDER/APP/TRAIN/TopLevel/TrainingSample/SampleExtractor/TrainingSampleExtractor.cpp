@@ -26,6 +26,8 @@
 #include <assert.h>
 #include <stddef.h>
 
+#define DBG;
+
 TrainingSampleExtractor::TrainingSampleExtractor(FinderInfo* const finderInfo,
     MathExpressionFeatureExtractor* const featureExtractor)
 : samples_extracted(std::vector<std::vector<BLSample*> >()),
@@ -98,10 +100,10 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
     Pix* image = Utils::leptReadImg(imagePath);
 
     BlobDataGrid* blobDataGrid = BlobDataGridFactory().createBlobDataGrid(image, &api, Utils::getNameFromPath(imagePath));
-#ifdef DBG_MEDS_TRAINER
-    string winname = "BlobDataGrid for Image " + imageName;
-    ScrollView* gridviewer = grid->MakeWindow(100, 100, winname.c_str());
-    grid->DisplayBoxes(gridviewer);
+#ifdef DBG
+    string winname = "BlobDataGrid for Image " +  Utils::getNameFromPath(imagePath);
+    ScrollView* gridviewer = blobDataGrid->MakeWindow(100, 100, winname.c_str());
+    blobDataGrid->DisplayBoxes(gridviewer);
 #endif
 
 
@@ -109,7 +111,7 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
     // samples vector.
     std::vector<BLSample*> img_samples = getGridSamples(blobDataGrid, i);
 
-#ifdef DBG_MEDS_TRAINER
+#ifdef DBG
     cout << "Finished grabbing samples.\n";
     M_Utils::waitForInput();
     delete gridviewer;
