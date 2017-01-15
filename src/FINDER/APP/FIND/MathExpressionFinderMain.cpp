@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
 //    BlobDataGrid* g =
 //        BlobDataGridFactory().createBlobDataGrid(p, &api, "0.png");
 
-  }
+//  }
 
   if(argc == 2) {
     if(std::string(argv[1]) == std::string("-m")) { // interactive menu

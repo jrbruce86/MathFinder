@@ -44,3 +44,7 @@ depcomp
 install-sh
 ltmain.sh
 missing
+MathFinderGtGen
+moc_mainWindow.cpp
+moc_pageTab.cpp
+qrc_icons.cpp

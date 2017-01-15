@@ -19,7 +19,6 @@ install-exec-hook:
 	cp $(toolsSrcDir)/select_training/select_training $(toolsDestDir)/MathFinderselect_training; \
 	cp $(toolsSrcDir)/scripts/convert_pdfpages $(toolsDestDir)/MathFinderconvert_pdfpages; \
 	cp $(toolsSrcDir)/scripts/removealpha $(toolsDestDir)/MathFinderremovealpha; \
-	cp $(toolsSrcDir)/scripts/rename_pngs $(toolsDestDir)/MathFinderrename_pngs; \
 	cp $(toolsSrcDir)/scripts/writefilenames $(toolsDestDir)/MathFinderwritefilenames; \
 	cp $(toolsSrcDir)/scripts/convertPngsToBinary $(toolsDestDir)/MathFinderconvertPngsToBinary; \
 	cp $(toolsSrcDir)/scripts/printPngInfo $(toolsDestDir)/MathFinderprintPngInfo;
@@ -27,7 +26,7 @@ install-exec-hook:
   mkdir $(shareDir)/scrollview; cp *.jar $(shareDir)/scrollview; \
 	cd ..; tar -xzvf tesseract-ocr-3.02.eng.tar.gz; cd tesseract-ocr; cp tessdata /usr/local/share -R;
 	mkdir -p ~/.mathfinder/training; cp training/* ~/.mathfinder/training -R; chmod 777 ~/.mathfinder -R
-	
+
 # Get rid of my stuff, Deciding to leave tessdata in case its been updated or used for other purposes
 uninstall-hook:
 	rm -f $(toolsDestDir)/MathFinder*

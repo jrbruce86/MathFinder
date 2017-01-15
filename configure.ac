@@ -24,9 +24,6 @@ AC_CONFIG_FILES([Makefile
 AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha], \
 [chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha])
 
-AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/rename_pngs:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/rename_pngs], \
-[chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/rename_pngs])
-
 AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convert_pdfpages:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convert_pdfpages], \
 [chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/convert_pdfpages])
 

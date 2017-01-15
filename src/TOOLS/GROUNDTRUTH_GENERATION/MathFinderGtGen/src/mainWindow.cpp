@@ -262,7 +262,7 @@ void mainWindow::refresh() {
     //*image = image->convertToFormat(QImage::Format_RGB32);
     while(!fileStream.atEnd()) {
       // Read the line and start parsing
-      QString line = fileStream.readLine();
+      QString line = fileStream.readLine().simplified();
       QStringList splitLine = line.split(" ");
       if(splitLine.size() != 6) continue; // just ignore ones we know are invalid
 
