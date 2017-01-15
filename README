@@ -3,7 +3,8 @@ This project requires Qt, libpng-dev, libjpeg-dev, and Leptonica
 to install the png and jpeg libraries before Leptonica for it to be able to 
 read/write png and jpeg images. 
 
-To compile this project, run the following commands from this directory:
+This project can be compiles and installed by running the following commands 
+from this directory:
 
 autoreconf -vfi
 ./configure
