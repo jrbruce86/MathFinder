@@ -413,6 +413,14 @@ std::string Utils::getHomeDir() {
   return chop(exec("echo ~"));
 }
 
+std::string Utils::getTrainingRoot() {
+  return checkTrailingSlash(getHomeDir()) + std::string(".mathfinder/training/");
+}
+
+std::string Utils::getGroundtruthRoot() {
+  return checkTrailingSlash(getHomeDir()) + std::string(".mathfinder/groundtruth/");
+}
+
 std::string Utils::getNameFromPath(const std::string& path) {
   const std::string::size_type dotIndex = path.find_last_of(".");
   const std::string::size_type slashIndex = path.find_last_of("/");
@@ -436,15 +444,19 @@ void Utils::getline(std::string& str) {
 
 
 void Utils::waitForInput() {
+  std::cout << "Press enter to continue! or 'q' to quit\n";
+  if((char)std::cin.peek() == '\n') {
+    std::cin.ignore();
+  }
   char c = 'a';
   char pc = 'b';
-  while(c != '\n') {
+  do {
     if(c == 'q')
       exit(EXIT_SUCCESS);
     if(pc != c && c != '\n')
-      printf("Press enter to continue! or 'q' to quit\n");
+      std::cout << "Press enter to continue! or 'q' to quit\n";
     pc = c;
-    scanf("%c", &c);
-  }
+    c = std::getchar();
+  } while(c != '\n');
 }
 

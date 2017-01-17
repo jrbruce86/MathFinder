@@ -26,8 +26,6 @@ class SegmentorSelectionMenu: public MenuBase {
 
   std::string getSelectedSegmentorName();
 
-  void setToDefault();
-
   std::string getDefaultSegmentorName();
 
  private:

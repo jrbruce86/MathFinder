@@ -20,7 +20,7 @@ GenericVector<std::string> StopwordFileReader::getStopwords() {
     return stopwords;
   }
   // Otherwise read in the file, update internal value, and return result
-  std::string stopwordFileName = Utils::checkTrailingSlash("~/.mathfinder/training/") +
+  std::string stopwordFileName = Utils::getTrainingRoot() +
       (std::string)"stopwords";
 
   std::ifstream stpwrdfs;

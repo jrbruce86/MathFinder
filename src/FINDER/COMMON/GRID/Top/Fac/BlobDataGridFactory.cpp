@@ -19,15 +19,21 @@
 #include <string>
 
 #include <M_Utils.h>
+#include <Utils.h>
 
 #include <stdio.h> // for NULL
 #include <assert.h>
 
-#define DBG_ROW_CHARACTERISTICS
+//#define DBG_ROW_CHARACTERISTICS
 #define DBG_INFO_GRID
+//#define DBG_VERBOSE
+//#define DBG_SHOW_ALL_BLOB_RESULT
 
 BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     tesseract::TessBaseAPI* tessBaseApi, const std::string imageName) {
+
+  std::cout << "Creating grid with image name of: " << imageName << std::endl;
+  Utils::waitForInput();
 
   // Initialize the tesseract api
   tessBaseApi->Init("/usr/local/share/", "eng");
@@ -153,7 +159,12 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
       TesseractRowData* tesseractRowData = new TesseractRowData(rowresit.data(), tesseractBlockData);
       tesseractBlockData->getTesseractRows().push_back(tesseractRowData);
       tesseractRowData->rowIndex = j;
-      tesseractRowData->setHasValidTessWord(findIfRowHasValidTessWord(tesseractRowData, tessBaseApi));
+      char* firstvalidword = getRowValidTessWord(tesseractRowData, tessBaseApi);
+      if(firstvalidword != NULL) {
+        tesseractRowData->setHasValidTessWord(true);
+        tesseractRowData->aValidWordFound = firstvalidword;
+      }
+
 
       // Iterate the words within the row
       WERD_RES_IT wordresit(tesseractRowData->getWordResList());
@@ -166,7 +177,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
         }
         WERD_CHOICE* const bestWordChoice = wordResultData->best_choice;
         if(!bestWordChoice) {
-          assert(false); // Shouldn't happen? We'll see....
+          // assert(false); // Shouldn't happen? We'll see.... (did happen.. whatever)
           continue; // Only care if has results
         }
 
@@ -206,16 +217,24 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
           for(int j = 0; j < i; ++j) { // advance to the choice list to that of the current character
             characterChoiceListIt.forward();
           }
+
+          if(characterChoiceListIt.empty()) {
+            continue; // only care if there's actually a result
+          }
+
           BLOB_CHOICE* const bestChoice =
               BLOB_CHOICE_IT(characterChoiceListIt.data()).data(); // should be at the head of the choice list for this character
 
-          // Get blobs that overlap this character in my grid and update them to have this data
 
           // the below shouldn't happen, every char recognized
           // by Tesseract should correspond to at least
-          // one blob in the image
-          assert(!blobDataGrid->RectangleEmpty(charResultBox));
+          // one blob in the image.... as it turns out this does happen....
+          // in this case Tesseract must be confused. I will just ignore the character in this case
+          if(blobDataGrid->RectangleEmpty(charResultBox)) {
+            continue;
+          }
 
+          // Get blobs that overlap this character in my grid and update them to have this data
           TesseractCharData* tesseractCharData =
               (new TesseractCharData(charResultBox, tesseractWordData))
               ->setCharResultInfo(bestChoice)
@@ -225,12 +244,54 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
           blobDataGridSearch.StartRectSearch(charResultBox);
           BlobData* curBlobData = blobDataGridSearch.NextRectSearch();
           while(curBlobData != NULL) { // start iterating blobs in char in word in row in block
-            assert(curBlobData->getParentChar() == NULL);
-            // Above assertion rules out the possibility
-            // of a blob mapping to more than one character.
-            // Shouldn't be possible. But if it is, I want to know.
-            curBlobData->setCharacterRecognitionData(tesseractCharData);
-            tesseractCharData->getBlobs().push_back(curBlobData);
+            // only care about blobs completely inside the current character box
+            if(tesseractCharData->getBoundingBox()->contains(curBlobData->getBoundingBox())) {
+
+              if(curBlobData->getParentChar() == NULL) {
+                // Above if rules out the possibility of a blob mapping to more than one character.
+                // Shouldn't be possible. But as it turns out it is when Tesseract gets confused which happens VERY OFTEN with the images I'm giving it...
+                // Below else statement contains debug for when I want to investigate.
+                // But for now, I'm just taking whatever I'm given first, and aside from printing out
+                // a warning, I'm just ignoring the rest and moving on with my life.
+                curBlobData->setCharacterRecognitionData(tesseractCharData);
+                tesseractCharData->getBlobs().push_back(curBlobData);
+#ifdef DBG_SHOW_ALL_BLOB_RESULT
+                std::cout << "The shown blob was recognized as belonging to the character " << tesseractCharData->getUnicode() << " and word " << tesseractCharData->getParentWord()->wordstr() << std::endl;
+                std::cout << "The character boundingbox to which the blob is currently being assigned is: ";
+                tesseractCharData->getBoundingBox()->print();
+                std::cout << "The blob boundingbox is: ";
+                curBlobData->getBoundingBox().print();
+                pixDisplayWithTitle(curBlobData->getBlobImage(), 100, 100, "Blob", 1);
+                M_Utils::dispRegion(M_Utils::tessTBoxToImBox(tesseractCharData->getBoundingBox(), image), image);
+                Utils::waitForInput();
+#endif
+              } else {
+                std::cout << "WARNING: blob was assigned by Tesseract a parent character more than once!!... "
+                    << "was previously assigned to char at memory " << curBlobData->getParentChar() << ", "
+                    << "now being assigned to " << tesseractCharData << ".. They the same? I'm taking the previous assignment and ignoring this one" << std::endl;
+#ifdef DBG_MULTI_PARENT_ISSUE
+                std::cout << "The blob was recognized as belonging to the character " << tesseractCharData->getUnicode() << std::endl;
+                std::cout << "The character boundingbox to which the blob is currently being assigned is: ";
+                tesseractCharData->getBoundingBox()->print();
+                std::cout << "The blob boundingbox is: ";
+                curBlobData->getBoundingBox().print();
+                std::cout << "Showing the hierarchy for the current parent the blob is being assigned to:\n";
+                dbgDisplayHierarchy(tesseractBlockData,
+                    tesseractRowData,
+                    tesseractWordData,
+                    tesseractCharData,
+                    curBlobData, image);
+                std::cout << "Showing the hierarchy for the parent the blob was already assigned to previously:\n";
+                std::cout << "The character boundingbox this blob was previously assigned to: ";
+                curBlobData->getParentChar()->getBoundingBox()->print();
+                dbgDisplayHierarchy(curBlobData->getParentBlock(),
+                    curBlobData->getParentRow(),
+                    curBlobData->getParentWord(),
+                    curBlobData->getParentChar(),
+                    curBlobData, image);
+#endif
+              }
+            }
             curBlobData = blobDataGridSearch.NextRectSearch();
           } // done iterating blobs in char in word in row in block
         } // done iterating chars in word in row in block
@@ -240,7 +301,6 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     } // done iterating rows in block
     bres_it.forward();
   } // done iterating blocks on the page
-
 #ifdef DBG_INFO_GRID
   {
     ScrollView* sv = blobDataGrid->MakeWindow(100, 100,
@@ -275,7 +335,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
 /**
  * Determines if the given row has a valid word on it according to Tesseract
  */
-bool BlobDataGridFactory::findIfRowHasValidTessWord(
+char* BlobDataGridFactory::getRowValidTessWord(
     TesseractRowData* const rowData,
     tesseract::TessBaseAPI* const api) {
   WERD_RES_LIST* wordreslist = rowData->getWordResList();
@@ -286,14 +346,14 @@ bool BlobDataGridFactory::findIfRowHasValidTessWord(
     WERD_RES* wordres = wordresit1.data();
     WERD_CHOICE* wordchoice = wordres->best_choice;
     if(wordchoice != NULL) {
-      const char* wrd = wordchoice->unichar_string().string();
+      char* wrd = (char*)wordchoice->unichar_string().string();
       if(api->IsValidWord(wrd)) {
-        return true;
+        return wrd;
       }
     }
     wordresit1.forward();
   }
-  return false;
+  return NULL;
 }
 
 //TODO: Modify so that first row with valid words is considered the top row
@@ -328,14 +388,23 @@ void BlobDataGridFactory::findAllRowCharacteristics(BlobDataGrid* const blobData
     }
     GenericVector<TesseractWordData*> words = row->getTesseractWords();
     int valid_words_cur_row = 0;
+    std::cout << "Checking " << words.size() << " words on the current row...\n";
     for(int j = 0; j < words.length(); ++j) {
       if(!words[j]->wordstr())
         continue;
       if(blobDataGrid->getTessBaseAPI()->IsValidWord(words[j]->wordstr()))
         ++valid_words_cur_row;
+      else {
+        std::cout << words[j]->wordstr() << " found not to be valid...\n";
+      }
     }
-    assert(valid_words_cur_row > 0); // shouldn't be 0 or less
-    ++num_rows_with_valid;
+    if(words.empty()) {
+      std::cout << "No words on the row......\n";
+    }
+    std::cout << "valid word that was found previously: " << row->aValidWordFound << std::endl;
+    if(valid_words_cur_row > 0) { // shouldn't be 0... but sometimes is when the engine is confused so...
+      ++num_rows_with_valid;
+    }
     row->setValidWordCount(valid_words_cur_row);
     avg_valid_words += (double)valid_words_cur_row;
   }
@@ -466,5 +535,32 @@ void BlobDataGridFactory::findAllRowCharacteristics(BlobDataGrid* const blobData
   std::cout << "Finished getting row characteristics.\n";
   M_Utils::waitForInput();
 #endif
+}
+
+void BlobDataGridFactory::dbgDisplayHierarchy(
+    TesseractBlockData* tesseractBlockData,
+    TesseractRowData* tesseractRowData,
+    TesseractWordData* tesseractWordData,
+    TesseractCharData* tesseractCharData,
+    BlobData* blob,
+    Pix* image) {
+  TBOX blockbox = tesseractBlockData->getBlockRes()->block->bounding_box();
+  std::cout << "Showing the block.\n";
+  M_Utils::dispRegion(M_Utils::tessTBoxToImBox(&blockbox, image), image);
+  M_Utils::waitForInput();
+  TBOX rowbox = (tesseractRowData->rowRes->row->bounding_box());
+  std::cout << "Showing the row.\n";
+  M_Utils::dispRegion(M_Utils::tessTBoxToImBox(&rowbox, image), image);
+  M_Utils::waitForInput();
+  std::cout << "Showing the word.\n";
+  TBOX wordbox = tesseractWordData->getBoundingBox();
+  M_Utils::dispRegion(M_Utils::tessTBoxToImBox(&wordbox, image), image);
+  M_Utils::waitForInput();
+  std::cout << "Showing the character.\n";
+  M_Utils::dispRegion(M_Utils::tessTBoxToImBox(tesseractCharData->getBoundingBox(), image), image);
+  M_Utils::waitForInput();
+  std::cout << "Showing the blob.\n";
+  pixDisplay(blob->getBlobImage(), 100, 100);
+  M_Utils::waitForInput();
 }
 

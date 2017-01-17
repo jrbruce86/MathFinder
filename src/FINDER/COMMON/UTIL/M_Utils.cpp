@@ -11,7 +11,9 @@
 #include <Lept_Utils.h>
 #include <BlobDataGrid.h>
 
-using namespace tesseract;
+#include <Utils.h>
+
+//using namespace tesseract;
 
 
 // TODO: Migrate everything here that belongs in basic_utils and lept_utils to there
@@ -197,18 +199,7 @@ void M_Utils::dispBlobOCRRes(BLOBNBOX* blob, PIX* im,
 }
 
 void M_Utils::waitForInput() {
-  char c = 0;
-  scanf("%c", &c); // flush
-  c = 'a';
-  char pc = 'b';
-  while((c != '\n')) {
-    if(c == 'q')
-      exit(EXIT_SUCCESS);
-    if(pc != c && c != '\n')
-      printf("Press enter to continue! or 'q' to quit\n");
-    pc = c;
-    scanf("%c", &c);
-  }
+  Utils::waitForInput();
 }
 
 void M_Utils::dispBoxCoords(BOX* box) {

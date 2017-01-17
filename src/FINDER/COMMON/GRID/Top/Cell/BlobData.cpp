@@ -14,7 +14,8 @@
 #include <BlockData.h>
 
 BlobData::BlobData(TBOX box, PIX* blobImage, BlobDataGrid* parentGrid)
-    : mathExpressionDetectionResult(false) {
+    : mathExpressionDetectionResult(false),
+      tesseractCharData(NULL) {
   this->box = box;
   this->blobImage = blobImage;
   this->parentGrid = parentGrid;

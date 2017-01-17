@@ -14,7 +14,8 @@
 TesseractRowData::TesseractRowData(ROW_RES* rowRes,
     TesseractBlockData* parentBlockData)
 : hasValidTessWord(false), avg_baselinedist((double)0),
-  rowIndex(-1), isConsideredNormal(true), valid_word_count(-1) {
+  rowIndex(-1), isConsideredNormal(true), valid_word_count(-1),
+  aValidWordFound(NULL) {
   this->rowRes = rowRes;
   this->parentBlockData = parentBlockData;
 }

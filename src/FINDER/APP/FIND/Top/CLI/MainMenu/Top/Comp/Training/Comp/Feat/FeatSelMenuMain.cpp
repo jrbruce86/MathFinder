@@ -67,3 +67,8 @@ std::vector<BlobFeatureExtractorFactory*> FeatureSelectionMenuMain::getSelectedF
   // Return all of the factories
   return allFactories;
 }
+
+void FeatureSelectionMenuMain::selectAllFeatures() {
+  spatialMenu->selectAllFactories();
+  recognitionMenu->selectAllFactories();
+}

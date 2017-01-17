@@ -92,11 +92,21 @@ void DatasetSelectionMenu::doTask() {
   }
 
   groundtruthImagePaths = findGroundtruthImagePaths(groundtruthDirPath);
+  if(groundtruthImagePaths.empty()) {
+    std::cout << "ERROR: Could not find the expected groundtruth image names. "
+        << "Names should be as follows: 0.png, 1.png, 2.png, etc (or some "
+        << "other extension possibly).\n";
+    return;
+  }
+
+#ifdef DBG_GTPATHS
   std::cout << "groundtruth image paths: \n";
   for(int i = 0; i < groundtruthImagePaths.size(); ++i) {
-    std::cout << groundtruthImagePaths[i] << " ";
+    std::cout << groundtruthImagePaths[i] << "\n";
   }
   std::cout << std::endl;
+#endif
+
   isComplete_ = true;
 }
 
@@ -149,11 +159,7 @@ std::string DatasetSelectionMenu::promptNewDatasetDirPath() {
         "for where the math regions are in the images. The images should be named as follows assuming "
         << "they are in .png format (images in most any format are supported): 0.png, 1.png, 2.png, etc...: ";
     Utils::getline(datasetDirPath);
-    std::cout << "The line I got " << datasetDirPath << std::endl;
-    std::cout << "Did it skip?? Shouldn't have. no Residual line. Remove this if not. TODO\n";
-    Utils::waitForInput();
     std::cout << std::endl;
-
     if(groundtruthDirPathIsGood(Utils::checkTrailingSlash(datasetDirPath))) {
       break; // All tests pass. Good to go!
     } else {
@@ -271,7 +277,9 @@ std::vector<std::string> DatasetSelectionMenu::findGroundtruthImagePaths(std::st
   for(int i = 0; i < trainingImagePaths.size(); ++i) {
     const int curNum = getFileNumFromPath(trainingImagePaths[i]);
 
-    assert(curNum > -1 && curNum < trainingImagePaths.size());
+    if(!(curNum > -1 && curNum < trainingImagePaths.size())) {
+      return std::vector<std::string>(); // return empty vector on error
+    }
     trainingImagePathsOrdered[curNum] = trainingImagePaths[i];
   }
 
@@ -283,8 +291,6 @@ int DatasetSelectionMenu::getFileNumFromPath(const std::string& path) {
   const int lastSlashIndex = curPath.find_last_of("/");
   const int dotIndex = curPath.find_last_of(".");
   const std::string curName = curPath.substr(lastSlashIndex + 1, dotIndex - lastSlashIndex);
-  std::cout << "Training image with path " << curPath << " read in as " << curName << std::endl;
-  Utils::waitForInput(); // TODO remove once confirmed this works right
   return atoi(curName.c_str());
 }
 

@@ -75,22 +75,21 @@ void DoTrainingMenu::doTask() {
          <<   "returning to the previous menu and selecting features to use. \n";
     return;
   }
-  if(detectorSelection->getSelectedDetectorName() == "" &&
-      segmentorSelection->getSelectedSegmentorName() == "") {
+  if(detectorName == "" && segmentorName == "") {
     std::cout << "Detector and segmentor haven't been chosen yet. " <<
-        "Use the defaults (" << detectorSelection->getDefaultDetectorName()
-        << " for detection and " << segmentorSelection->getDefaultSegmentorName()
-        << " for segmentation)? ";
+        "Use the defaults ('" << detectorSelection->getDefaultDetectorName()
+        << "' for detection and '" << segmentorSelection->getDefaultSegmentorName()
+        << "' for segmentation)? ";
     if(Utils::promptYesNo()) {
-      detectorSelection->setToDefault();
-      segmentorSelection->setToDefault();
+      detectorName = detectorSelection->getDefaultDetectorName();
+      segmentorName = segmentorSelection->getDefaultSegmentorName();
     }
   }
-  if(detectorSelection->getSelectedDetectorName() == "") {
+  if(detectorName == "") {
     detectorSelection->doTask();
     detectorName = detectorSelection->getSelectedDetectorName();
   }
-  if(segmentorSelection->getSelectedSegmentorName() == "") {
+  if(segmentorName == "") {
     segmentorSelection->doTask();
     segmentorName = segmentorSelection->getSelectedSegmentorName();
   }
@@ -110,8 +109,9 @@ void DoTrainingMenu::doTask() {
   bool descriptionDone = false;
   std::string description = "";
   while(true) {
-    std::cout << "Type in an optional brief description on the math expression finder being trained and press enter when finished (or just press enter if description N/A): ";
-    std::getline(std::cin, description);
+    std::cout << "Type in an optional brief description on the math expression "
+        << "finder being trained and press enter when finished.\n";
+    Utils::getline(description);
     if(description == "" || description == "\n") {
       break;
     }

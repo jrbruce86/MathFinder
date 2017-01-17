@@ -20,6 +20,9 @@
 #include <WordData.h>
 #include <BlobDataGrid.h>
 
+//#define DBG_INFO_GRID
+//#define DBG_INFO_GRID_S
+
 TesseractBlockData::TesseractBlockData(BLOCK_RES* blockRes,
     BlobDataGrid* parentGrid) {
   this->blockRes = blockRes;
@@ -47,7 +50,7 @@ std::vector<TesseractRowData*>& TesseractBlockData::getTesseractRows() {
 }
 
 
-
+// Find recognized sentence in this block
 // here a sentence is simply any group of one or more words starting with
 // a capital letter, valid first word, and ending with a period or question mark.
 void TesseractBlockData::findRecognizedSentences(
@@ -73,8 +76,9 @@ void TesseractBlockData::findRecognizedSentences(
       const char* wordstr = words[j]->wordstr();
       if(!sentence_found) { // looking for the start of a sentence
         if((tesseractRows.size() == (i+1))
-            && (words.length() == (j+1)))
+            && (words.length() == (j+1))) {
           continue; // don't create an empty sentence if at the end of the block
+        }
         if(isupper(wordstr[0]) && islower(wordstr[1])) {
           // see if the uppercase word is valid or not based on the api
           if(api->IsValidWord(wordstr)) {
@@ -84,8 +88,7 @@ void TesseractBlockData::findRecognizedSentences(
             sentence_found = true;
           }
         }
-      }
-      else {  // looking for the end of the current sentence
+      } else {  // looking for the end of the current sentence
         // for now I'll assume a '.' or '?' is the end of the sentence
         // (also I'll count the last character on the block as the end
         // of a sentence if the block ends while a sentence ending is
@@ -112,20 +115,22 @@ void TesseractBlockData::findRecognizedSentences(
   // if a sentence was started near the end of the page and followed by all null
   // words then there'll be an empty sentence at the end of the page. if there is
   // then delete it here
-  TesseractSentenceData* lastsentence = tesseractSentences.back();
-  if(lastsentence->getSentenceText() == NULL) {
-    tesseractSentences.pop_back();
-    delete lastsentence;
-    lastsentence = NULL;
+  if(!tesseractSentences.empty()) {
+    TesseractSentenceData* lastsentence = tesseractSentences.back();
+    if(lastsentence->getSentenceText() == NULL) {
+      tesseractSentences.pop_back();
+      delete lastsentence;
+      lastsentence = NULL;
+    }
   }
 
   // Done finding the sentences, optional debugging below
 #ifdef DBG_INFO_GRID
   std::cout << "...............................................\n";
   std::cout << "here are the " << tesseractSentences.size()
-           << " sentences that were found:\n";
+           << " sentences that were found in the current block:\n";
   for(int i = 0; i < tesseractSentences.size(); i++) {
-    char* sentence = recognized_sentences[i]->getSentenceText();
+    char* sentence = tesseractSentences[i]->getSentenceText();
     std::cout << i << ": " << ((sentence != NULL) ? sentence : "NULL")
              << std::endl << "------\n";
   }
@@ -151,9 +156,12 @@ void TesseractBlockData::findRecognizedSentences(
     }
   }
 #ifdef DBG_INFO_GRID
-  sentence_sv = MakeWindow(100, 100, "BlobInfoGrid after getting the sentences");
-  DisplayBoxes(sentence_sv);
-  M_Utils::waitForInput();
+  {
+    ScrollView* sentence_sv = parentGrid->MakeWindow(100, 100, "BlobInfoGrid after getting the sentences");
+    parentGrid->DisplayBoxes(sentence_sv);
+    M_Utils::waitForInput();
+    delete sentence_sv;
+  }
 #endif
 
   getSentenceRegions();
@@ -205,15 +213,6 @@ void TesseractBlockData::getSentenceRegions() {
   //    is a row or portion of a row for that sentence)
   for(int j = 0; j < tesseractSentences.size(); ++j) {
 
-#ifdef DBG_INFO_GRID_S
-    if(j == dbgsentence) {
-      std::cout << "about to find line boxes for sentence " << j << ":\n";
-      std::cout << recognizedSentences[j]->sentence_txt << std::endl;
-      std::cout << "the lines of this sentence are " << startRowIndex << "-" << endRowIndex << std::endl;
-      M_Utils::waitForInput();
-    }
-#endif
-
     TesseractSentenceData* const cursentence = tesseractSentences[j];
 
     // Grab the convenience variables up front
@@ -229,6 +228,15 @@ void TesseractBlockData::getSentenceRegions() {
     const int firstWordLeft = startWord->getBoundingBox().left();
     TBOX startRowBox = startRow->getBoundingBox();
     const int numRows = endRowIndex - startRowIndex + 1;
+
+#ifdef DBG_INFO_GRID_S
+    if(j == dbgsentence) {
+      std::cout << "about to find line boxes for sentence " << j << ":\n";
+      std::cout << tesseractSentences[j]->sentence_txt << std::endl;
+      std::cout << "the lines of this sentence are " << startRowIndex << "-" << endRowIndex << std::endl;
+      M_Utils::waitForInput();
+    }
+#endif
 
     // holds separate box for each row of the sentence
     Boxa* sentencelines = boxaCreate(numRows);
@@ -259,6 +267,15 @@ void TesseractBlockData::getSentenceRegions() {
       TBOX lastBox(endRowBox.left(), endRowBox.bottom(), lastWordRight, endRowBox.top());
       boxaAddBox(sentencelines, createLeptBox(lastBox), L_INSERT);
     }
+
+#ifdef DBG_INFO_GRID_S
+    std::cout << "Displaying the isothetic region corresponding to the sentence:\n"
+        << cursentence->getSentenceText() << std::endl;
+    for(int i = 0; i < sentencelines->n; ++i) {
+      M_Utils::dispRegion(sentencelines->box[i], parentGrid->getBinaryImage());
+    }
+    M_Utils::waitForInput();
+#endif
     cursentence->setRowBoxes(sentencelines);
   }
 }

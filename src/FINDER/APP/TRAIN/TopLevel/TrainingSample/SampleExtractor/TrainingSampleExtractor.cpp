@@ -26,7 +26,7 @@
 #include <assert.h>
 #include <stddef.h>
 
-#define DBG;
+#define DBG
 
 TrainingSampleExtractor::TrainingSampleExtractor(FinderInfo* const finderInfo,
     MathExpressionFeatureExtractor* const featureExtractor)
@@ -88,11 +88,12 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
   // precomputations on the entire training set prior to any feature
   // extraction. this may or may not be applicable depending on the
   // feature extraction implementations being used
-
+  std::cout << "Starting traininer initialization.\n";
   featureExtractor->doTrainerInitialization();
-
+  std::cout << "Done with trainer initialization.\n";
 
   // Extract the features for each image in the groundtruth dataset
+  std::cout << "Extracting the features for each image in the groundtruth dataset.\n";
   for(int i = 0; i < finderInfo->getGroundtruthImagePaths().size(); ++i) {
     tesseract::TessBaseAPI api; // the tesseract api that will be used for features which require it during feature extraction
 
@@ -172,8 +173,9 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
 // implementation is being utilized.
 std::vector<BLSample*> TrainingSampleExtractor::getGridSamples(BlobDataGrid* const blobDataGrid,
     int image_index) {
-
+  std::cout << "Starting feature extraction for training image " << image_index << std::endl;
   featureExtractor->extractFeatures(blobDataGrid);
+  std::cout << "Finished extracting features for training image " << image_index << std::endl;
   BlobDataGridSearch bdgs(blobDataGrid);
   bdgs.StartFullSearch();
   BlobData* blob = NULL;

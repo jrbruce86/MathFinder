@@ -54,8 +54,8 @@ setDistanceAboveRowBaseline(const double dist) {
 TBOX* TesseractCharData::getBoundingBox() {
   return &charResultBoundingBox;
 }
-std::string* TesseractCharData::getUnicode() {
-  return &recognitionResultUnicode;
+std::string TesseractCharData::getUnicode() {
+  return recognitionResultUnicode;
 }
 BLOB_CHOICE* TesseractCharData::getCharResultInfo() {
   return charResultInfo;

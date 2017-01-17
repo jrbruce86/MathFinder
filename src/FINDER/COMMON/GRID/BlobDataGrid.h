@@ -66,6 +66,8 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
 
   GenericVector<Segmentation*>& getSegments();
 
+  void HandleClick(int x, int y);
+
  private:
 
   tesseract::TessBaseAPI* tessBaseAPI; // the api this grid relies on

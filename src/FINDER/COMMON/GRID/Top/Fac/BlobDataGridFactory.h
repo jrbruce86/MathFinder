@@ -14,6 +14,10 @@
 
 class BlobDataGrid;
 class TesseractRowData;
+class TesseractBlockData;
+class TesseractWordData;
+class TesseractCharData;
+class BlobData;
 
 class BlobDataGridFactory {
  public:
@@ -32,7 +36,9 @@ class BlobDataGridFactory {
 
  private:
 
-  bool findIfRowHasValidTessWord(
+  // Returns the recognized word if theres a 'valid' one on the row,
+  // otherwise returns NULL
+  char* getRowValidTessWord(
       TesseractRowData* const rowData,
       tesseract::TessBaseAPI* const tessBaseApi);
 
@@ -41,6 +47,13 @@ class BlobDataGridFactory {
   // "normal" or "abnormal" from a Tesseract perspective based upon this
   // analysis.
   void findAllRowCharacteristics(BlobDataGrid* const blobDataGrid);
+
+  void dbgDisplayHierarchy(
+      TesseractBlockData* tesseractBlockData,
+      TesseractRowData* tesseractRowData,
+      TesseractWordData* tesseractWordData,
+      TesseractCharData* tesseractCharData,
+      BlobData* blob, Pix* image);
 };
 
 

@@ -65,6 +65,7 @@ struct TesseractRowData {
 
   bool hasValidTessWord;
 
+  char* aValidWordFound;
 
   GenericVector<TesseractWordData*> wordinfovec;
 

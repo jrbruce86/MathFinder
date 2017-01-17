@@ -51,10 +51,10 @@ bool FinderTrainingPaths::printPathMissingError(const std::string& path) {
 }
 
 std::string FinderTrainingPaths::getGroundtruthRoot() {
-  return Utils::checkTrailingSlash(Utils::getHomeDir()) + ".mathfinder/groundtruth/";
+  return Utils::checkTrailingSlash(Utils::getGroundtruthRoot());
 }
 std::string FinderTrainingPaths::getTrainingRoot() {
-  return Utils::checkTrailingSlash(Utils::getHomeDir()) + ".mathfinder/training/";
+  return Utils::checkTrailingSlash(Utils::getTrainingRoot());
 }
 
 std::string FinderTrainingPaths::getTrainedFinderRoot() {

@@ -55,10 +55,6 @@ std::string SegmentorSelectionMenu::getSelectedSegmentorName() {
   return selectedSegmentorName;
 }
 
-void SegmentorSelectionMenu::setToDefault() {
-  this->selectedSegmentorName = getDefaultSegmentorName();
-}
-
 std::string SegmentorSelectionMenu::getDefaultSegmentorName() {
   return MathExpressionSegmentorFactory().getSupportedSegmentorNames()[0];
 }

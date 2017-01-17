@@ -40,7 +40,7 @@
 #include <iostream>
 #include <assert.h>
 
-#define DBG_SINGLE_SENTENCE
+//#define DBG_SINGLE_SENTENCE
 
 NGramProfileGenerator::NGramProfileGenerator(
     FinderInfo* const finderInfo,
@@ -49,7 +49,7 @@ NGramProfileGenerator::NGramProfileGenerator(
   this->finderInfo = finderInfo;
   this->ngramRanker = ngramRanker;
   this->ngramdir = ngramdir;
-  this->groundtruth_path = finderInfo->getGroundtruthDirPath();
+  this->groundtruthFilePath = finderInfo->getGroundtruthFilePath();
 }
 
 
@@ -159,13 +159,13 @@ RankedNGramVecs NGramProfileGenerator::generateNewNGrams() {
   if(!Utils::existsDirectory(math_ngramdir))
     Utils::exec("mkdir " + math_ngramdir);
   else {
-    Utils::exec("rm -r " + math_ngramdir); // make anew
+    Utils::exec("rm -rf " + math_ngramdir); // make anew
     Utils::exec("mkdir " + math_ngramdir);
   }
   if(!Utils::existsDirectory(nonmath_ngramdir))
     Utils::exec("mkdir " + nonmath_ngramdir);
   else {
-    Utils::exec("rm -r " + nonmath_ngramdir); // make anew
+    Utils::exec("rm -rf " + nonmath_ngramdir); // make anew
     Utils::exec("mkdir " + nonmath_ngramdir);
   }
 
@@ -175,16 +175,16 @@ RankedNGramVecs NGramProfileGenerator::generateNewNGrams() {
   // Iterate through half of the training images and generate the n-gram profile from their OCR results
   int mathsentence_cnt = 0;
   int nonmathsentence_cnt = 0;
-  for(int i = 1; i <= img_num/2; i++) {
+  for(int i = 0; i < img_num/2; ++i) {
     tesseract::TessBaseAPI api;
     std::string trainingImagePath = finderInfo->getGroundtruthImagePaths()[i];
     Pix* trainingImage = Utils::leptReadImg(trainingImagePath);
     BlobDataGrid* blobDataGrid = BlobDataGridFactory().createBlobDataGrid(trainingImage, &api, Utils::getNameFromPath(trainingImagePath));
 
 #ifdef DBG_NGRAM_INIT
-    bool showgrid = false;
+    bool showgrid = true;
     if(showgrid) {
-      std::string winname = "(featext)BlobInfoGrid for Image " + Utils::intToString(i);
+      std::string winname = "(ngrams)BlobInfoGrid for Image " + Utils::intToString(i);
       ScrollView* gridviewer = blobDataGrid->MakeWindow(100, 100, winname.c_str());
       blobDataGrid->DisplayBoxes(gridviewer);
       Utils::waitForInput();
@@ -200,9 +200,10 @@ RankedNGramVecs NGramProfileGenerator::generateNewNGrams() {
     // non-math. A sentence is a math sentence if it overlaps any region
     // of the groundtruth for the given page, otherwise it is a non-math
     // sentence.
-    for(int j = 0; j < sentences.size(); ++j)
+    for(int j = 0; j < sentences.size(); ++j) {
       sentences[j]->setIsMath(isSentenceMath(sentences[j], i));
-
+    }
+    std::cout << "Done checking sentences for math.\n";
 #ifdef DBG_NGRAM_INIT_SHOW_SENTENCE_LABELS
     dbgShowSentenceLabels(trainingImage, blobDataGrid, trainingImagePath);
 #endif
@@ -290,11 +291,11 @@ bool NGramProfileGenerator::isSentenceMath(TesseractSentenceData* sentence, int 
     // see if any entry of the groundtruth for the given image
     // overlaps with the current line's box
     std::ifstream gtfile;
-    std::string gtfilename = groundtruth_path;
+    std::string gtfilename = groundtruthFilePath;
     gtfile.open(gtfilename.c_str(), std::ifstream::in);
     if((gtfile.rdstate() & std::ifstream::failbit) != 0) {
       std::cout << "ERROR: Could not open Groundtruth.dat in " \
-           << groundtruth_path << std::endl;
+           << groundtruthFilePath << std::endl;
       assert(false);
     }
     int max = 55;
@@ -334,21 +335,35 @@ void NGramProfileGenerator::colorSentenceBlobs(Pix* const im, const int sentence
     TesseractBlockData* const block, BlobDataGrid* const grid, const LayoutEval::Color color) {
   BlobData* b = NULL;
   BlobDataGridSearch bdgs(grid);
-  TBOX blockBox = block->getBlockRes()->block->bounding_box();
+  bdgs.SetUniqueMode(true);
+  BLOCK_RES* blockRes = block->getBlockRes();
+  if(blockRes == NULL) {
+    return;
+  }
+  TBOX blockBox = blockRes->block->bounding_box();
+  blockBox.print();
   bdgs.StartRectSearch(blockBox);
   while((b = bdgs.NextRectSearch()) != NULL) {
     TesseractWordData* const word = b->getParentWord();
     if(word == NULL) {
       continue;
     }
-    if(word->getParentBlock() != NULL) {
-      if(!(word->getParentBlock()->getBlockRes()->block->bounding_box() == blockBox)) {
+    TesseractBlockData* parentWordBlock = word->getParentBlock();
+    if(parentWordBlock != NULL) {
+      BLOCK_RES* parentWordBlockRes = parentWordBlock->getBlockRes();
+      if(parentWordBlockRes == NULL) {
         continue;
       }
+      if(parentWordBlockRes->block == NULL) {
+        continue;
+      }
+      if(!(parentWordBlockRes->block->bounding_box() == blockBox)) {
+        continue;
+      }
+      //std::cout << "4\n";
     } else {
       continue;
     }
-
     if(word->getSentenceIndex() == sentencenum) {
       Box* bbox = M_Utils::getBlobDataBox(b, im);
       Lept_Utils::fillBoxForeground(im, bbox, color);
@@ -357,9 +372,10 @@ void NGramProfileGenerator::colorSentenceBlobs(Pix* const im, const int sentence
   }
 }
 
+#include <DatasetMenu.h>
 void NGramProfileGenerator::dbgShowSentenceLabels(Pix* const curimg,
     BlobDataGrid* const grid,
-    std::string img_name) {
+    std::string img_path) {
   std::string path = ngramdir;
   // for debugging display all the math sentences in red and non-math in blue
   bool show_math_nonmath = true;
@@ -367,11 +383,11 @@ void NGramProfileGenerator::dbgShowSentenceLabels(Pix* const curimg,
   if(show_math_nonmath) {
     Pix* dbgimg = pixCopy(NULL, curimg);
     dbgimg = pixConvertTo32(dbgimg);
-    std::string dbgsavename = path + (std::string)"SentenceMathNonMath" + img_name;
+    std::string dbgsavename = path + (std::string)"SentenceMathNonMath_" + Utils::intToString(DatasetSelectionMenu::getFileNumFromPath(img_path));
     std::ofstream dbgfile((dbgsavename + ".txt").c_str());
     if(!dbgfile.is_open()) {
       std::cout << "ERROR: Could not open debug file for writing in " \
-          << dbgfile << std::endl;
+          << dbgsavename << std::endl;
       assert(false);
     }
     for(int i = 0; i < grid->getTesseractBlocks().size(); ++i) {
@@ -390,7 +406,7 @@ void NGramProfileGenerator::dbgShowSentenceLabels(Pix* const curimg,
           colorSentenceBlobs(dbgimg, j, block, grid, LayoutEval::BLUE);
         if(turnondisplay) {
           pixDisplay(dbgimg, 100, 100);
-          M_Utils::waitForInput();
+          Utils::waitForInput();
         }
       }
     }

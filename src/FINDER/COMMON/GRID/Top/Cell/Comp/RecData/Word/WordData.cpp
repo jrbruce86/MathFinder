@@ -11,12 +11,14 @@
 #include <BlockData.h>
 
 #include <stddef.h>
+#include <iostream>
 
 TesseractWordData::TesseractWordData(TBOX boundingBox,
     WERD_RES* const wordRes,
     TesseractRowData* const parentRowData)
 : sentenceIndex(-1), isValidTessWord(false),
-  resultMatchesMathWord(false) {
+  resultMatchesMathWord(false), resultMatchesStopword(false),
+  parentRow(NULL), wordRes(NULL) {
   this->boundingBox = boundingBox;
   this->wordRes = wordRes;
   this->parentRow = parentRowData;
@@ -43,8 +45,9 @@ WERD_CHOICE* TesseractWordData::bestchoice() {
 }
 
 WERD* TesseractWordData::word() {
-  if(!wordRes)
+  if(!wordRes) {
     return NULL;
+  }
   return wordRes->word;
 }
 

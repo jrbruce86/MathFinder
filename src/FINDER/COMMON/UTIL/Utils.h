@@ -141,6 +141,8 @@ namespace Utils {
   bool existsFile(const std::string& filename);
 
   std::string getHomeDir();
+  std::string getTrainingRoot();
+  std::string getGroundtruthRoot();
 
   // pulls out the name from the full path which includes an extension
   // so for instance, passing in "/home/bob/imname.jpg" would output

@@ -19,8 +19,9 @@
 #ifndef NGRAMPROFILEGENERATOR_H
 #define NGRAMPROFILEGENERATOR_H
 
-#define DBG_NGRAM_INIT // comment out to turn off debugging
-#define DBG_NGRAM_INIT_SHOW_SENTENCE_LABELS
+//#define DBG_NGRAM_INIT // comment out to turn off debugging
+//#define DBG_NGRAM_INIT_SHOW_SENTENCE_LABELS
+
 
 #ifdef DBG_NGRAM_INIT
 #include <Lept_Utils.h>
@@ -65,7 +66,7 @@ class NGramProfileGenerator {
   FinderInfo* finderInfo;
   NGramRanker* ngramRanker;
   std::string ngramdir;
-  std::string groundtruth_path;
+  std::string groundtruthFilePath;
 
   // use existing n-grams to avoid the time overhead when I
   // already have the n-grams I need and don't need to remake

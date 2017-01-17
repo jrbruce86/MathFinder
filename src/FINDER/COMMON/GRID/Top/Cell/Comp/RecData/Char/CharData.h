@@ -57,7 +57,7 @@ class TesseractCharData {
    * Getters
    */
   TBOX* getBoundingBox();
-  std::string* getUnicode();
+  std::string getUnicode();
   BLOB_CHOICE* getCharResultInfo();
   double getDistanceAboveRowBaseline();
   TesseractWordData* getParentWord();

@@ -41,13 +41,13 @@ class DatasetSelectionMenu : public virtual MenuBase {
 
   static std::vector<std::string> findGroundtruthImagePaths(std::string groundtruthDirPath);
 
+  static std::string findGroundtruthFilePath(std::string path);
+
  private:
 
   std::string promptNewDatasetDirPath();
 
   std::string promptSelectExistingGroundtruth();
-
-  std::string findGroundtruthFilePath(std::string path);
 
   std::string groundtruthDirPath;
 

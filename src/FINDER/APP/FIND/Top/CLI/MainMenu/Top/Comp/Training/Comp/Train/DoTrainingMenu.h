@@ -34,10 +34,10 @@ class DoTrainingMenu : public virtual MenuBase {
 
   void doTask();
 
- private:
-
-  std::vector<std::string> getFeatureExtractorUniqueNames(
+  static std::vector<std::string> getFeatureExtractorUniqueNames(
       const std::vector<BlobFeatureExtractorFactory*>& factories);
+
+ private:
 
   NameSelectionMenu* nameSelection;
   FeatureSelectionMenuMain* featureSelection;

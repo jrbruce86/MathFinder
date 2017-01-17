@@ -19,10 +19,65 @@
 
 #include <string>
 
+// for testing
+#include <DetMenu.h>
+#include <SegMenu.h>
+#include <FeatSelMenuMain.h>
+#include <FeatExt.h>
+#include <FeatExtFac.h>
+#include <DatasetMenu.h>
+#include <FTPathsFactory.h>
+#include <TrainerForMathExpressionFinder.h>
+#include <DoTrainingMenu.h>
+#include <DetFac.h>
+#include <SegFac.h>
+
 /**
  * Application point of entry
  */
 int main(int argc, char* argv[]) {
+
+  // Testing out features in isolation
+  DetectorSelectionMenu detSel(NULL);
+  SegmentorSelectionMenu segSel(NULL);
+  FeatureSelectionMenuMain featureSelection(NULL);
+  featureSelection.selectAllFeatures();
+  std::vector<BlobFeatureExtractorFactory*> featureFactories =
+      featureSelection.getSelectedFactories();
+  std::string groundtruthDirPath = FinderTrainingPaths::getGroundtruthRoot() + std::string("advcalc1/");
+  FinderInfo* finderInfo = FinderInfoBuilder().setFinderName("a")
+        ->setFeatureExtractorUniqueNames(DoTrainingMenu::getFeatureExtractorUniqueNames(featureFactories))
+        ->setDetectorName(detSel.getDefaultDetectorName())
+        ->setSegmentorName(segSel.getDefaultSegmentorName())
+        ->setDescription("a")
+        ->setGroundtruthName("advcalc1")
+        ->setGroundtruthDirPath(groundtruthDirPath)
+        ->setGroundtruthFilePath(DatasetSelectionMenu::findGroundtruthFilePath(groundtruthDirPath))
+        ->setFinderTrainingPaths(FinderTrainingPathsFactory().createFinderTrainingPaths("a"))
+        ->setGroundtruthImagePaths(DatasetSelectionMenu::findGroundtruthImagePaths(groundtruthDirPath))
+        ->build();
+
+    // Build the trainer (let the trainer own the finder info, the feature extractor,
+    // the detector, and the segmentor and destroy them all when done)
+    MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor =
+        MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
+            finderInfo, featureFactories);
+    TrainerForMathExpressionFinder trainer(
+        finderInfo,
+        mathExpressionFeatureExtractor,
+        MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
+        MathExpressionSegmentorFactory().createMathExpressionSegmentor(finderInfo, mathExpressionFeatureExtractor));
+
+    // Run the trainer, indicate success/failure
+    trainer.runTraining();
+
+
+
+
+
+
+
+
 
 //  {
 //    std::string datasetDirPath;
@@ -36,7 +91,12 @@ int main(int argc, char* argv[]) {
 //        << "they are in .png format (images in most any format are supported): 0.png, 1.png, 2.png, etc...: \n\n" << std::endl;
 //    Utils::getline(datasetDirPath);
 //    std::cout << "The line I got " << datasetDirPath << std::endl;
-
+//    std::cin >> datasetDirPath;
+//    std::cout << "derp!!\n\n";
+//
+//    std::cout << "testing wait for input....\n";
+//    Utils::waitForInput();
+//  }
 
 //    TessBaseAPI api;
 //    Pix* p = Utils::leptReadImg(FinderTrainingPaths::getGroundtruthRoot() + std::string("advcalc1/0.png"));

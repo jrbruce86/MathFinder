@@ -34,6 +34,11 @@ class FeatureSelectionMenuMain: public virtual MenuBase {
    */
   std::vector<BlobFeatureExtractorFactory*> getSelectedFactories();
 
+  /**
+   * Selects all features (added for testing/debugging purposes)
+   */
+  void selectAllFeatures();
+
  private:
 
   SpatialFeatureMenu* spatialMenu;
