@@ -27,6 +27,8 @@
 #include <stddef.h>
 
 #define DBG
+#define DBG_MEDS_TRAINER_SHOW_TRAINDATA
+#define DBG_DISPLAY
 
 TrainingSampleExtractor::TrainingSampleExtractor(FinderInfo* const finderInfo,
     MathExpressionFeatureExtractor* const featureExtractor)
@@ -94,6 +96,7 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
 
   // Extract the features for each image in the groundtruth dataset
   std::cout << "Extracting the features for each image in the groundtruth dataset.\n";
+  Utils::waitForInput();
   for(int i = 0; i < finderInfo->getGroundtruthImagePaths().size(); ++i) {
     tesseract::TessBaseAPI api; // the tesseract api that will be used for features which require it during feature extraction
 
@@ -101,12 +104,14 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
     Pix* image = Utils::leptReadImg(imagePath);
 
     BlobDataGrid* blobDataGrid = BlobDataGridFactory().createBlobDataGrid(image, &api, Utils::getNameFromPath(imagePath));
-#ifdef DBG
+#ifdef DBG_SHOW_GRID
     string winname = "BlobDataGrid for Image " +  Utils::getNameFromPath(imagePath);
     ScrollView* gridviewer = blobDataGrid->MakeWindow(100, 100, winname.c_str());
     blobDataGrid->DisplayBoxes(gridviewer);
+    Utils::waitForInput();
+    delete gridviewer;
+    gridviewer = NULL;
 #endif
-
 
     // now to get the features from the grid and append them to the
     // samples vector.
@@ -115,14 +120,12 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
 #ifdef DBG
     cout << "Finished grabbing samples.\n";
     M_Utils::waitForInput();
-    delete gridviewer;
-    gridviewer = NULL;
 #endif
 
 #ifdef DBG_MEDS_TRAINER_SHOW_TRAINDATA
     // to debug I'll color all the blobs that are labeled as math
     // red and all the other ones as blue
-    Pix* colorimg = Utils::leptReadImg(img_filepath);
+    Pix* colorimg = Utils::leptReadImg(imagePath);
     colorimg = pixConvertTo32(colorimg);
     for(int j = 0; j < img_samples.size(); j++) {
       BLSample* sample = img_samples[j];
@@ -176,6 +179,7 @@ std::vector<BLSample*> TrainingSampleExtractor::getGridSamples(BlobDataGrid* con
   std::cout << "Starting feature extraction for training image " << image_index << std::endl;
   featureExtractor->extractFeatures(blobDataGrid);
   std::cout << "Finished extracting features for training image " << image_index << std::endl;
+  Utils::waitForInput();
   BlobDataGridSearch bdgs(blobDataGrid);
   bdgs.StartFullSearch();
   BlobData* blob = NULL;

@@ -25,7 +25,7 @@
 #include <assert.h>
 
 //#define DBG_ROW_CHARACTERISTICS
-#define DBG_INFO_GRID
+//#define DBG_INFO_GRID
 //#define DBG_VERBOSE
 //#define DBG_SHOW_ALL_BLOB_RESULT
 
@@ -94,7 +94,9 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
         new BlobData(M_Utils::LeptBoxToTessBox(box, image),
             blobImage, blobDataGrid);
     blobDataGrid->InsertBBox(true, true, blobData);
+#ifdef DBG_INFO_GRID
     ++total_blobs_grid;
+#endif
   }
 #ifdef DBG_INFO_GRID
   {

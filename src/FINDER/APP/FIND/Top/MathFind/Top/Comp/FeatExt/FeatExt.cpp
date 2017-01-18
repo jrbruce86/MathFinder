@@ -8,6 +8,7 @@
 #include <FeatExt.h>
 
 #include <BlobDataGrid.h>
+#include <Utils.h>
 
 #define DBG_FEAT_EXT
 
@@ -30,6 +31,8 @@ void MathExpressionFeatureExtractor::doTrainerInitialization() {
     std::cout << "Running trainer intialization on extractor " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << std::endl;
 #endif
     blobFeatureExtractors[i]->doTrainerInitialization();
+    std::cout << "Done running traininger inititialization on extractor " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << std::endl;
+    Utils::waitForInput();
   }
 }
 
@@ -40,6 +43,7 @@ void MathExpressionFeatureExtractor::extractFeatures(BlobDataGrid* const blobDat
     std::cout << "Running preprocessing for the " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << " extractor.\n";
     blobFeatureExtractors[i]->doPreprocessing(blobDataGrid);
     std::cout << "Done running preprocessing for the " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << " extractor.\n";
+    Utils::waitForInput();
   }
 
   // Now, for each blob on the grid, run all of the blob feature extraction logic

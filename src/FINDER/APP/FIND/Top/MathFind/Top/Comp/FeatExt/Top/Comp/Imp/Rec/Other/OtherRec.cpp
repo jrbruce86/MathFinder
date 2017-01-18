@@ -66,11 +66,13 @@ void OtherRecognitionFeatureExtractor::doTrainerInitialization() {
     assert(false);
   }
   std::string mathWord;
+  std::cout << "Mathwords read:\n";
   while(getline(mathwordstream, mathWord)) {
     std::string word = mathWord;
     if(word.empty())
       continue;
     mathwords.push_back(word);
+    std::cout << word << std::endl;
   }
 }
 

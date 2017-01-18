@@ -75,7 +75,7 @@ void TrainerForMathExpressionFinder::trainDetector() {
 #ifdef JUST_GET_SAMPLES
   std::cout << "Finished getting samples. To continue with training, comment out "
       << "JUST_GET_SAMPLES.\n";
-  exit(EXIT_SUCCESS);
+  Utils::waitForInput();
 #endif
   detector->doTraining(samples);
   std::cout << "Finished training the detector.\n";
