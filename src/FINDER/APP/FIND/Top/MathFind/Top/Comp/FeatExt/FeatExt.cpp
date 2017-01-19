@@ -31,7 +31,7 @@ void MathExpressionFeatureExtractor::doTrainerInitialization() {
     std::cout << "Running trainer intialization on extractor " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << std::endl;
 #endif
     blobFeatureExtractors[i]->doTrainerInitialization();
-    std::cout << "Done running traininger inititialization on extractor " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << std::endl;
+    std::cout << "Done running trainer initialization on extractor " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << std::endl;
     Utils::waitForInput();
   }
 }

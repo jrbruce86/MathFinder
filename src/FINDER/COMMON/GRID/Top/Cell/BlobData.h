@@ -177,6 +177,18 @@ class BlobData: public ELIST_LINK {
 
   BlobDataGrid* getParentGrid();
 
+  /**
+   * The confidence Tesseract has in the character result that it recognized
+   * this blob as being a part of
+   */
+  float getCharRecognitionConfidence();
+
+  /**
+   * The confidence Tesseract has in the word result that it recognized
+   * this blob as being a part of
+   */
+  float getWordRecognitionConfidence();
+
  private:
   TBOX box;
 
@@ -203,6 +215,10 @@ class BlobData: public ELIST_LINK {
   std::vector<DoubleFeature*> extractedFeatures;
 
   bool mathExpressionDetectionResult;
+
+  // the lowest possible certainty of a blob defined by Tesseract
+  // (should be defined to -20 in the init list)
+  const float minTesseractCertainty;
 };
 
 #endif /* BLOBDATA_H_ */

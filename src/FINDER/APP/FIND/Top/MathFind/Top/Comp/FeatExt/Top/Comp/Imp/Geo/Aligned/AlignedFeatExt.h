@@ -79,6 +79,10 @@ class NumAlignedBlobsFeatureExtractor : public virtual BlobFeatureExtractor {
   bool rightwardFeatureEnabled;
   bool downwardFeatureEnabled;
   bool upwardFeatureEnabled;
+
+  // dbg
+  bool indbg;
+  bool dbgdontcare;
 };
 
 #endif /* NUMALIGNEDBLOBSFEATUREEXTRACTOR_H_ */

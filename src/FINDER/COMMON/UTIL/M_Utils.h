@@ -24,7 +24,6 @@ using namespace std;
 #include <tesseractclass.h>
 using namespace tesseract;
 
-//namespace tesseract {
 
 //class Tesseract;
 //class ColPartition;
@@ -111,6 +110,9 @@ class M_Utils {
 
   // For debugging, display the region of the image
   static void dispRegion(BOX* box, PIX* im);
+
+  // For debugging, display the blob on the image
+  static void dbgDisplayBlob(BlobData* blob);
 
   // convenience function for debugging, display a blobinfo boundingbox
   static void dispBlobDataRegion(BlobData* bb, PIX* im);

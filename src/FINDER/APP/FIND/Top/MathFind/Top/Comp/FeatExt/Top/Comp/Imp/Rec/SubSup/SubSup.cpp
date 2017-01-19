@@ -36,11 +36,6 @@ SubOrSuperscriptsFeatureExtractor
   this->description = description;
 }
 
-void SubOrSuperscriptsFeatureExtractor::doFinderInitialization() {
-
-}
-
-
 /**
  * TODO ASAP Only use recognition results at this stage if has very high confidence
  */
@@ -118,7 +113,7 @@ std::vector<DoubleFeature*> SubOrSuperscriptsFeatureExtractor::extractFeatures(B
     cout << "The displayed blob has/is a sub/superscript!\n";
     cout << "has_sup: " << has_sup << ", has_sub: " << has_sub
          << ", is_sup: " << is_sup << ", is_sub: "  << is_sub << endl;
-    dbgDisplayBlob(blobData, blobData->getParentGrid()->getBinaryImage());
+    M_Utils::dbgDisplayBlob(blobData);
   }
 #endif
 
@@ -308,14 +303,6 @@ std::vector<FeatureExtractorFlagDescription*> SubOrSuperscriptsFeatureExtractor:
 }
 
 
-// Debug
-void SubOrSuperscriptsFeatureExtractor::dbgDisplayBlob(BlobData* blob, Pix* im) {
-  M_Utils m;
-  m.dispHlBlobDataRegion(blob, im);
-  m.dispBlobDataRegion(blob, im);
-  m.waitForInput();
-}
-
 void SubOrSuperscriptsFeatureExtractor::dbgSubSuper(BlobData* blob, BlobData* neighbor, SubSuperScript subsuper) {
   cout << "found a " << ((subsuper == SUPER) ? "super" : "sub")
        << "-script for the displayed blob\n";
@@ -323,14 +310,14 @@ void SubOrSuperscriptsFeatureExtractor::dbgSubSuper(BlobData* blob, BlobData* ne
        << ((blob->getParentWordstr() == NULL) ? "NULL" : blob->getParentWordstr()) << endl;
   if(blob->getParentWord() == NULL)
     cout << "no blobs were recognized in the blob's word!\n";
-  dbgDisplayBlob(blob, blob->getParentGrid()->getBinaryImage());
+  M_Utils::dbgDisplayBlob(blob);
   cout << "displayed is the previous blob's "
        << ((subsuper == SUPER) ? "super" : "sub") << "-script\n";
   cout << "here's the recognition result for that neighbor's word: "
        << ((neighbor->getParentWordstr() == NULL) ? "NULL" : neighbor->getParentWordstr()) << endl;
   if(neighbor->getParentWord() == NULL)
     cout << "no blobs were recognized in the neighbor's word!\n";
-  dbgDisplayBlob(neighbor, neighbor->getParentGrid()->getBinaryImage());
+  M_Utils::dbgDisplayBlob(neighbor);
 }
 
 

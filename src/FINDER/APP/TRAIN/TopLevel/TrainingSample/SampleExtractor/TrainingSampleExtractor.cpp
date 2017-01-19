@@ -29,6 +29,7 @@
 #define DBG
 #define DBG_MEDS_TRAINER_SHOW_TRAINDATA
 #define DBG_DISPLAY
+#define DBG_SHOW_GRID
 
 TrainingSampleExtractor::TrainingSampleExtractor(FinderInfo* const finderInfo,
     MathExpressionFeatureExtractor* const featureExtractor)
@@ -90,9 +91,8 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
   // precomputations on the entire training set prior to any feature
   // extraction. this may or may not be applicable depending on the
   // feature extraction implementations being used
-  std::cout << "Starting traininer initialization.\n";
   featureExtractor->doTrainerInitialization();
-  std::cout << "Done with trainer initialization.\n";
+  std::cout << "Done with trainer initialization on all extractors.\n";
 
   // Extract the features for each image in the groundtruth dataset
   std::cout << "Extracting the features for each image in the groundtruth dataset.\n";

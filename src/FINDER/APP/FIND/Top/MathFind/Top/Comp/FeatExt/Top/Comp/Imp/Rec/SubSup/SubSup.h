@@ -28,8 +28,6 @@ public:
   SubOrSuperscriptsFeatureExtractor(
       SubOrSuperscriptsFeatureExtractorDescription* const description);
 
-  void doFinderInitialization();
-
   void doPreprocessing(BlobDataGrid* const blobDataGrid);
 
   std::vector<DoubleFeature*> extractFeatures(BlobData* const blob);
@@ -62,7 +60,6 @@ public:
   bool isSupFeatureEnabled;
 
   // Debug methods
-  void dbgDisplayBlob(BlobData* blob, Pix* im);
   void dbgSubSuper(BlobData* blob, BlobData* neighbor, SubSuperScript subsuper);
 };
 

@@ -21,6 +21,7 @@
 #include <assert.h>
 
 #define DBG_SHOW_STACKED_FEATURE
+#define DBG_STACKED_FEATURE_ALOT
 #define DBG_DISPLAY
 
 NumVerticallyStackedBlobsFeatureExtractor
@@ -146,7 +147,7 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
 #ifdef DBG_STACKED_FEATURE_ALOT
       if(blob->bounding_box() == box) {
         cout << "showing a blob which has no more adjacent blobs and " << count << " stacked elements\n";
-        dbgDisplayBlob(blob);
+        M_Utils::dbgDisplayBlob(blob);
       }
 #endif
       break;
@@ -174,7 +175,7 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
       int dbgall = false;
       if(blob->bounding_box() == box || dbgall) {
         cout << "showing the blob being measured to have " << count+1 << " stacked items\n";
-        dbgDisplayBlob(blob);
+        M_Utils::dbgDisplayBlob(blob);
         cout << "showing the stacked blob\n";
         cout << "here is the stacked blob's bottom and top y coords: "
              << stacked_blob->bottom() << ", " << stacked_blob->top() << endl;
@@ -182,7 +183,7 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
              << central_blob->bottom() << ", " << central_blob->top() << endl;
         cout << "here is the bottom and top y coords of the current blob above/below the stacked blob: "
              << prev_stacked_blob->bottom() << ", " << prev_stacked_blob->top() << endl;
-        dbgDisplayBlob(stacked_blob);
+        M_Utils::dbgDisplayBlob(stacked_blob);
       }
 #endif
       ++count;
@@ -195,9 +196,9 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
 #ifdef DBG_STACKED_FEATURE_ALOT
       if(blob->bounding_box() == box) {
         cout << "showing a blob which has no (or no more) stacked features\n";
-        dbgDisplayBlob(blob);
+        M_Utils::dbgDisplayBlob(blob);
         cout << "showing the candidate which was not adjacent\n";
-        dbgDisplayBlob(stacked_blob);
+        M_Utils::dbgDisplayBlob(stacked_blob);
       }
 #endif
       break;

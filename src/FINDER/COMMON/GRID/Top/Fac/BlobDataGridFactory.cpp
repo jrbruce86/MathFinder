@@ -247,8 +247,8 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
           BlobData* curBlobData = blobDataGridSearch.NextRectSearch();
           while(curBlobData != NULL) { // start iterating blobs in char in word in row in block
             // only care about blobs completely inside the current character box
-            if(tesseractCharData->getBoundingBox()->contains(curBlobData->getBoundingBox())) {
-
+            if(tesseractCharData->getBoundingBox()->contains(
+                curBlobData->getBoundingBox())) {
               if(curBlobData->getParentChar() == NULL) {
                 // Above if rules out the possibility of a blob mapping to more than one character.
                 // Shouldn't be possible. But as it turns out it is when Tesseract gets confused which happens VERY OFTEN with the images I'm giving it...
@@ -267,11 +267,12 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
                 M_Utils::dispRegion(M_Utils::tessTBoxToImBox(tesseractCharData->getBoundingBox(), image), image);
                 Utils::waitForInput();
 #endif
-              } else {
+              }
+#ifdef DBG_MULTI_PARENT_ISSUE
+              else {
                 std::cout << "WARNING: blob was assigned by Tesseract a parent character more than once!!... "
                     << "was previously assigned to char at memory " << curBlobData->getParentChar() << ", "
                     << "now being assigned to " << tesseractCharData << ".. They the same? I'm taking the previous assignment and ignoring this one" << std::endl;
-#ifdef DBG_MULTI_PARENT_ISSUE
                 std::cout << "The blob was recognized as belonging to the character " << tesseractCharData->getUnicode() << std::endl;
                 std::cout << "The character boundingbox to which the blob is currently being assigned is: ";
                 tesseractCharData->getBoundingBox()->print();
@@ -291,8 +292,8 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
                     curBlobData->getParentWord(),
                     curBlobData->getParentChar(),
                     curBlobData, image);
-#endif
               }
+#endif
             }
             curBlobData = blobDataGridSearch.NextRectSearch();
           } // done iterating blobs in char in word in row in block
@@ -390,20 +391,14 @@ void BlobDataGridFactory::findAllRowCharacteristics(BlobDataGrid* const blobData
     }
     GenericVector<TesseractWordData*> words = row->getTesseractWords();
     int valid_words_cur_row = 0;
-    std::cout << "Checking " << words.size() << " words on the current row...\n";
     for(int j = 0; j < words.length(); ++j) {
-      if(!words[j]->wordstr())
+      if(!words[j]->wordstr()) {
         continue;
-      if(blobDataGrid->getTessBaseAPI()->IsValidWord(words[j]->wordstr()))
+      }
+      if(blobDataGrid->getTessBaseAPI()->IsValidWord(words[j]->wordstr())) {
         ++valid_words_cur_row;
-      else {
-        std::cout << words[j]->wordstr() << " found not to be valid...\n";
       }
     }
-    if(words.empty()) {
-      std::cout << "No words on the row......\n";
-    }
-    std::cout << "valid word that was found previously: " << row->aValidWordFound << std::endl;
     if(valid_words_cur_row > 0) { // shouldn't be 0... but sometimes is when the engine is confused so...
       ++num_rows_with_valid;
     }

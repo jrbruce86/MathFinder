@@ -38,9 +38,6 @@ class NumCompletelyNestedBlobsFeatureExtractor
   int blobDataKey;
 
   NumCompletelyNestedBlobsFeatureExtractorDescription* description;
-
-  // debug
-  void dbgDisplayBlob(BlobData* blob, Pix* im);
 };
 
 #endif /* NUMCOMPLETELYNESTEDBLOBSFEATUREEXTRACTOR_H_ */

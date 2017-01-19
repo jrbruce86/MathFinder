@@ -15,7 +15,8 @@
 
 BlobData::BlobData(TBOX box, PIX* blobImage, BlobDataGrid* parentGrid)
     : mathExpressionDetectionResult(false),
-      tesseractCharData(NULL) {
+      tesseractCharData(NULL),
+      minTesseractCertainty(-20) {
   this->box = box;
   this->blobImage = blobImage;
   this->parentGrid = parentGrid;
@@ -193,5 +194,40 @@ Pix* BlobData::getBlobImage() {
 
 BlobDataGrid* BlobData::getParentGrid() {
   return parentGrid;
+}
+
+
+/**
+ * The confidence Tesseract has in the character result that it recognized
+ * this blob as being a part of
+ */
+float BlobData::getCharRecognitionConfidence() {
+  TesseractCharData* const charData = getParentChar();
+  if(charData == NULL) {
+    return minTesseractCertainty;
+  }
+  BLOB_CHOICE* info = charData->getCharResultInfo();
+  if(info == NULL) {
+    return minTesseractCertainty;
+  }
+  return info->certainty();
+}
+
+/**
+ * The confidence Tesseract has in the word result that it recognized
+ * this blob as being a part of
+ */
+float BlobData::getWordRecognitionConfidence() {
+  TesseractWordData* const wordData = getParentWord();
+  if(wordData == NULL) {
+    return minTesseractCertainty;
+  }
+  WERD_CHOICE* const info = getParentWord()->bestchoice();
+  if(info == NULL) {
+    return minTesseractCertainty;
+  }
+  // returns the worst certainty of the individual
+  // blobs in the word (as defined by Tesseract)
+  return info->certainty();
 }
 

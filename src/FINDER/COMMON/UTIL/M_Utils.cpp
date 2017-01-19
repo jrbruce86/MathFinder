@@ -213,6 +213,14 @@ void M_Utils::dispRegion(BOX* box, PIX* im) {
   pixDisplay(bboxim, 100, 100);
 }
 
+void M_Utils::dbgDisplayBlob(BlobData* blob) {
+  Pix* im = blob->getParentGrid()->getBinaryImage();
+  dispHlBlobDataRegion(blob, im);
+  dispBlobDataRegion(blob, im);
+  waitForInput();
+}
+
+
 // convenience function for debugging, display a blobinfo boundingbox
 void M_Utils::dispBlobDataRegion(BlobData* bb, PIX* im) {
   TBOX t = bb->getBoundingBox();

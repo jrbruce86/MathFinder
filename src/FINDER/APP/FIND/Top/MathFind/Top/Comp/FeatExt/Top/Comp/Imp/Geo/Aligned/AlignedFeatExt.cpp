@@ -22,11 +22,16 @@
 #include <string>
 #include <vector>
 
+#define DBG_COVER_FEATURE
+#define DBG_COVER_FEATURE_ALOT
+#define DBG_FEATURE
+
 NumAlignedBlobsFeatureExtractor::NumAlignedBlobsFeatureExtractor(NumAlignedBlobsFeatureExtractorDescription* description)
 : rightwardFeatureEnabled(false),
   downwardFeatureEnabled(false),
   upwardFeatureEnabled(false),
-  blobDataKey(-1) {
+  blobDataKey(-1), indbg(false),
+  dbgdontcare(false) {
   this->description = description;
 }
 
@@ -66,7 +71,7 @@ std::vector<DoubleFeature*> NumAlignedBlobsFeatureExtractor::extractFeatures(Blo
 
   NumAlignedBlobsData* const data = (NumAlignedBlobsData*)(blob->getVariableDataAt(blobDataKey));
 
-#ifdef DBG_FEAT1
+#ifdef DBG_FEATURE
   double rhabc = (double)(data->getRhabcCount());
   double uvabc = (double)(data->getUvabcCount());
   double dvabc = (double)(data->getDvabcCount());
@@ -74,10 +79,10 @@ std::vector<DoubleFeature*> NumAlignedBlobsFeatureExtractor::extractFeatures(Blo
     cout << "Displayed blob has rhabc = " << rhabc << endl;
   if(uvabc > 1 && upwardFeatureEnabled)
     cout << "Displayed blob has uvabc = " << uvabc << endl;
-  if(dvabc > 1 && downwardownwardFeatureEnabled)
+  if(dvabc > 1 && downwardFeatureEnabled)
     cout << "Displayed blob has dvabc = " << dvabc << endl;
   if(rhabc > 1 || uvabc > 1 || dvabc > 1)
-    dbgDisplayBlob(blob);
+    M_Utils::dbgDisplayBlob(blob);
 #endif
 
   return data->getExtractedFeatures();
@@ -121,7 +126,7 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   assert(blob_box != NULL);
 
   int count = 0;
-  bool indbg = false;
+  indbg = false;
 #ifdef DBG_COVER_FEATURE
   bool single_mode = true; // if this is true thne only debugging one blob and its neighbors
                             // otherwise then debug all of them
@@ -136,10 +141,9 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   TBOX blobbox = blob->bounding_box();
   if(blobbox.left() == dbgleft && blobbox.top() == dbgtop) {
     cout << "found it!\n";
-    M_Utils m;
-    m.dispBlobInfoRegion(blob, curimg);
-    m.dispHlBlobInfoRegion(blob, curimg);
-    m.waitForInput();
+    M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+    M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+    M_Utils::waitForInput();
     indbg = true;
   }
 #endif
@@ -151,7 +155,10 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   // of the BlobInfoGrid for what factors that are used to determine this. This feature
   // really isn't too effective for normal rows
   // TODO: See about finding a way to put the below code back in
-  // if(blob->validword && blob->onRowNormal() /*&& !seg_mode*/)
+//  if(blob->belongsToRecognizedWord()
+//      && blob->belongsToRecognizedNormalRow()
+//      && !seg_mode
+//      && blob->BlobData()) // TODO add confidence threshold?
   //  return 0;
   // ----------------COMMENT AND CODE IN QUESTION END---------------------
   int range;
@@ -205,18 +212,18 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
 #ifdef DBG_COVER_FEATURE
     bool was_added = false;
     if(indbg) {
-      cout << "displaying element found " << ((dir == RIGHT) ? "to the right of "
-          : (dir == UP) ? "above " : "below ") << "the blob of interest\n";
-      M_Utils::dispHlBlobInfoRegion(n, curimg);
-      M_Utils::dispBlobInfoRegion(n, curimg);
-      cout << "at i: " << i << endl;
-      cout << "point: " <<  ((dir == RIGHT) ? (blob->bottom() + i) :
-          (blob->left() + i)) << endl;
+      std::cout << "displaying element found " << ((dir == BlobSpatial::RIGHT) ? "to the right of "
+          : (dir == BlobSpatial::UP) ? "above " : "below ") << "the blob of interest\n";
+      M_Utils::dispHlBlobDataRegion(n, blobDataGrid->getBinaryImage());
+      M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+      std::cout << "at i: " << i << std::endl;
+      std::cout << "point: " <<  ((dir == BlobSpatial::RIGHT) ? (blob->bottom() + i) :
+          (blob->left() + i)) << std::endl;
     }
 #endif
     // if the neighbor is covered and isn't already on the list
     // then add it to the list (in ascending order)
-    bool dbgdontcare = false;
+    dbgdontcare = false;
     if(!covered_blobs.bool_binary_search(n) && n != blob) {
       // Determine whether or not the neighbor is covered by the current bounding box
       // If in segmentation mode, then determine whether or not the neighbor is covered by the current blob's segmentation box
@@ -253,16 +260,16 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
 #ifdef DBG_COVER_FEATURE
   if(count > 1 && !single_mode) {
     cout << "the highlighted blob is the one being evaluated and has " << count
-         << " covered blobs " << "in the " << ((dir == RIGHT) ? " rightward "
-             : ((dir == UP) ? " upward " : " downward ")) << "direction\n";
-    M_Utils::dispHlBlobInfoRegion(blob, curimg);
-    M_Utils::dispBlobInfoRegion(blob, curimg);
+         << " covered blobs " << "in the " << ((dir == BlobSpatial::RIGHT) ? " rightward "
+             : ((dir == BlobSpatial::UP) ? " upward " : " downward ")) << "direction\n";
+    M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+    M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
     M_Utils::waitForInput();
 #ifdef DBG_COVER_FEATURE_ALOT
     for(int j = 0; j < covered_blobs.length(); ++j) {
       cout << "the highlighted blob is covered by the blob previously shown\n";
-      M_Utils::dispHlBlobInfoRegion(covered_blobs[j], curimg);
-      M_Utils::dispBlobInfoRegion(covered_blobs[j], curimg);
+      M_Utils::dispHlBlobDataRegion(covered_blobs[j], blobDataGrid->getBinaryImage());
+      M_Utils::dispBlobDataRegion(covered_blobs[j], blobDataGrid->getBinaryImage());
       M_Utils::waitForInput();
     }
 #endif

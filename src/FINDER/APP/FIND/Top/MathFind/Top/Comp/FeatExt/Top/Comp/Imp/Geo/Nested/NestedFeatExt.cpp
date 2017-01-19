@@ -57,13 +57,6 @@ void NumCompletelyNestedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* con
   }
 }
 
-void NumCompletelyNestedBlobsFeatureExtractor::dbgDisplayBlob(BlobData* blob, Pix* im) {
-  M_Utils m;
-  m.dispHlBlobDataRegion(blob, im);
-  m.dispBlobDataRegion(blob, im);
-  m.waitForInput();
-}
-
 std::vector<DoubleFeature*> NumCompletelyNestedBlobsFeatureExtractor::extractFeatures(BlobData* const blobData) {
   // Already did the extraction during preprocessing, so just return result
   return blobData->getVariableDataAt(blobDataKey)->getExtractedFeatures();
@@ -111,7 +104,7 @@ int NumCompletelyNestedBlobsFeatureExtractor::countNestedBlobs(BlobData* const b
     if(nested > 0) {
       cout << "displaying blob which has " << nested << " nested element(s)\n";
       cout << "blob has area " << blob->bounding_box().area() << endl;
-      dbgDisplayBlob(blob, blobDataGrid->getBinaryImage());
+      M_Utils::dbgDisplayBlob(blob);
       for(int i = 0; i < nestedbloblist.length(); ++i) {
         cout << "displaying nested element # " << i << endl;
         cout << "nested element has area of " << nestedbloblist[i]->bounding_box().area() << endl;
@@ -127,7 +120,7 @@ int NumCompletelyNestedBlobsFeatureExtractor::countNestedBlobs(BlobData* const b
 #ifdef DBG_FEAT2
   if(nested > 0) {
     cout << "Displayed blob has " << nested << " nested blobs\n";
-    dbgDisplayBlob(blob, blobDataGrid->getBinaryImage());
+    M_Utils::dbgDisplayBlob(blob);
   }
 #endif
 

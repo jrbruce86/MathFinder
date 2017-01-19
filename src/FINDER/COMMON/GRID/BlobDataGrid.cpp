@@ -97,10 +97,12 @@ void BlobDataGrid::HandleClick(int x, int y) {
   std::cout << "the character corresponding to the blob you clicked:\n";
   if(bb->getParentChar() != NULL) {
     std::cout << bb->getParentChar()->getUnicode() << std::endl;
+    std::cout << "Character certainty: " << bb->getCharRecognitionConfidence() << std::endl;
   } else std::cout << "NULL\n";
   std::cout << "the word corresponding to the blob you clicked:\n";
   if(bb->getParentWordstr() != NULL) {
     std::cout << bb->getParentWordstr() << std::endl;
+    std::cout << "Word certainty: " << bb->getWordRecognitionConfidence() << std::endl;
     if(bb->belongsToRecognizedWord())
       std::cout << "the blob is in a recognized 'valid' word!\n";
     else

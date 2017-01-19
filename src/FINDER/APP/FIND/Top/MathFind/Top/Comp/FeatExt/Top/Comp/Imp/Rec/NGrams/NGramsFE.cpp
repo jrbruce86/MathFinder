@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <vector>
 
+#define DBG_DISPLAY_NG_PROFILE
 #define DBG_SHOW_NGRAMS
 #define DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
 
@@ -58,6 +59,18 @@ void SentenceNGramsFeatureExtractor
   mathNGramProfile =
       NGramProfileGenerator(finderInfo, ngramRanker, ngramdir)
       .generateMathNGrams();
+#ifdef DBG_DISPLAY_NG_PROFILE
+  std::cout << "-----------\nDisplaying the n-gram profile\n------------\n";
+  for(int i = 0; i < mathNGramProfile.size(); ++i) {
+    const int gram = i + 1;
+    std::cout << gram << "-grams:\n";
+    for(int j = 0; j < mathNGramProfile[i].size(); ++j) {
+      NGramFrequency* ngFreq = mathNGramProfile[i][j];
+      std::cout << gram << "-gram: " << *(ngFreq->ngram)
+          << ", frequency: " << ngFreq->frequency << std::endl;
+    }
+  }
+#endif
 }
 
 void SentenceNGramsFeatureExtractor::doFinderInitialization() {
