@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <assert.h>
 
-#define DBG_NESTED_FEATURE
+//#define DBG_NESTED_FEATURE
 #define DBG_FEAT2
 
 NumCompletelyNestedBlobsFeatureExtractor
@@ -74,7 +74,7 @@ int NumCompletelyNestedBlobsFeatureExtractor::countNestedBlobs(BlobData* const b
   NumCompletelyNestedBlobsData* data = (NumCompletelyNestedBlobsData*)blob->getVariableDataAt(blobDataKey);
   BlobDataGridSearch bigs(blobDataGrid);
   bigs.StartRectSearch(blob->getBoundingBox());
-  BlobData* nestblob;
+  BlobData* nestblob = NULL;
   GenericVector<BlobData*> nestedbloblist;
   while((nestblob = bigs.NextRectSearch()) != NULL) {
     if(nestblob == blob ||
@@ -92,8 +92,8 @@ int NumCompletelyNestedBlobsFeatureExtractor::countNestedBlobs(BlobData* const b
       double area_thresh = (double)1/(double)64;
       if(nestbox.area() < ((double)(blobbox.area())*area_thresh))
         continue;
-      nestedbloblist.push_back(nestblob); // avoid duplicates
-      nestedbloblist.sort();
+      nestedbloblist.push_back(nestblob);
+      nestedbloblist.sort(); // sort to avoid duplicates
       ++nested;
     }
   }

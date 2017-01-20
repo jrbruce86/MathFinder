@@ -16,7 +16,9 @@
 BlobData::BlobData(TBOX box, PIX* blobImage, BlobDataGrid* parentGrid)
     : mathExpressionDetectionResult(false),
       tesseractCharData(NULL),
-      minTesseractCertainty(-20) {
+      minTesseractCertainty(-20),
+      markedAsTesseractSplit(false),
+      markedForDeletion(false) {
   this->box = box;
   this->blobImage = blobImage;
   this->parentGrid = parentGrid;
@@ -229,5 +231,22 @@ float BlobData::getWordRecognitionConfidence() {
   // returns the worst certainty of the individual
   // blobs in the word (as defined by Tesseract)
   return info->certainty();
+}
+
+// Markers solely for during grid creation stage and/or debugging
+void BlobData::markForDeletion() {
+  markedForDeletion = true;
+}
+
+bool BlobData::isMarkedForDeletion() {
+  return markedForDeletion;
+}
+
+void BlobData::markAsTesseractSplit() {
+  markedAsTesseractSplit = true;
+}
+
+bool BlobData::isMarkedAsTesseractSplit() {
+  return markedAsTesseractSplit;
 }
 

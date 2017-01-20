@@ -189,6 +189,12 @@ class BlobData: public ELIST_LINK {
    */
   float getWordRecognitionConfidence();
 
+  // Markers solely for during grid creation stage and/or debugging
+  void markForDeletion();
+  bool isMarkedForDeletion();
+  void markAsTesseractSplit();
+  bool isMarkedAsTesseractSplit();
+
  private:
   TBOX box;
 
@@ -219,6 +225,10 @@ class BlobData: public ELIST_LINK {
   // the lowest possible certainty of a blob defined by Tesseract
   // (should be defined to -20 in the init list)
   const float minTesseractCertainty;
+
+  // markers for grid creation/debugging
+  bool markedAsTesseractSplit;
+  bool markedForDeletion;
 };
 
 #endif /* BLOBDATA_H_ */

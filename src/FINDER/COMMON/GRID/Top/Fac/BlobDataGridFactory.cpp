@@ -28,6 +28,8 @@
 //#define DBG_INFO_GRID
 //#define DBG_VERBOSE
 //#define DBG_SHOW_ALL_BLOB_RESULT
+//#define DBG_MULTI_PARENT_ISSUE
+#define DBG_NO_OVERLAP
 
 BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     tesseract::TessBaseAPI* tessBaseApi, const std::string imageName) {
@@ -60,13 +62,11 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
   tessBaseApi->SetImage(image); // set the image
   tessBaseApi->Recognize(NULL); // Run Tesseract's layout analysis and recognition without equation detection
 
-
   /**
    * ---------------
    *    Stage 2:
    * ---------------
-   * Take all of the raw connected components which Tesseract extracted from the image
-   * during its early preprocessing stage and place them on a 2D search-able grid.
+   * Get all of the image's raw connected compents and place them on a 2D search-able grid.
    * The grid entries added include, at this stage, just the connected component image
    * and its bounding box coordinates. More information will be added for each connected
    * component at later stages.
@@ -74,7 +74,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
   // Grab the connected components (as images)
 
   Pixa* blobImages = pixaCreate(0);
-  Boxa* blobCoords = tessBaseApi->GetConnectedComponents(&blobImages);
+  Boxa* blobCoords = pixConnComp(image, &blobImages, 8);
   assert(blobImages->n == blobCoords->n); // should be the same.. don't see why not...
 
   // Create a grid containing an entry for each connected component which includes
@@ -121,15 +121,6 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
   // Note: Take into account all of the features available, remember the inheritance hierarchy
   // Note: While I'm using the mutable iterator, I'm still only changing the pointer through the higher level api.
   //       Only reason I'm using the mutable iterator is so I have public access to everything for readonly purposes
-
-  // Initialize the grid search
-  BlobDataGridSearch blobDataGridSearch(blobDataGrid);
-
-  // TODO: Once compiles, see about iterating through the symbols in the word to
-  //       try and get the isSuperscript feature or other features that might be helpful......
-
-  // TODO: Add in row_res and other stuff I may need later (this will come in handy
-  //       for n-grams and stuff).
 
   // Iterate the blocks, and within the blocks the rows to get the sentences.
   // I'll then map the individual blobs to the sentences to which they belong to later (if they belong to a sentence)
@@ -220,19 +211,19 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
             characterChoiceListIt.forward();
           }
 
-          if(characterChoiceListIt.empty()) {
-            continue; // only care if there's actually a result
-          }
-
-          BLOB_CHOICE* const bestChoice =
+          BLOB_CHOICE* const bestChoice = characterChoiceListIt.empty() ? NULL :
               BLOB_CHOICE_IT(characterChoiceListIt.data()).data(); // should be at the head of the choice list for this character
-
 
           // the below shouldn't happen, every char recognized
           // by Tesseract should correspond to at least
           // one blob in the image.... as it turns out this does happen....
           // in this case Tesseract must be confused. I will just ignore the character in this case
           if(blobDataGrid->RectangleEmpty(charResultBox)) {
+#ifdef DBG_NO_OVERLAP
+            M_Utils::dispHlTBoxRegion(charResultBox, image);
+            std::cout << "The displayed region has no overlap on the grid and is currently being ignored.... \n";
+            Utils::waitForInput();
+#endif
             continue;
           }
 
@@ -242,6 +233,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
               ->setCharResultInfo(bestChoice)
               ->setRecognitionResultUnicode(unicodeCharResult);
           tesseractWordData->getTesseractChars().push_back(tesseractCharData);
+          BlobDataGridSearch blobDataGridSearch(blobDataGrid);
           blobDataGridSearch.SetUniqueMode(true);
           blobDataGridSearch.StartRectSearch(charResultBox);
           BlobData* curBlobData = blobDataGridSearch.NextRectSearch();
@@ -250,11 +242,8 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
             if(tesseractCharData->getBoundingBox()->contains(
                 curBlobData->getBoundingBox())) {
               if(curBlobData->getParentChar() == NULL) {
-                // Above if rules out the possibility of a blob mapping to more than one character.
-                // Shouldn't be possible. But as it turns out it is when Tesseract gets confused which happens VERY OFTEN with the images I'm giving it...
-                // Below else statement contains debug for when I want to investigate.
-                // But for now, I'm just taking whatever I'm given first, and aside from printing out
-                // a warning, I'm just ignoring the rest and moving on with my life.
+                // Above if statement rules out the possibility of a blob mapping to more than one character.
+                // At first thought it wouldn't be possible but as it turns out it often happens
                 curBlobData->setCharacterRecognitionData(tesseractCharData);
                 tesseractCharData->getBlobs().push_back(curBlobData);
 #ifdef DBG_SHOW_ALL_BLOB_RESULT
@@ -268,18 +257,24 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
                 Utils::waitForInput();
 #endif
               }
-#ifdef DBG_MULTI_PARENT_ISSUE
               else {
-                std::cout << "WARNING: blob was assigned by Tesseract a parent character more than once!!... "
+#ifdef DBG_MULTI_PARENT_ISSUE
+                std::cout << "WARNING: blob was assigned by Tesseract a parent character more than once!!... This should have been caught and handled earlier by separating the blob out... "
                     << "was previously assigned to char at memory " << curBlobData->getParentChar() << ", "
-                    << "now being assigned to " << tesseractCharData << ".. They the same? I'm taking the previous assignment and ignoring this one" << std::endl;
+                    << "now being assigned to " << tesseractCharData << ".. They the same?" << std::endl;
                 std::cout << "The blob was recognized as belonging to the character " << tesseractCharData->getUnicode() << std::endl;
-                std::cout << "The character boundingbox to which the blob is currently being assigned is: ";
-                tesseractCharData->getBoundingBox()->print();
-                std::cout << "The blob boundingbox is: ";
-                curBlobData->getBoundingBox().print();
-                std::cout << "Showing the hierarchy for the current parent the blob is being assigned to:\n";
-                dbgDisplayHierarchy(tesseractBlockData,
+                //std::cout << "The character boundingbox to which the blob is currently being assigned is: \n";
+                //tesseractCharData->getBoundingBox()->print();
+                std::cout << "Showing the character region\n";
+                M_Utils::dispHlTBoxRegion(*(tesseractCharData->getBoundingBox()), image);
+                M_Utils::waitForInput();
+                //std::cout << "The blob boundingbox is: \n";
+                //curBlobData->getBoundingBox().print();
+                std::cout << "Showing the blob region:\n";
+                M_Utils::dispHlBlobDataRegion(curBlobData, image);
+                M_Utils::waitForInput();
+                //std::cout << "Showing the hierarchy for the current parent the blob is being assigned to:\n";
+/*                dbgDisplayHierarchy(tesseractBlockData,
                     tesseractRowData,
                     tesseractWordData,
                     tesseractCharData,
@@ -291,9 +286,31 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
                     curBlobData->getParentRow(),
                     curBlobData->getParentWord(),
                     curBlobData->getParentChar(),
-                    curBlobData, image);
-              }
+                    curBlobData, image);*/
 #endif
+              }
+            } else if(curBlobData->getBoundingBox().contains(charResultBox)) {
+              // checks the condition where a blob needs to be split up
+              // this happens when Tesseract has figured out that multiple characters might
+              // be connected due to noise (sometimes they are just barely connected by one or two pixels)
+              curBlobData->markForDeletion(); // This needs to get removed once it's been split fully
+              // create and insert new blob for this data if there isn't already an entry with a matching bounding box
+              BlobData* splitBlob = blobDataGrid->getEntryWithBoundingBox(charResultBox);
+              if(splitBlob == NULL) {
+                splitBlob = new BlobData(
+                    charResultBox,
+                    pixClipRectangle(
+                        image,
+                        M_Utils::tessTBoxToImBox(
+                            &charResultBox,
+                            image),
+                        NULL),
+                    blobDataGrid);
+                blobDataGrid->InsertBBox(true, true, splitBlob);
+              }
+              splitBlob->markAsTesseractSplit(); // mark the blob as one that was split from connected component by Tesseract
+              splitBlob->setCharacterRecognitionData(tesseractCharData);
+              tesseractCharData->getBlobs().push_back(splitBlob);
             }
             curBlobData = blobDataGridSearch.NextRectSearch();
           } // done iterating blobs in char in word in row in block
@@ -307,12 +324,35 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
 #ifdef DBG_INFO_GRID
   {
     ScrollView* sv = blobDataGrid->MakeWindow(100, 100,
-        "The BlobDataGrid");
+        "The BlobDataGrid (before deleting marked entries)");
     blobDataGrid->DisplayBoxes(sv);
     M_Utils::waitForInput();
     delete sv;
   }
 #endif
+  // Delete entries marked for deletion
+  {
+    BlobDataGridSearch bdgs(blobDataGrid);
+    bdgs.SetUniqueMode(true);
+    bdgs.StartFullSearch();
+    BlobData* b = bdgs.NextFullSearch();
+    while(b != NULL) {
+      if(b->isMarkedForDeletion()) {
+        bdgs.RemoveBBox();
+      }
+      b = bdgs.NextFullSearch();
+    }
+  }
+#ifdef DBG_INFO_GRID
+  {
+    ScrollView* sv = blobDataGrid->MakeWindow(100, 100,
+        "The BlobDataGrid (after deleting marked entries)");
+    blobDataGrid->DisplayBoxes(sv);
+    M_Utils::waitForInput();
+    delete sv;
+  }
+#endif
+
   for(int i = 0; i < blobDataGrid->getTesseractBlocks().size(); ++i) {
     blobDataGrid->getTesseractBlocks()[i]->findRecognizedSentences(
         tessBaseApi, blobDataGrid);

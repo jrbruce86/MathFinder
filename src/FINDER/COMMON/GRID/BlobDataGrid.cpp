@@ -86,6 +86,20 @@ GenericVector<Segmentation*>& BlobDataGrid::getSegments() {
   return Segments;
 }
 
+BlobData* BlobDataGrid::getEntryWithBoundingBox(const TBOX box) {
+  BlobDataGridSearch search(this);
+  search.SetUniqueMode(true);
+  search.StartRectSearch(box);
+  BlobData* b = search.NextRectSearch();
+  while(b != NULL) {
+    if(box == b->getBoundingBox()) {
+      return b;
+    }
+    b = search.NextRectSearch();
+  }
+  return NULL;
+}
+
 void BlobDataGrid::HandleClick(int x, int y) {
   std::cout << "-----------------------------------\n";
   std::cout << "\nx,y: " << x << ", " << y << std::endl;
@@ -110,6 +124,9 @@ void BlobDataGrid::HandleClick(int x, int y) {
   }
   else
     std::cout << "(NULL)\n";
+  if(bb->isMarkedAsTesseractSplit()) {
+    std::cout << "Marked as split by Tesseract.\n";
+  }
   std::cout << "The tesseract boundingbox: \n";
   TBOX t = bb->bounding_box();
   M_Utils::dispTBoxCoords(&t);

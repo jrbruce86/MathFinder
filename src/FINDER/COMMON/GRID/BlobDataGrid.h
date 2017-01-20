@@ -66,6 +66,12 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
 
   GenericVector<Segmentation*>& getSegments();
 
+  /**
+   * Return an entry with the exact same bounding box as the one provided
+   * if such an entry exists. If not, return NULL.
+   */
+  BlobData* getEntryWithBoundingBox(const TBOX box);
+
   void HandleClick(int x, int y);
 
  private:

@@ -109,8 +109,8 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
     ScrollView* gridviewer = blobDataGrid->MakeWindow(100, 100, winname.c_str());
     blobDataGrid->DisplayBoxes(gridviewer);
     Utils::waitForInput();
-    delete gridviewer;
-    gridviewer = NULL;
+    //delete gridviewer; // TODO put this back!!!!
+    //gridviewer = NULL;
 #endif
 
     // now to get the features from the grid and append them to the

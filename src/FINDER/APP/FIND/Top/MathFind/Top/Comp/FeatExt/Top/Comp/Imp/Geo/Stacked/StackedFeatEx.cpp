@@ -84,6 +84,7 @@ void NumVerticallyStackedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* co
       color = LayoutEval::BLUE;
     M_Utils::drawHlBlobDataRegion(blob, dbgim2, color);
   }
+  // TODO: Fix this file name!!!!!
   pixWrite(("debug/stacked_blobs" + blobDataGrid->getImageName()).c_str(), dbgim2, IFF_PNG);
 #ifdef DBG_DISPLAY
   pixDisplay(dbgim2, 100, 100);
@@ -172,7 +173,7 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
     TBOX central_bb = central_blob->getBoundingBox();
     if(isAdjacent(stacked_blob, prev_stacked_blob, dir, false, &central_bb)) {
 #ifdef DBG_STACKED_FEATURE_ALOT
-      int dbgall = false;
+      int dbgall = true;
       if(blob->bounding_box() == box || dbgall) {
         cout << "showing the blob being measured to have " << count+1 << " stacked items\n";
         M_Utils::dbgDisplayBlob(blob);

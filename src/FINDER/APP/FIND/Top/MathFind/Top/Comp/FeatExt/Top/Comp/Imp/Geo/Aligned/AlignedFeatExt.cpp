@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 
-#define DBG_COVER_FEATURE
-#define DBG_COVER_FEATURE_ALOT
+//#define DBG_COVER_FEATURE
+//#define DBG_COVER_FEATURE_ALOT
 #define DBG_FEATURE
 
 NumAlignedBlobsFeatureExtractor::NumAlignedBlobsFeatureExtractor(NumAlignedBlobsFeatureExtractorDescription* description)
@@ -98,7 +98,7 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
 
   TBOX* segbox = NULL;
 
-  TBOX* blob_box; // this could either be the blob itself or the blob's segmentation depending on
+  TBOX* blob_box = NULL; // this could either be the blob itself or the blob's segmentation depending on
                   // whether seg_mode is turned off or on respectively.
   TBOX bbox = blob->getBoundingBox();
   if(seg_mode) {
@@ -154,12 +154,12 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   // in which case the feature is still found. see findAllRowCharacteristics() method
   // of the BlobInfoGrid for what factors that are used to determine this. This feature
   // really isn't too effective for normal rows
-  // TODO: See about finding a way to put the below code back in
-//  if(blob->belongsToRecognizedWord()
-//      && blob->belongsToRecognizedNormalRow()
-//      && !seg_mode
-//      && blob->BlobData()) // TODO add confidence threshold?
-  //  return 0;
+  if(blob->belongsToRecognizedWord()
+      && blob->belongsToRecognizedNormalRow()
+      && !seg_mode
+      && blob->getCharRecognitionConfidence() > -5) {
+    return 0;
+  }
   // ----------------COMMENT AND CODE IN QUESTION END---------------------
   int range;
   if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT)

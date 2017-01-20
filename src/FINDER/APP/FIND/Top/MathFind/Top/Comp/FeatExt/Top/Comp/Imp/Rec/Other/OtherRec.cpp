@@ -300,8 +300,8 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
   bdgs.StartFullSearch();
   double validblobcount = 0;
   while((blob = bdgs.NextFullSearch()) != NULL) {
-    if(blob->getParentChar()->getParentWord()->getIsValidTessWord()) {
-      avg_confidence += blob->getParentChar()->getCharResultInfo()->certainty();
+    if(blob->getParentWord() != NULL && blob->getParentWord()->getIsValidTessWord()) {
+      avg_confidence += blob->getCharRecognitionConfidence();
       ++validblobcount;
     }
   }
@@ -449,7 +449,7 @@ std::vector<DoubleFeature*> OtherRecognitionFeatureExtractor::extractFeatures(Bl
 
   /******** Confidence flag ********/
   if(confidenceFlagEnabled) {
-    double ocr_conf = (double)blob->getParentChar()->getCharResultInfo()->certainty();
+    double ocr_conf = (double)blob->getCharRecognitionConfidence();
     if(ocr_conf > avg_confidence) {
       ocr_conf = avg_confidence; // don't punish for having more confidence
     }
