@@ -76,11 +76,11 @@ std::vector<DoubleFeature*> NumAlignedBlobsFeatureExtractor::extractFeatures(Blo
   double uvabc = (double)(data->getUvabcCount());
   double dvabc = (double)(data->getDvabcCount());
   if(rhabc > 1 && rightwardFeatureEnabled)
-    cout << "Displayed blob has rhabc = " << rhabc << endl;
+    std::cout << "Displayed blob has rhabc = " << rhabc << std::endl;
   if(uvabc > 1 && upwardFeatureEnabled)
-    cout << "Displayed blob has uvabc = " << uvabc << endl;
+    std::cout << "Displayed blob has uvabc = " << uvabc << std::endl;
   if(dvabc > 1 && downwardFeatureEnabled)
-    cout << "Displayed blob has dvabc = " << dvabc << endl;
+    std::cout << "Displayed blob has dvabc = " << dvabc << std::endl;
   if(rhabc > 1 || uvabc > 1 || dvabc > 1)
     M_Utils::dbgDisplayBlob(blob);
 #endif
@@ -340,7 +340,7 @@ bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(const TBOX& neighbor,
     neighbor_center = M_Utils::centerx(neighbor);
   }
   else {
-    cout << "ERROR: isNeighborCovered only supports RIGHT, UP, and DOWN directions\n";
+    std::cout << "ERROR: isNeighborCovered only supports RIGHT, UP, and DOWN directions\n";
     assert(false);
   }
   // is the neighbor covered?

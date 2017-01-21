@@ -157,7 +157,7 @@ void BlobDataGrid::HandleClick(int x, int y) {
     if(rowstr.empty())
       std::cout << "blob belongs to a row that didn't have any recognized text\n";
     else
-      std::cout << "blob belongs to row recognized wtih the follwing text:\n" << rowstr << endl;
+      std::cout << "blob belongs to row recognized wtih the follwing text:\n" << rowstr << std::endl;
   }
   else
     std::cout << "\nthe blob you clicked on was not assigned a text line\n";

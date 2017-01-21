@@ -193,8 +193,8 @@ void M_Utils::dispBlobOCRRes(BLOBNBOX* blob, PIX* im,
   pixDisplay(bboxim, 100, 100);
   BLOB_CHOICE* ocr_res = runBlobOCR(blob, ocrengine);
   const char* const unicode_res = getBlobChoiceUnicode(ocr_res, ocrengine);
-  cout << "OCR result: " << unicode_res << endl;
-  cout << "certainty: " << ocr_res->certainty() << endl;
+  std::cout << "OCR result: " << unicode_res << std::endl;
+  std::cout << "certainty: " << ocr_res->certainty() << std::endl;
   waitForInput();
 }
 
@@ -203,9 +203,9 @@ void M_Utils::waitForInput() {
 }
 
 void M_Utils::dispBoxCoords(BOX* box) {
-  cout << "(left, top, right, bottom): " << box->x << ", "
+  std::cout << "(left, top, right, bottom): " << box->x << ", "
        << box->y << ", " << box->w+box->x << ", "
-       << box->y+box->h << endl;
+       << box->y+box->h << std::endl;
 }
 
 void M_Utils::dispRegion(BOX* box, PIX* im) {
@@ -256,7 +256,7 @@ void M_Utils::drawHlBoxRegion(BOX* box, PIX* im, LayoutEval::Color color) {
 }
 
 void M_Utils::dispTBoxCoords(TBOX* box) {
-  cout << "int left=" << box->left() << ", top=" << box->top()
+  std::cout << "int left=" << box->left() << ", top=" << box->top()
        << ", right=" << box->right() << ", bottom="
        << box->bottom() << ";\n";
 }

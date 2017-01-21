@@ -14,6 +14,7 @@
 #include <Direction.h>
 #include <DoubleFeature.h>
 #include <M_Utils.h>
+#include <Utils.h>
 
 #include <allheaders.h>
 
@@ -21,13 +22,20 @@
 #include <assert.h>
 
 #define DBG_SHOW_STACKED_FEATURE
-#define DBG_STACKED_FEATURE_ALOT
+//#define DBG_SHOW_INDIVIDUAL_STACKED_FEATURE
+//#define DBG_STACKED_FEATURE_ALOT
 #define DBG_DISPLAY
 
 NumVerticallyStackedBlobsFeatureExtractor
 ::NumVerticallyStackedBlobsFeatureExtractor(
-    NumVerticallyStackedBlobsFeatureExtractorDescription* const description) {
+    NumVerticallyStackedBlobsFeatureExtractorDescription* const description,
+    FinderInfo* const finderInfo)
+: wordConfidenceThresh(-5) {
   this->description = description;
+  this->stackedDirPath =
+      Utils::checkTrailingSlash(
+          finderInfo->getFinderTrainingPaths()->getFeatureExtDirPath())
+            + "VertStacked/";
 }
 
 void NumVerticallyStackedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* const blobDataGrid) {
@@ -72,7 +80,7 @@ void NumVerticallyStackedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* co
     if(curBlobData->getStackedBlobsCount() == 0)
       continue;
     if(curBlobData->getStackedBlobsCount() < 0) {
-      cout << "ERROR: stacked character count < 0 >:-[\n";
+      std::cout << "ERROR: stacked character count < 0 >:-[\n";
       assert(false);
     }
     LayoutEval::Color color;
@@ -84,8 +92,10 @@ void NumVerticallyStackedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* co
       color = LayoutEval::BLUE;
     M_Utils::drawHlBlobDataRegion(blob, dbgim2, color);
   }
-  // TODO: Fix this file name!!!!!
-  pixWrite(("debug/stacked_blobs" + blobDataGrid->getImageName()).c_str(), dbgim2, IFF_PNG);
+  if(!Utils::existsDirectory(stackedDirPath)) {
+    Utils::exec(std::string("mkdir -p " + stackedDirPath));
+  }
+  pixWrite((stackedDirPath + blobDataGrid->getImageName()).c_str(), dbgim2, IFF_PNG);
 #ifdef DBG_DISPLAY
   pixDisplay(dbgim2, 100, 100);
   M_Utils::waitForInput();
@@ -104,22 +114,26 @@ std::vector<DoubleFeature*> NumVerticallyStackedBlobsFeatureExtractor::extractFe
 int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob,
     BlobDataGrid* const blobDataGrid, const BlobSpatial::Direction dir) {
   int count = 0;
-  // if the blob belongs to a valid word then the feature is zero
+  // if the blob belongs to a word Tesseract found to be 'valid' and with high enough
+  // confidence then the feature is zero
 #ifdef DBG_STACKED_FEATURE_ALOT
-  int left=1773, top=1243, right=1810, bottom=1210;
-  TBOX box(left, bottom, right, top);
+  //int left=1773, top=1243, right=1810, bottom=1210;
+  //TBOX box(left, bottom, right, top);
 #endif
-  // ----------------COMMENT AND/OR CODE IN QUESTION START---------------------
-  //if(blob->validword || blob->onRowNormal()) {
-//#ifdef DBG_STACKED_FEATURE_ALOT
-//      if(blob->bounding_box() == box) {
-//        cout << "showing a blob which is part of a valid word or 'normal' row and thus can't have stacked elements\n";
-//        dbgDisplayBlob(blob);
-//      }
-//#endif
-    //return 0;
-  //}
-  // ----------------COMMENT AND/OR CODE IN QUESTION END-----------------------
+
+  if((blob->belongsToRecognizedWord()
+      || blob->belongsToRecognizedNormalRow())
+      && blob->getWordRecognitionConfidence() > wordConfidenceThresh) {
+#ifdef DBG_STACKED_FEATURE_ALOT
+      //if(blob->bounding_box() == box) {
+        std::cout << "showing a blob which is part of a valid word or 'normal' row, "
+            "and meets the confidence threshold necessary to be considered "
+            << "ineligible for having stacked elements. Its stacked feature is being fixed to zero.\n";
+        M_Utils::dbgDisplayBlob(blob);
+      //}
+#endif
+    return 0;
+  }
 
   // go to first element above or below depending on the direction
   BlobDataGridSearch vsearch(blobDataGrid);
@@ -146,46 +160,45 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
     }
     if(stacked_blob == NULL) {
 #ifdef DBG_STACKED_FEATURE_ALOT
-      if(blob->bounding_box() == box) {
-        cout << "showing a blob which has no more adjacent blobs and " << count << " stacked elements\n";
+      //if(blob->bounding_box() == box) {
+        std::cout << "showing a blob which has no more adjacent blobs and " << count << " stacked elements\n";
         M_Utils::dbgDisplayBlob(blob);
-      }
+      //}
 #endif
-      break;
+      break; // break the chain
+    }
+    if((stacked_blob->belongsToRecognizedWord()
+        || stacked_blob->belongsToRecognizedNormalRow())
+        && stacked_blob->getWordRecognitionConfidence() > wordConfidenceThresh) {
+      // if it's part of a valid word then it's discarded here
+#ifdef DBG_STACKED_FEATURE_ALOT
+      //if(blob->bounding_box() == box) {
+        std::cout << "showing a blob whose stacked element belongs to a valid word or normal row and thus can't be stacked\n";
+        M_Utils::dbgDisplayBlob(blob);
+        std::cout << "showing the candidate which can't be stacked\n";
+        M_Utils::dbgDisplayBlob(stacked_blob);
+      //}
+#endif
+      break; // break the chain
     }
     // found the element above/below the prev_stacked_blob.
     // is it adjacent based on the prev_stacked blob's location and central blob's height?
-
-    // ----------------COMMENT AND/OR CODE IN QUESTION START---------------------
-    //if(stacked_blob->validword || stacked_blob->onRowNormal()) { // if its part of a valid word then it's discarded here
-//#ifdef DBG_STACKED_FEATURE_ALOT
-      //if(blob->bounding_box() == box) {
-        //cout << "showing a blob whose stacked element belongs to a valid word or normal row and thus can't be stacked\n";
-        //dbgDisplayBlob(blob);
-        //cout << "showing the candidate which can't be stacked\n";
-        //dbgDisplayBlob(stacked_blob);
-      //}
-//#endif
-      //return count;
-    //}
-    // ----------------COMMENT AND/OR CODE IN QUESTION END-----------------------
-
     TBOX central_bb = central_blob->getBoundingBox();
     if(isAdjacent(stacked_blob, prev_stacked_blob, dir, false, &central_bb)) {
-#ifdef DBG_STACKED_FEATURE_ALOT
-      int dbgall = true;
-      if(blob->bounding_box() == box || dbgall) {
-        cout << "showing the blob being measured to have " << count+1 << " stacked items\n";
+#ifdef DBG_SHOW_INDIVIDUAL_STACKED_FEATURE
+      //int dbgall = true;
+      //if(blob->bounding_box() == box || dbgall) {
+        std::cout << "showing the blob being measured to have " << count+1 << " stacked items\n";
         M_Utils::dbgDisplayBlob(blob);
-        cout << "showing the stacked blob\n";
-        cout << "here is the stacked blob's bottom and top y coords: "
-             << stacked_blob->bottom() << ", " << stacked_blob->top() << endl;
-        cout << "here is the bottom and top y coords of the blob being measured: "
-             << central_blob->bottom() << ", " << central_blob->top() << endl;
-        cout << "here is the bottom and top y coords of the current blob above/below the stacked blob: "
-             << prev_stacked_blob->bottom() << ", " << prev_stacked_blob->top() << endl;
+        std::cout << "showing the stacked blob\n";
+        std::cout << "here is the stacked blob's bottom and top y coords: "
+             << stacked_blob->bottom() << ", " << stacked_blob->top() << std::endl;
+        std::cout << "here is the bottom and top y coords of the blob being measured: "
+             << central_blob->bottom() << ", " << central_blob->top() << std::endl;
+        std::cout << "here is the bottom and top y coords of the current blob above/below the stacked blob: "
+             << prev_stacked_blob->bottom() << ", " << prev_stacked_blob->top() << std::endl;
         M_Utils::dbgDisplayBlob(stacked_blob);
-      }
+      //}
 #endif
       ++count;
       prev_stacked_blob = stacked_blob;
@@ -195,12 +208,12 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
     }
     else {
 #ifdef DBG_STACKED_FEATURE_ALOT
-      if(blob->bounding_box() == box) {
-        cout << "showing a blob which has no (or no more) stacked features\n";
+      //if(blob->bounding_box() == box) {
+        std::cout << "showing a blob which has no (or no more) stacked features\n";
         M_Utils::dbgDisplayBlob(blob);
-        cout << "showing the candidate which was not adjacent\n";
+        std::cout << "showing the candidate which was not adjacent\n";
         M_Utils::dbgDisplayBlob(stacked_blob);
-      }
+      //}
 #endif
       break;
     }

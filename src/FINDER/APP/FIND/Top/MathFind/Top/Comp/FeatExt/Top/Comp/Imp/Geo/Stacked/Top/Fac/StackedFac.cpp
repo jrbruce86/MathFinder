@@ -18,7 +18,7 @@ NumVerticallyStackedBlobsFeatureExtractorFactory
 NumVerticallyStackedBlobsFeatureExtractor*
 NumVerticallyStackedBlobsFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
-  return new NumVerticallyStackedBlobsFeatureExtractor(blobFeatureExtractorDescription);
+  return new NumVerticallyStackedBlobsFeatureExtractor(blobFeatureExtractorDescription, finderInfo);
 }
 
 BlobFeatureExtractorDescription* NumVerticallyStackedBlobsFeatureExtractorFactory::getDescription() {

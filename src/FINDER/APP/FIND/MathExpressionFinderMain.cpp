@@ -165,7 +165,7 @@ void runFinder(char* path) {
   } else if(Utils::existsFile(imagePath)) {
     pixaAddPix(images, Utils::leptReadImg(imagePath), L_INSERT);
   } else {
-    std::cout << "Unable to read in the image(s) on the given path." << endl;
+    std::cout << "Unable to read in the image(s) on the given path." << std::endl;
     return MathExpressionFinderUsage::printUsage();
   }
 

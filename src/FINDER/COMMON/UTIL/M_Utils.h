@@ -13,7 +13,6 @@
 // Standard c/c++
 #include <stdio.h>
 #include <iostream>
-using namespace std;
 
 // det/seg
 #include <Lept_Utils.h>

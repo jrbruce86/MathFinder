@@ -115,8 +115,8 @@ void OtherRecognitionFeatureExtractor
   if(bad_page)
     std::cout << "The page has no valid words!!\n";
   else {
-    std::cout << "Average normal text height: " << avg_blob_height << endl;
-    std::cout << "Average width to height ratio for normal text: " << avg_whr << endl;
+    std::cout << "Average normal text height: " << avg_blob_height << std::endl;
+    std::cout << "Average width to height ratio for normal text: " << avg_whr << std::endl;
   }
 #endif
 
@@ -170,7 +170,7 @@ void OtherRecognitionFeatureExtractor
     else
       avg_baseline_dist_ /= count;
 #ifdef DBG_DRAW_BASELINE
-std::cout << "row " << i << " average baseline dist: " << avg_baseline_dist_ << endl;
+std::cout << "row " << i << " average baseline dist: " << avg_baseline_dist_ << std::endl;
 #endif
 rows[i]->avg_baselinedist = avg_baseline_dist_;
   }
@@ -288,7 +288,7 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
   std::cout << "Displaying the blobs which were found by Tesseract to be italicized as red. "
       << "All other blobs are in black.\n";
   std::cout << "The displayed image was saved to "
-      << (dbgdir + "bolditalics" + blobDataGrid->getImageName()).c_str() << endl;
+      << (dbgdir + "bolditalics" + blobDataGrid->getImageName()).c_str() << std::endl;
   pixDisplay(boldital_img, 100, 100);
   M_Utils::waitForInput();
 #endif
@@ -307,7 +307,7 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
   }
   avg_confidence /= validblobcount;
 #ifdef DBG_CERTAINTY
-  std::cout << "Average valid word certainty: " << avg_confidence << endl;
+  std::cout << "Average valid word certainty: " << avg_confidence << std::endl;
 #endif
 
 

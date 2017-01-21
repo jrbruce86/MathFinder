@@ -110,9 +110,9 @@ std::vector<DoubleFeature*> SubOrSuperscriptsFeatureExtractor::extractFeatures(B
 
 #ifdef DBG_FEAT3
   if(has_sup || has_sub || is_sup || is_sub) {
-    cout << "The displayed blob has/is a sub/superscript!\n";
-    cout << "has_sup: " << has_sup << ", has_sub: " << has_sub
-         << ", is_sup: " << is_sup << ", is_sub: "  << is_sub << endl;
+    std::cout << "The displayed blob has/is a sub/superscript!\n";
+    std::cout << "has_sup: " << has_sup << ", has_sub: " << has_sub
+         << ", is_sup: " << is_sup << ", is_sub: "  << is_sub << std::endl;
     M_Utils::dbgDisplayBlob(blobData);
   }
 #endif
@@ -268,7 +268,7 @@ void SubOrSuperscriptsFeatureExtractor::setBlobSubSuperScript(BlobData* const bl
       }
     }
     else {
-      cout << "ERROR: Invalid setBlobSubSuperScript option\n";
+      std::cout << "ERROR: Invalid setBlobSubSuperScript option\n";
       assert(false);
     }
   }
@@ -304,19 +304,19 @@ std::vector<FeatureExtractorFlagDescription*> SubOrSuperscriptsFeatureExtractor:
 
 
 void SubOrSuperscriptsFeatureExtractor::dbgSubSuper(BlobData* blob, BlobData* neighbor, SubSuperScript subsuper) {
-  cout << "found a " << ((subsuper == SUPER) ? "super" : "sub")
+  std::cout << "found a " << ((subsuper == SUPER) ? "super" : "sub")
        << "-script for the displayed blob\n";
-  cout << "here's the recognition result for that blob's word: "
-       << ((blob->getParentWordstr() == NULL) ? "NULL" : blob->getParentWordstr()) << endl;
+  std::cout << "here's the recognition result for that blob's word: "
+       << ((blob->getParentWordstr() == NULL) ? "NULL" : blob->getParentWordstr()) << std::endl;
   if(blob->getParentWord() == NULL)
-    cout << "no blobs were recognized in the blob's word!\n";
+    std::cout << "no blobs were recognized in the blob's word!\n";
   M_Utils::dbgDisplayBlob(blob);
-  cout << "displayed is the previous blob's "
+  std::cout << "displayed is the previous blob's "
        << ((subsuper == SUPER) ? "super" : "sub") << "-script\n";
-  cout << "here's the recognition result for that neighbor's word: "
-       << ((neighbor->getParentWordstr() == NULL) ? "NULL" : neighbor->getParentWordstr()) << endl;
+  std::cout << "here's the recognition result for that neighbor's word: "
+       << ((neighbor->getParentWordstr() == NULL) ? "NULL" : neighbor->getParentWordstr()) << std::endl;
   if(neighbor->getParentWord() == NULL)
-    cout << "no blobs were recognized in the neighbor's word!\n";
+    std::cout << "no blobs were recognized in the neighbor's word!\n";
   M_Utils::dbgDisplayBlob(neighbor);
 }
 

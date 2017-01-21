@@ -16,6 +16,7 @@
 #include <BlobFeatExtDesc.h>
 #include <StackedData.h>
 #include <Direction.h>
+#include <FinderInfo.h>
 
 #include <baseapi.h>
 
@@ -34,7 +35,8 @@ class NumVerticallyStackedBlobsFeatureExtractor
  public:
 
   NumVerticallyStackedBlobsFeatureExtractor(
-      NumVerticallyStackedBlobsFeatureExtractorDescription* const description);
+      NumVerticallyStackedBlobsFeatureExtractorDescription* const description,
+      FinderInfo* const finderInfo);
 
   void doPreprocessing(BlobDataGrid* const blobDataGrid);
 
@@ -65,6 +67,10 @@ class NumVerticallyStackedBlobsFeatureExtractor
   int blobDataKey;
 
   NumVerticallyStackedBlobsFeatureExtractorDescription* description;
+
+  std::string stackedDirPath;
+
+  const float wordConfidenceThresh;
 };
 
 

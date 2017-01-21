@@ -119,7 +119,7 @@ int NumCompletelyNestedBlobsFeatureExtractor::countNestedBlobs(BlobData* const b
 
 #ifdef DBG_FEAT2
   if(nested > 0) {
-    cout << "Displayed blob has " << nested << " nested blobs\n";
+    std::cout << "Displayed blob has " << nested << " nested blobs\n";
     M_Utils::dbgDisplayBlob(blob);
   }
 #endif

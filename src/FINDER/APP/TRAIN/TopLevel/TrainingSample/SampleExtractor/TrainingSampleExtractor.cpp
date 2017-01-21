@@ -105,7 +105,7 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
 
     BlobDataGrid* blobDataGrid = BlobDataGridFactory().createBlobDataGrid(image, &api, Utils::getNameFromPath(imagePath));
 #ifdef DBG_SHOW_GRID
-    string winname = "BlobDataGrid for Image " +  Utils::getNameFromPath(imagePath);
+    std::string winname = "BlobDataGrid for Image " +  Utils::getNameFromPath(imagePath);
     ScrollView* gridviewer = blobDataGrid->MakeWindow(100, 100, winname.c_str());
     blobDataGrid->DisplayBoxes(gridviewer);
     Utils::waitForInput();
@@ -118,7 +118,7 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
     std::vector<BLSample*> img_samples = getGridSamples(blobDataGrid, i);
 
 #ifdef DBG
-    cout << "Finished grabbing samples.\n";
+    std::cout << "Finished grabbing samples.\n";
     M_Utils::waitForInput();
 #endif
 
@@ -135,7 +135,7 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
       else
         Lept_Utils::fillBoxForeground(colorimg, sample->blobbox, LayoutEval::BLUE);
     }
-    string dbgname = "dbg_training_im" + Utils::intToString(i) + ".png";
+    std::string dbgname = "dbg_training_im" + Utils::intToString(i) + ".png";
     pixWrite(dbgname.c_str(), colorimg, IFF_PNG);
 #ifdef DBG_DISPLAY
     pixDisplay(colorimg, 100, 100);

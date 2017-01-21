@@ -426,7 +426,7 @@ std::string Utils::getNameFromPath(const std::string& path) {
   const std::string::size_type slashIndex = path.find_last_of("/");
   if(slashIndex != std::string::npos) {
     if(dotIndex > slashIndex && dotIndex != std::string::npos) {
-      return path.substr(slashIndex + 1, dotIndex - slashIndex);
+      return path.substr(slashIndex + 1, dotIndex - slashIndex - 1);
     } else {
       return path.substr(slashIndex + 1);
     }
