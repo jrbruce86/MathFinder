@@ -26,7 +26,8 @@ OtherRecognitionFeatureExtractorFactory
 OtherRecognitionFeatureExtractor* OtherRecognitionFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
 
-  OtherRecognitionFeatureExtractor* result = new OtherRecognitionFeatureExtractor(description);
+  OtherRecognitionFeatureExtractor* result =
+      new OtherRecognitionFeatureExtractor(description, finderInfo);
 
   const std::string vDarbFlagName = description->getVdarbFlag()->getName();
   const std::string heightFlagName = description->getHeightFlag()->getName();

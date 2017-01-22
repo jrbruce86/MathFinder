@@ -82,6 +82,9 @@ class SentenceNGramsFeatureExtractor : public BlobFeatureExtractor {
   bool isUnigramFlagEnabled;
   bool isBigramFlagEnabled;
   bool isTrigramFlagEnabled;
+
+  // debug
+  std::ofstream dbgfs;
 };
 
 

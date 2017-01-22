@@ -30,9 +30,10 @@
 #include <assert.h>
 #include <vector>
 
-#define DBG_DISPLAY_NG_PROFILE
-#define DBG_SHOW_NGRAMS
-#define DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
+//#define DBG_DISPLAY_NG_PROFILE
+//#define DBG_SHOW_NGRAMS
+//#define DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
+#define DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
 
 SentenceNGramsFeatureExtractor::SentenceNGramsFeatureExtractor(
      SentenceNGramsFeatureExtractorDescription* const description,
@@ -101,15 +102,34 @@ void SentenceNGramsFeatureExtractor::doPreprocessing(
 #endif
   }
 
+#ifdef DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
+  if(!Utils::existsDirectory(ngramdir)) {
+    Utils::exec(std::string("mkdir -p") + ngramdir);
+  }
+  std::string dbgFilePath = Utils::checkTrailingSlash(ngramdir) +
+      blobDataGrid->getImageName();
+  dbgfs.open(dbgFilePath.c_str());
+  if(!dbgfs.is_open()) {
+    std::cout << "ERROR Could not open file " << dbgFilePath << " for ngram debugging\n";
+  }
+#endif
+
   // -- now use the ranked ngram vectors and compare them to the n-gram profile
   //    to get the actual feature values.
   for(int i = 0; i < page_sentences.size(); ++i) {
     TesseractSentenceData* cursentence = page_sentences[i];
+#ifdef DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
+    dbgfs << "----------------\nSentence:\n" << cursentence->sentence_txt << std::endl;
+#endif
     GenericVector<double> ng_features;
     for(int j = 0; j < 3; ++j)
       ng_features.push_back(getNGFeature(cursentence, j+1));
     cursentence->setNGramFeatures(ng_features);
   }
+
+#ifdef DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
+  dbgfs.close();
+#endif
 }
 
 std::vector<DoubleFeature*> SentenceNGramsFeatureExtractor
@@ -182,14 +202,24 @@ double SentenceNGramsFeatureExtractor::getNGFeature(
   std::cout << "The unscaled " << gram << "-gram feature for the above sentence:\n";
   std::cout << ng_feat << std::endl;
 #endif
+#ifdef DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
+  dbgfs << "The unscaled " << gram << "-gram feature for the above sentence: "
+      << ng_feat << std::endl;
+#endif
   ng_feat = scaleNGramFeature(ng_feat, mathNGramProfile[gramindex]);
 #ifdef DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
   std::cout << "The scaled " << gram << "-gram feature: " << ng_feat << std::endl;
+#endif
+#ifdef DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
+  dbgfs << "The scaled " << gram << "-gram feature: " << ng_feat << std::endl;
 #endif
   ng_feat = M_Utils::expNormalize(ng_feat);
 #ifdef DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
   std::cout << "The normalized " << gram << "-gram feature: " << ng_feat << std::endl;
   M_Utils::waitForInput();
+#endif
+#ifdef DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
+  dbgfs << "The normalized " << gram << "-gram feature: " << ng_feat << std::endl;
 #endif
   return ng_feat;
 }

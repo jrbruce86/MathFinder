@@ -12,6 +12,7 @@
 #include <CharData.h>
 #include <RowData.h>
 #include <BlockData.h>
+#include <M_Utils.h>
 
 BlobData::BlobData(TBOX box, PIX* blobImage, BlobDataGrid* parentGrid)
     : mathExpressionDetectionResult(false),
@@ -187,6 +188,28 @@ bool BlobData::belongsToRecognizedNormalRow() {
   return getParentRow()->getIsConsideredNormal();
 }
 
+bool BlobData::isRightmostInWord() {
+  if(!belongsToRecognizedWord()) {
+    return false;
+  }
+  // call above rules out possibility of parent char or word being null
+  if(getParentWord()->getTesseractChars().back() == getParentChar()) {
+    return true;
+  }
+  return false;
+}
+
+bool BlobData::isLeftmostInWord() {
+  if(!belongsToRecognizedWord()) {
+    return false;
+  }
+  // call above rules out possibility of parent char or word being null
+  if(getParentWord()->getTesseractChars().front() == getParentChar()) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Image of this blob (just the blob)
  */
@@ -231,6 +254,16 @@ float BlobData::getWordRecognitionConfidence() {
   // returns the worst certainty of the individual
   // blobs in the word (as defined by Tesseract)
   return info->certainty();
+}
+
+FontInfo* BlobData::getFontInfo() {
+  if(getParentWord() == NULL) {
+    return NULL;
+  }
+  if(getParentWord()->getWordRes() == NULL) {
+    return NULL;
+  }
+  return (FontInfo*)getParentWord()->getWordRes()->fontinfo;
 }
 
 // Markers solely for during grid creation stage and/or debugging

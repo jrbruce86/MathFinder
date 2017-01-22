@@ -245,6 +245,10 @@ std::string Utils::chop(std::string str) {
   return str;
 }
 
+float Utils::getCertaintyThresh() {
+  return -5;
+}
+
 char* Utils::strRemoveChar(char*& str, int index) {
   if(str == NULL)
     return NULL;

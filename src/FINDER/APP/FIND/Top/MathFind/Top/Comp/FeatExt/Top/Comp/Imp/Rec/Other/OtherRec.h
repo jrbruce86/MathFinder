@@ -28,7 +28,8 @@ class OtherRecognitionFeatureExtractor : public virtual BlobFeatureExtractor {
  public:
 
   OtherRecognitionFeatureExtractor(
-      OtherRecognitionFeatureExtractorDescription* const description);
+      OtherRecognitionFeatureExtractorDescription* const description,
+      FinderInfo* const finderInfo);
 
   void doTrainerInitialization();
 
@@ -84,7 +85,12 @@ class OtherRecognitionFeatureExtractor : public virtual BlobFeatureExtractor {
 
   double avg_confidence;   // average ocr confidence
 
-  std::string dbgdir;
+  std::string otherFeatDir; // directory where debug or other stuff gets dumped
+  void createDumpDirIfNotExist(); // creates the above directory if it doesn't exist
+  // convenience function for writing a debug image to
+  // the common dir for this class. adds the extension so dont
+  // include in the name
+  void pixWriteToDumpDir(std::string imName, Pix* im);
 };
 
 

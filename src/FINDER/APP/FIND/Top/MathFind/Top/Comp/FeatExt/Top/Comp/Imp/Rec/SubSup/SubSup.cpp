@@ -20,25 +20,26 @@
 
 #define DBG_SHOW_SUB_SUPER
 #define DBG_FEAT3
-#define DBG_DISPLAY
-#define DBG_SUB_SUPER
-
-#define CERTAINTY_THRESH 5
+//#define DBG_DISPLAY
+//#define DBG_SUB_SUPER
 
 
 SubOrSuperscriptsFeatureExtractor
 ::SubOrSuperscriptsFeatureExtractor(
-    SubOrSuperscriptsFeatureExtractorDescription* const description)
+    SubOrSuperscriptsFeatureExtractorDescription* const description,
+    FinderInfo* const finderInfo)
 : hasSubFeatureEnabled(false),
   isSubFeatureEnabled(false),
   hasSupFeatureEnabled(false),
-  isSupFeatureEnabled(false) {
+  isSupFeatureEnabled(false),
+  wordCertaintyThresh(Utils::getCertaintyThresh()),
+  wordCertaintyThreshHigh(wordCertaintyThresh / 2) {
   this->description = description;
+  this->subSupDir =
+      Utils::checkTrailingSlash(
+          finderInfo->getFinderTrainingPaths()->getFeatureExtDirPath())
+        + std::string("SubSuper/");
 }
-
-/**
- * TODO ASAP Only use recognition results at this stage if has very high confidence
- */
 
 void SubOrSuperscriptsFeatureExtractor::doPreprocessing(BlobDataGrid* const blobDataGrid) {
   blobSubscriptDataKey = findOpenBlobDataIndex(blobDataGrid);
@@ -56,9 +57,6 @@ void SubOrSuperscriptsFeatureExtractor::doPreprocessing(BlobDataGrid* const blob
   gridSearch.StartFullSearch();
   blobData = NULL;
   while((blobData = gridSearch.NextFullSearch()) != NULL) {
-    // TODO Filter out noise blobs early on somewhere here (blobs significantly smaller than average
-    // recognized by Tesseract on the page if it's a "good page" according to Tesseract)
-
     // figure out whether or not the blob has sub/superscripts
     // and update data accordingly
     if(isSubFeatureEnabled || hasSubFeatureEnabled) {
@@ -81,7 +79,10 @@ void SubOrSuperscriptsFeatureExtractor::doPreprocessing(BlobDataGrid* const blob
      else if(ssData->isSubscript)
        M_Utils::drawHlBlobDataRegion(blobData, dbgss_im, LayoutEval::BLUE);
    }
-   pixWrite((std::string("dbgdir/") + (std::string)"subsuper" + blobDataGrid->getImageName()).c_str(), dbgss_im, IFF_PNG);
+   if(!(Utils::existsDirectory(subSupDir))) {
+     Utils::exec(std::string("mkdir -p ") + subSupDir);
+   }
+   pixWrite((Utils::checkTrailingSlash(subSupDir) + blobDataGrid->getImageName()).c_str(), dbgss_im, IFF_PNG);
  #ifdef DBG_DISPLAY
    pixDisplay(dbgss_im, 100, 100);
    M_Utils::waitForInput();
@@ -158,35 +159,37 @@ std::vector<DoubleFeature*> SubOrSuperscriptsFeatureExtractor::extractFeatures(B
 void SubOrSuperscriptsFeatureExtractor::setBlobSubSuperScript(BlobData* const blob,
     BlobDataGrid* const blobDataGrid, const SubSuperScript subsuper) {
   // ----------------COMMENT AND/OR CODE IN QUESTION START---------------------
-  // the blob belongs to a valid word, the subscript or superscript can only
-  // reside on the last blob of that word
-  //if(blob->validword) {
-  //  if(!blob->isRightmostInWord())
-  //    return;
-  //}
+  // if the blob belongs to a word that is both considered 'valid' by Tesseract's dictionary and was
+  // recognized with high enough confidence then do some filtering
+  if(blob->getWordRecognitionConfidence() > wordCertaintyThresh) {
 
-  // if the word this blob belongs to ends in punctuation then don't bother
-  // looking for the subscript, the punctuation is all that will be found
-  //if(subsuper == SUB) {
-  //  const char* word = blob->wordstr();
-  //  if(word != NULL) {
-  //    int lastchar = strlen(word) - 1;
-  //    if(word[lastchar] == '.' || word[lastchar] == ',' || word[lastchar] == '?')
-  //      return;
-  //  }
-  //}
+    // filter blobs that don't reside on the rightmost character of a
+    // word that matches up to a 'valid' one based on Tesseract's dictionary
+    // (characters having sub/superscripts would have to be the rightmost
+    // in their word)
+    if(blob->belongsToRecognizedWord() && !blob->isRightmostInWord()) {
+      return;
+    }
+
+    // filter blobs that are parts of words ending in punctuation from
+    // being candidates of having subscripts. doesn't matter if the word
+    // matches a valid entry in the dictionary or not, but the confidence
+    // has to be extra high instead.
+    const char lastChar = blob->getParentWordstr() == NULL ?
+        'x' : blob->getParentWordstr()[strlen(blob->getParentWordstr()) - 1];
+    if(subsuper == SUB &&
+        (blob->getWordRecognitionConfidence() > wordCertaintyThreshHigh) &&
+        (lastChar == '.'
+            || lastChar == ','
+                || lastChar == '?')) {
+      return;
+    }
+  }
+
   // ----------------COMMENT AND/OR CODE IN QUESTION END-----------------------
 
   // Get pointer to relevant data in this blob
   SubOrSuperscriptsData* const data = (SubOrSuperscriptsData*)blob->getVariableDataAt(blobSubscriptDataKey);
-
-
-  // TODO
-  // See "ltrresultiterator.h" functions for "isSubscript" etc.
-  // If Tesseract confidence high enough just use that!!!
-  // Wait until the thing compiles and I can play with it before moving forward
-
-
 
   inT16 h_adj_thresh = blob->getBoundingBox().width() / 2;
   inT32 area_thresh = blob->getBoundingBox().area() / 8;
@@ -195,6 +198,7 @@ void SubOrSuperscriptsFeatureExtractor::setBlobSubSuperScript(BlobData* const bl
   // do repeated beam searches starting from the vertical center
   // of the current blob, going downward for subscripts and upward for superscripts
   BlobDataGridSearch beamsearch(blobDataGrid);
+  //beamsearch.SetUniqueMode(true);
   for(int i = 0; i < blob->getBoundingBox().height() / 2; ++i) {
     int j = (subsuper == SUPER) ? i : -i;
     beamsearch.StartSideSearch(blob_right, blob_center_y + j, blob_center_y + j + 1);
@@ -221,34 +225,21 @@ void SubOrSuperscriptsFeatureExtractor::setBlobSubSuperScript(BlobData* const bl
     if(h_dist > h_adj_thresh)
       continue; // too far away
     // ----------------COMMENT AND/OR CODE IN QUESTION START---------------------
-    //if(neighbor->validword) {
-    //  if(!neighbor->isLeftmostInWord())
-    //    continue; // if the super/subscript is in a valid word, it has to be at the first letter
-    //}
+    if(neighbor->belongsToRecognizedWord()
+        && neighbor->getWordRecognitionConfidence() > wordCertaintyThresh) {
+      if(!neighbor->isLeftmostInWord())
+        continue; // if the super/subscript is in a valid word, it has to be at the first letter
+    }
     // ----------------COMMENT AND/OR CODE IN QUESTION START---------------------
 
     // get the neighbor's relevant data so I can update it based on results
     SubOrSuperscriptsData* const neighborData = (SubOrSuperscriptsData*)neighbor->getVariableDataAt(blobSubscriptDataKey);
     if(subsuper == SUPER) {
-      if(neighbor->getBoundingBox().bottom() > (blob_center_y - ((blob_center_y - blob->getBoundingBox().bottom())/8))) {
-        // TODO: Put below code back in but add in a high confidence threshold///
-        TesseractCharData* const blobRecData = blob->getParentChar();
-        if(blobRecData != NULL) {
-          if(blobRecData->getParentWord() == neighbor->getParentWord()) {
-            TesseractWordData* const blobWord = blobRecData->getParentWord();
-            // TODO experiment with the certainty threshold
-            if(blobWord != NULL && blobWord->getWordRes()->best_choice->certainty() > CERTAINTY_THRESH) {
-              if(blobWord->wordstr() != NULL) {
-                const char* wrd = blobWord->wordstr();
-                if(wrd[0] == '(' && blobRecData->isLeftmostInWord())
-                  continue; // discard beginning parenthesis like (x), which are often mistaken
-                if((wrd[strlen(wrd)-1] == 's') && ((wrd[strlen(wrd)-2] == 39)
-                    || Utils::checkForPrimeGlyph(wrd)))
-                  continue; // discard possessives like "Simpson's", "Taylor's" etc..
-              }
-            }
-          }
-        }
+      if(neighbor->getBoundingBox().bottom()
+          > (blob_center_y -
+              ((blob_center_y -
+                  blob->getBoundingBox().bottom())
+                  /8))) {
 #ifdef DBG_SUB_SUPER
         dbgSubSuper(blob, neighbor, subsuper);
 #endif
@@ -310,6 +301,8 @@ void SubOrSuperscriptsFeatureExtractor::dbgSubSuper(BlobData* blob, BlobData* ne
        << ((blob->getParentWordstr() == NULL) ? "NULL" : blob->getParentWordstr()) << std::endl;
   if(blob->getParentWord() == NULL)
     std::cout << "no blobs were recognized in the blob's word!\n";
+  std::cout << "here's the confidence Tesseract had in its result for the blob's word: " << blob->getWordRecognitionConfidence()
+      << ", and for the neighbor: " << neighbor->getWordRecognitionConfidence() << std::endl;
   M_Utils::dbgDisplayBlob(blob);
   std::cout << "displayed is the previous blob's "
        << ((subsuper == SUPER) ? "super" : "sub") << "-script\n";

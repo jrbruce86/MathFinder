@@ -48,9 +48,11 @@ class TesseractBlockData {
 
   std::vector<TesseractSentenceData*>& getRecognizedSentences();
 
+  BlobDataGrid* parentGrid;
+
+
  private:
 
-  BlobDataGrid* parentGrid;
   std::vector<TesseractRowData*> tesseractRows;
   BLOCK_RES* blockRes;
   std::vector<TesseractSentenceData*> tesseractSentences;

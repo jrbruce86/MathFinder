@@ -21,7 +21,7 @@
 // tesseract
 #include <colpartition.h>
 #include <tesseractclass.h>
-using namespace tesseract;
+//using namespace tesseract;
 
 
 //class Tesseract;
@@ -52,9 +52,9 @@ class M_Utils {
 
   // Similar to getBlobBoxImCoords but instead returns the bounding box
   // for an entire ColPartition in the same image coordinate space
-  static BOX* getColPartImCoords(ColPartition* cp, PIX* im);
+  static BOX* getColPartImCoords(tesseract::ColPartition* cp, PIX* im);
 
-  static TBOX getColPartTBox(ColPartition* cp, PIX* im);
+  static TBOX getColPartTBox(tesseract::ColPartition* cp, PIX* im);
 
   // Same as above but gets coords for C_BLOB
   // However for this one, you have the option of providing the image
@@ -89,17 +89,17 @@ class M_Utils {
   // the blob is normalized in the same way as blobs are normalized for the
   // purpose of orientation and script detection (OSD). The ocr engine is
   // passed in as an argument (could be trained for any language)
-  static BLOB_CHOICE* runBlobOCR(BLOBNBOX* blob, Tesseract* ocrengine);
+  static BLOB_CHOICE* runBlobOCR(BLOBNBOX* blob, tesseract::Tesseract* ocrengine);
 
   // Takes a BLOB_CHOICE, the result of running OCR on a BLOBNBOX, and
   // returns its result as a character array. Needs the version of tesseract
   // on which it was recognized to be provided as the second argument.
   static const char* const getBlobChoiceUnicode(BLOB_CHOICE* bc, \
-      Tesseract* ocrengine);
+      tesseract::Tesseract* ocrengine);
 
   // Debug funtion to quickly display a BLOBNBOX, run OCR on it, and
   // show the result
-  static void dispBlobOCRRes(BLOBNBOX* blob, PIX* im, Tesseract* ocrengine);
+  static void dispBlobOCRRes(BLOBNBOX* blob, PIX* im, tesseract::Tesseract* ocrengine);
 
   // Waits for user input. This is useful in debugging.
   static void waitForInput();

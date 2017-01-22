@@ -77,6 +77,9 @@ namespace Utils {
   // (TAKEN OUT BECAUSE IT'S BUGGY... SEE M_UTILS.H FOR REPLACEMENT!!!)
   //vector<char*> lineSplit(const char* txt);
 
+  // Common Tesseract confidence threshold
+  float getCertaintyThresh();
+
   // sometimes the apostrophe is mistakenly written in unicode as the
   // prime glyph which ends up being represented by the following sequence
   // of signed characters: -30 -128 -103. Checks to see if that sequence

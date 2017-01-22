@@ -24,7 +24,7 @@
 #include <assert.h>
 
 //#define DBG_NESTED_FEATURE
-#define DBG_FEAT2
+//#define DBG_FEAT2
 
 NumCompletelyNestedBlobsFeatureExtractor
 ::NumCompletelyNestedBlobsFeatureExtractor(

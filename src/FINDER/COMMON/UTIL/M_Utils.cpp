@@ -38,7 +38,7 @@ TBOX M_Utils::imToCBlobGridCoords(BOX* box, PIX* im) {
   return TBOX(left,bottom,right,top);
 }
 
-BOX* M_Utils::getColPartImCoords(ColPartition* cp, PIX* im) {
+BOX* M_Utils::getColPartImCoords(tesseract::ColPartition* cp, PIX* im) {
   BLOBNBOX_CLIST* blobnboxes = cp->boxes();
   CLIST_ITERATOR bbox_it(blobnboxes);
   l_int32 height = (l_int32)im->h;
@@ -67,7 +67,7 @@ BOX* M_Utils::getColPartImCoords(ColPartition* cp, PIX* im) {
   return boxret;
 }
 
-TBOX M_Utils::getColPartTBox(ColPartition* cp, PIX* im) {
+TBOX M_Utils::getColPartTBox(tesseract::ColPartition* cp, PIX* im) {
   BOX* cpbox = getColPartImCoords(cp, im);
   TBOX tbox = imToCBlobGridCoords(cpbox, im);
   boxDestroy(&cpbox);
@@ -143,7 +143,7 @@ BOX* M_Utils::getBlobDataBox(BlobData* b, PIX* im) {
   return tessTBoxToImBox(&t, im);
 }
 
-BLOB_CHOICE* M_Utils::runBlobOCR(BLOBNBOX* blob, Tesseract* ocrengine) {
+BLOB_CHOICE* M_Utils::runBlobOCR(BLOBNBOX* blob, tesseract::Tesseract* ocrengine) {
   // * Normalize blob height to x-height (current OSD):
   // SetupNormalization(NULL, NULL, &rotation, NULL, NULL, 0,
   //                    box.rotational_x_middle(rotation),
@@ -182,12 +182,12 @@ BLOB_CHOICE* M_Utils::runBlobOCR(BLOBNBOX* blob, Tesseract* ocrengine) {
 }
 
 const char* const M_Utils::getBlobChoiceUnicode(BLOB_CHOICE* bc,
-    Tesseract* ocrengine) {
+    tesseract::Tesseract* ocrengine) {
   return ocrengine->unicharset.id_to_unichar_ext(bc->unichar_id());
 }
 
 void M_Utils::dispBlobOCRRes(BLOBNBOX* blob, PIX* im,
-    Tesseract* ocrengine) {
+    tesseract::Tesseract* ocrengine) {
   BOX* box_ = getBlobBoxImCoords(blob, im);
   PIX* bboxim = pixClipRectangle(im, box_, NULL);
   pixDisplay(bboxim, 100, 100);

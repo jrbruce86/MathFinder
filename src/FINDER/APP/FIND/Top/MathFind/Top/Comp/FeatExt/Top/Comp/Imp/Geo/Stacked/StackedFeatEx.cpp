@@ -21,16 +21,16 @@
 #include <stddef.h>
 #include <assert.h>
 
-#define DBG_SHOW_STACKED_FEATURE
+//#define DBG_SHOW_STACKED_FEATURE
 //#define DBG_SHOW_INDIVIDUAL_STACKED_FEATURE
 //#define DBG_STACKED_FEATURE_ALOT
-#define DBG_DISPLAY
+//#define DBG_DISPLAY
 
 NumVerticallyStackedBlobsFeatureExtractor
 ::NumVerticallyStackedBlobsFeatureExtractor(
     NumVerticallyStackedBlobsFeatureExtractorDescription* const description,
     FinderInfo* const finderInfo)
-: wordConfidenceThresh(-5) {
+: wordConfidenceThresh(Utils::getCertaintyThresh()) {
   this->description = description;
   this->stackedDirPath =
       Utils::checkTrailingSlash(

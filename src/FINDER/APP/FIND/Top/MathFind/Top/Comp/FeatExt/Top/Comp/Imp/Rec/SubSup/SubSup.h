@@ -15,6 +15,7 @@
 #include <BlobFeatExtDesc.h>
 #include <FeatExtFlagDesc.h>
 #include <BlobData.h>
+#include <FinderInfo.h>
 
 #include <vector>
 
@@ -26,7 +27,8 @@ class SubOrSuperscriptsFeatureExtractor
 public:
 
   SubOrSuperscriptsFeatureExtractor(
-      SubOrSuperscriptsFeatureExtractorDescription* const description);
+      SubOrSuperscriptsFeatureExtractorDescription* const description,
+      FinderInfo* const finderInfo);
 
   void doPreprocessing(BlobDataGrid* const blobDataGrid);
 
@@ -59,8 +61,12 @@ public:
   bool hasSupFeatureEnabled;
   bool isSupFeatureEnabled;
 
-  // Debug methods
+  const float wordCertaintyThresh;
+  const float wordCertaintyThreshHigh;
+
+  // Debug methods/variables
   void dbgSubSuper(BlobData* blob, BlobData* neighbor, SubSuperScript subsuper);
+  std::string subSupDir;
 };
 
 #endif /* SUBORSUPERSCRIPTS_H_ */

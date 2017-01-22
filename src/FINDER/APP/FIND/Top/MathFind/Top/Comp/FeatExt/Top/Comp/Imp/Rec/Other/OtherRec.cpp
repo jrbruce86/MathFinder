@@ -17,6 +17,7 @@
 #include <M_Utils.h>
 #include <BlobFeatExtDesc.h>
 #include <FeatExtFlagDesc.h>
+#include <FinderInfo.h>
 
 #include <allheaders.h>
 
@@ -27,6 +28,7 @@
 #include <assert.h>
 #include <vector>
 
+//#define DBG_TRAINTER_INIT_OTHER
 #define DBG_AVG
 #define SHOW_ABNORMAL_ROWS
 #define DBG_DISPLAY
@@ -40,7 +42,8 @@
 
 OtherRecognitionFeatureExtractor
 ::OtherRecognitionFeatureExtractor(
-    OtherRecognitionFeatureExtractorDescription* const description)
+    OtherRecognitionFeatureExtractorDescription* const description,
+    FinderInfo* const finderInfo)
 : avg_blob_height(0), avg_whr(0), bad_page(false), avg_confidence(0),
   vdarbFlagEnabled(false), heightFlagEnabled(false),
   widthHeightFlagEnabled(false), isOcrMathFlagEnabled(false),
@@ -50,7 +53,9 @@ OtherRecognitionFeatureExtractor
   blobDataGrid(NULL) {
   this->description = description;
   this->stopwordHelper = description->getCategory()->getStopwordHelper();
-  this->dbgdir = "debug/";
+  this->otherFeatDir = Utils::checkTrailingSlash(
+      finderInfo->getFinderTrainingPaths()->getFeatureExtDirPath()) +
+      std::string("Other/");
 
 }
 
@@ -66,13 +71,17 @@ void OtherRecognitionFeatureExtractor::doTrainerInitialization() {
     assert(false);
   }
   std::string mathWord;
+#ifdef DBG_TRAINTER_INIT_OTHER
   std::cout << "Mathwords read:\n";
+#endif
   while(getline(mathwordstream, mathWord)) {
     std::string word = mathWord;
     if(word.empty())
       continue;
     mathwords.push_back(word);
+#ifdef DBG_TRAINER_INIT_OTHER
     std::cout << word << std::endl;
+#endif
   }
 }
 
@@ -96,10 +105,8 @@ void OtherRecognitionFeatureExtractor
   double avgheight = 0;
   double avgwhr = 0;
   double count = 0;
-  TesseractWordData* const blobWord = blob->getParentChar()->getParentWord();
-  TesseractRowData* const blobRow = blob->getParentChar()->getParentWord()->getParentRow();
   while((blob = bdgs.NextFullSearch()) != NULL) {
-    if(blobWord->getIsValidTessWord() && blobRow->getIsConsideredNormal()) {
+    if(blob->belongsToRecognizedWord() && blob->belongsToRecognizedNormalRow()) {
       avgheight += (double)blob->getBoundingBox().height();
       avgwhr += ((double)blob->getBoundingBox().width() / (double)blob->getBoundingBox().height());
       ++count;
@@ -126,15 +133,14 @@ void OtherRecognitionFeatureExtractor
   Pix* pixdbg_r = pixCopy(NULL, blobDataGrid->getBinaryImage());
   pixdbg_r = pixConvertTo32(pixdbg_r);
   while((blob = bdgs.NextFullSearch()) != NULL) {
-    if(blob->getParentRow() == NULL)
-      continue;
-    if(blob->getParentRow()->isConsideredNormal)
+    if(blob->belongsToRecognizedNormalRow())
       M_Utils::drawHlBlobDataRegion(blob, pixdbg_r, LayoutEval::RED);
     else
       M_Utils::drawHlBlobDataRegion(blob, pixdbg_r, LayoutEval::BLUE);
   }
-  pixWrite((std::string("debug/Rows_Abnormal/") + blobDataGrid->getImageName()).c_str(),
-      pixdbg_r, IFF_PNG);
+  pixWriteToDumpDir(std::string("Rows_Abnormal_") +
+        blobDataGrid->getImageName(),
+      pixdbg_r);
 #ifdef DBG_DISPLAY
   std::cout << "displaying the abnormal rows for image " << blobDataGrid->getImageName() << " as blue regions\n";
   pixDisplay(pixdbg_r, 100, 100);
@@ -199,33 +205,36 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
       std::cout << "WARNING::ROW EMPTY!!\n";
       continue;
     }
-    for(int j = left; j < right; j++) {
+    for(int j = left; j < right; ++j) {
       inT32 y = blobDataGrid->getBinaryImage()->h - (inT32)row->row()->base_line((float)j);
       Lept_Utils::drawAtXY(dbgim, j, y, LayoutEval::GREEN);
     }
   }
-  pixWrite((std::string("debug/") + std::string("baselines/") + blobDataGrid->getImageName()).c_str(), dbgim, IFF_PNG);
+  pixWriteToDumpDir(std::string("baselines_") +
+      blobDataGrid->getImageName(),
+    dbgim);
 #ifdef DBG_DISPLAY
   std::cout << "Displaying the baselines in green.\n";
   pixDisplay(dbgim, 100, 100);
   M_Utils::waitForInput();
 #endif
   pixDestroy(&dbgim);
-
 #endif
-
-
 
   // determine whether or not each blob belongs to a "math word"
   bdgs.StartFullSearch();
+  blob = NULL;
   while((blob = bdgs.NextFullSearch()) != NULL) {
-    const char* wordStr = blob->getParentChar()->getParentWord()->wordstr();
+    if(blob->getParentWord() == NULL) {
+      continue;
+    }
+    const char* wordStr = blob->getParentWordstr();
     if(wordStr == NULL)
       continue;
     std::string blobword = (std::string)wordStr;
-    for(int i = 0; i < mathwords.length(); i++) {
+    for(int i = 0; i < mathwords.length(); ++i) {
       if(blobword == mathwords[i]) {
-        blob->getParentChar()->getParentWord()->setResultMatchesMathWord(true);
+        blob->getParentWord()->setResultMatchesMathWord(true);
         break;
       }
     }
@@ -239,13 +248,15 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
       M_Utils::drawHlBlobDataRegion(blob, mathwordim, LayoutEval::RED);
     }
   }
-  pixWrite((std::string("debug/") + (std::string)"mathwords" + blobDataGrid->getImageName()).c_str(), mathwordim, IFF_PNG);
+  pixWriteToDumpDir(std::string("mathwords") +
+      blobDataGrid->getImageName(),
+    mathwordim);
 #ifdef DBG_DISPLAY
   pixDisplay(mathwordim, 100, 100);
+  std::cout << "Displaying math words highlighted in red.\n";
   M_Utils::waitForInput();
 #endif
   pixDestroy(&mathwordim);
-
 #endif
 
   // Determine the ratio of non-italicized blobs to total blobs on the page
@@ -257,14 +268,13 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
   blob = NULL;
   while((blob = bdgs.NextFullSearch()) != NULL) {
     bool isItalic = false;
-    if(blob->getParentWord() != NULL) {
-      const FontInfo* const fontInfo = blob->getParentWord()->getWordRes()->fontinfo;
-      if(fontInfo != NULL) {
-        isItalic = fontInfo->is_italic();
-      }
+    tesseract::FontInfo* const fontInfo = blob->getFontInfo();
+    if(fontInfo != NULL) {
+      isItalic = fontInfo->is_italic();
     }
-    if(!isItalic)
+    if(!isItalic) {
       ++non_ital_blobs;
+    }
     ++total_blobs;
   }
   assert(blobDataGrid->getNonItalicizedRatio() == -1);
@@ -274,33 +284,35 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
   PIX* boldital_img = pixCopy(NULL, blobDataGrid->getBinaryImage());
   boldital_img = pixConvertTo32(boldital_img);
   while((blob = bdgs.NextFullSearch()) != NULL) {
-    if(blob->getParentWord() != NULL) {
-      const tesseract::FontInfo* fontInfo = blob->getParentWord()->getWordRes()->fontinfo;
-      if(fontInfo != NULL) {
-        if(fontInfo->is_italic()) {
-          M_Utils::drawHlBlobDataRegion(blob, boldital_img, LayoutEval::RED);
-        }
+    tesseract::FontInfo* const fontInfo = blob->getFontInfo();
+    if(fontInfo != NULL) {
+      if(fontInfo->is_italic()) {
+        M_Utils::drawHlBlobDataRegion(blob, boldital_img, LayoutEval::RED);
       }
     }
   }
-  pixWrite((dbgdir + std::string("bolditalics") + blobDataGrid->getImageName()).c_str(), boldital_img, IFF_PNG);
+  pixWriteToDumpDir(std::string("italics") +
+      blobDataGrid->getImageName(),
+    boldital_img);
 #ifdef DBG_DISPLAY
   std::cout << "Displaying the blobs which were found by Tesseract to be italicized as red. "
       << "All other blobs are in black.\n";
   std::cout << "The displayed image was saved to "
-      << (dbgdir + "bolditalics" + blobDataGrid->getImageName()).c_str() << std::endl;
+      << (otherFeatDir + std::string("italics") + blobDataGrid->getImageName()).c_str() << std::endl;
   pixDisplay(boldital_img, 100, 100);
   M_Utils::waitForInput();
 #endif
   pixDestroy(&boldital_img);
 #endif
 
-  // determine the average ocr confidence for valid words on the page,
+  // determine the average ocr confidence for valid words (words with a match
+  // to Tesseract's dictionary) on the page,
   // if there are no valid words the bad_page flag is set to true
   bdgs.StartFullSearch();
   double validblobcount = 0;
+  blob = NULL;
   while((blob = bdgs.NextFullSearch()) != NULL) {
-    if(blob->getParentWord() != NULL && blob->getParentWord()->getIsValidTessWord()) {
+    if(blob->belongsToRecognizedWord()) {
       avg_confidence += blob->getCharRecognitionConfidence();
       ++validblobcount;
     }
@@ -315,21 +327,28 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
   bdgs.StartFullSearch();
   blob = NULL;
 #ifdef SHOW_STOP_WORDS
-  std::string stpwrdim_name = dbgdir + (std::string)"stop_words_"
-            + blobDataGrid->getImageName();
   assert(dbgim == NULL);
   dbgim = pixCopy(NULL, blobDataGrid->getBinaryImage());
   dbgim = pixConvertTo32(dbgim);
 #endif
   while((blob = bdgs.NextFullSearch()) != NULL) {
-    blob->getParentChar()->getParentWord()->setResultMatchesStopword(stopwordHelper->isStopWord(std::string(blob->getParentChar()->getParentWord()->wordstr())));
+    TesseractWordData* const parentWord = blob->getParentWord();
+    char* parentWordStr = (char*)(blob->getParentWordstr());
+    if(parentWord == NULL || parentWordStr == NULL) {
+      continue;
+    }
+    parentWord->setResultMatchesStopword(
+        stopwordHelper->isStopWord(
+            std::string(parentWordStr)));
 #ifdef SHOW_STOP_WORDS
     if(blob->belongsToRecognizedStopword())
       M_Utils::drawHlBlobDataRegion(blob, dbgim, LayoutEval::RED);
 #endif
   }
 #ifdef SHOW_STOP_WORDS
-  pixWrite(stpwrdim_name.c_str(), dbgim, IFF_PNG);
+  pixWriteToDumpDir(std::string("stop_words_") +
+      blobDataGrid->getImageName(),
+    dbgim);
 #ifdef DBG_DISPLAY
   std::cout << "Displaying the blobs belonging to stop words in red on the page.\n";
   pixDisplay(dbgim, 100, 100);
@@ -340,8 +359,6 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
 #endif
 
 #ifdef SHOW_VALID_WORDS
-  std::string validwrdim_name = dbgdir + (std::string)"valid_words_" +
-      blobDataGrid->getImageName();
   assert(dbgim == NULL);
   dbgim = pixCopy(NULL, blobDataGrid->getBinaryImage());
   dbgim = pixConvertTo32(dbgim);
@@ -351,7 +368,9 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
     if(blob->belongsToRecognizedWord())
       M_Utils::drawHlBlobDataRegion(blob, dbgim, LayoutEval::RED);
   }
-  pixWrite(validwrdim_name.c_str(), dbgim, IFF_PNG);
+  pixWriteToDumpDir(std::string("valid_words_") +
+      blobDataGrid->getImageName(),
+    dbgim);
 #ifdef DBG_DISPLAY
   std::cout << "Displaying the blobs belonging to valid words in red on the page.\n";
   pixDisplay(dbgim, 100, 100);
@@ -360,8 +379,8 @@ rows[i]->avg_baselinedist = avg_baseline_dist_;
   pixDestroy(&dbgim);
   dbgim = NULL;
 #endif
-
-  //++imdbgnum;
+  std::cout << "Made it!!!\n";
+  Utils::waitForInput();
 }
 
 
@@ -580,4 +599,20 @@ std::vector<FeatureExtractorFlagDescription*> OtherRecognitionFeatureExtractor
   return enabledFlagDescriptions;
 }
 
+void OtherRecognitionFeatureExtractor::createDumpDirIfNotExist() {
+  if(!Utils::existsDirectory(otherFeatDir)) {
+    Utils::exec(std::string("mkdir -p ") + otherFeatDir);
+  }
+}
+
+void OtherRecognitionFeatureExtractor::pixWriteToDumpDir(
+    std::string imName,
+    Pix* im) {
+  createDumpDirIfNotExist();
+  pixWrite(
+      (Utils::checkTrailingSlash(otherFeatDir) +
+          imName + std::string(".png")).c_str(),
+      im,
+      IFF_PNG);
+}
 

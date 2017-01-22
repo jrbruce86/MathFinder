@@ -169,6 +169,20 @@ class BlobData: public ELIST_LINK {
    */
   bool belongsToRecognizedNormalRow();
 
+  /**
+   * Returns true if this blob was recognized by Tesseract as belonging to the
+   * right-most character in a word that is considered 'valid' based on Tesseract's
+   * dictionary (has a matching entry in the dictionary).
+   */
+  bool isRightmostInWord();
+
+  /**
+   * Returns true if this blob was recognized by Tesseract as belonging to the
+   * left-most character in a word that is considered 'valid' based on Tesseract's
+   * dictionary (has a matching entry in the dictionary).
+   */
+  bool isLeftmostInWord();
+
   BlobMergeData& getMergeData();
 
   TBOX bounding_box() const;
@@ -188,6 +202,12 @@ class BlobData: public ELIST_LINK {
    * this blob as being a part of
    */
   float getWordRecognitionConfidence();
+
+  /**
+   * Gets font info from the parent if that info exists.
+   * If not returns NULL.
+   */
+  FontInfo* getFontInfo();
 
   // Markers solely for during grid creation stage and/or debugging
   void markForDeletion();

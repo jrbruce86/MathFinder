@@ -27,7 +27,8 @@ SubOrSuperscriptsFeatureExtractorFactory
 SubOrSuperscriptsFeatureExtractor*
 SubOrSuperscriptsFeatureExtractorFactory::create(FinderInfo* const finderInfo) {
 
-  SubOrSuperscriptsFeatureExtractor* result = new SubOrSuperscriptsFeatureExtractor(description);
+  SubOrSuperscriptsFeatureExtractor* result =
+      new SubOrSuperscriptsFeatureExtractor(description, finderInfo);
 
   const std::string hasSubFlagName = description->getHasSubscriptDescription()->getName();
   const std::string isSubFlagName = description->getIsSubscriptDescription()->getName();
