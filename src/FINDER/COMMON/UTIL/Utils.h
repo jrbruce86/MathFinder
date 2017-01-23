@@ -43,6 +43,10 @@ namespace Utils {
   // convert integer to string
   std::string intToString(int i);
 
+  // convert string to all lowercase (makes copy and returns that,
+  // doesn't muck with the original
+  std::string toLower(std::string str);
+
   // Read in an image using Leptonica, end execution with error
   // message if pixread fails
   Pix* leptReadImg(std::string fn);

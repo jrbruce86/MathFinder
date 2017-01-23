@@ -66,7 +66,9 @@ int main(int argc, char* argv[]) {
         finderInfo,
         mathExpressionFeatureExtractor,
         MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
-        MathExpressionSegmentorFactory().createMathExpressionSegmentor(finderInfo, mathExpressionFeatureExtractor));
+        MathExpressionSegmentorFactory().createMathExpressionSegmentor(
+            finderInfo,
+            mathExpressionFeatureExtractor));
 
     // Run the trainer, indicate success/failure
     trainer.runTraining();

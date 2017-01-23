@@ -141,6 +141,7 @@ am_libCOMMON_la_OBJECTS = GRID/libCOMMON_la-BlobDataGrid.lo \
 	GRID/Top/Cell/Comp/Data/Desc/Cat/libCOMMON_la-BlobFeatExtCat.lo \
 	GRID/Top/Cell/Comp/Data/Desc/Desc/libCOMMON_la-BlobFeatExtDesc.lo \
 	GRID/Top/Cell/Comp/Data/Desc/Flag/libCOMMON_la-FeatExtFlagDesc.lo \
+	GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/libCOMMON_la-EmptyFlagDesc.lo \
 	GRID/Top/Cell/Comp/Data/NGram/NGProfile/libCOMMON_la-NGramRanker.lo \
 	GRID/Top/Cell/Comp/RecData/Block/Sentence/libCOMMON_la-SentenceData.lo
 libCOMMON_la_OBJECTS = $(am_libCOMMON_la_OBJECTS)
@@ -370,6 +371,7 @@ GRID/Top/Cell/Comp/Spatial/Merge/BlobMergeData.h \
 GRID/Top/Cell/Comp/Data/Desc/Cat/BlobFeatExtCat.h \
 GRID/Top/Cell/Comp/Data/Desc/Desc/BlobFeatExtDesc.h \
 GRID/Top/Cell/Comp/Data/Desc/Flag/FeatExtFlagDesc.h \
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.h \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGram.h \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.h \
 GRID/Top/Cell/Comp/RecData/Block/Sentence/SentenceData.h \
@@ -392,6 +394,7 @@ GRID/Top/Cell/Comp/Spatial/Merge/BlobMergeData.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Cat/BlobFeatExtCat.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Desc/BlobFeatExtDesc.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Flag/FeatExtFlagDesc.cpp \
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.cpp \
 GRID/Top/Cell/Comp/RecData/Block/Sentence/SentenceData.cpp
 
@@ -412,6 +415,7 @@ libCOMMON_la_CPPFLAGS = -IGRID \
 -IGRID/Top/Cell/Comp/Data/Stopword \
 -IGRID/Top/Cell/Comp/Data/Desc/Cat \
 -IGRID/Top/Cell/Comp/Data/Desc/Flag \
+-IGRID/Top/Cell/Comp/Data/Desc/Flag/Empty \
 -IGRID/Top/Cell/Comp/Data/NGram/NGProfile \
 -IGRID/Top/Cell/Comp/RecData/Block/Sentence \
 -I/usr/local/include/leptonica \
@@ -647,6 +651,15 @@ GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR)/$(am__dirstamp):
 GRID/Top/Cell/Comp/Data/Desc/Flag/libCOMMON_la-FeatExtFlagDesc.lo:  \
 	GRID/Top/Cell/Comp/Data/Desc/Flag/$(am__dirstamp) \
 	GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR)/$(am__dirstamp)
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(am__dirstamp):
+	@$(MKDIR_P) GRID/Top/Cell/Comp/Data/Desc/Flag/Empty
+	@: > GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(am__dirstamp)
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)
+	@: > GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/$(am__dirstamp)
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/libCOMMON_la-EmptyFlagDesc.lo:  \
+	GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(am__dirstamp) \
+	GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/$(am__dirstamp)
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(am__dirstamp):
 	@$(MKDIR_P) GRID/Top/Cell/Comp/Data/NGram/NGProfile
 	@: > GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(am__dirstamp)
@@ -683,6 +696,8 @@ mostlyclean-compile:
 	-rm -f GRID/Top/Cell/Comp/Data/Desc/Desc/*.lo
 	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/*.$(OBJEXT)
 	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/*.lo
+	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/*.$(OBJEXT)
+	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/*.lo
 	-rm -f GRID/Top/Cell/Comp/Data/DoubleFeat/*.$(OBJEXT)
 	-rm -f GRID/Top/Cell/Comp/Data/DoubleFeat/*.lo
 	-rm -f GRID/Top/Cell/Comp/Data/Fac/*.$(OBJEXT)
@@ -717,6 +732,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@GRID/Top/Cell/Comp/Data/Desc/Cat/$(DEPDIR)/libCOMMON_la-BlobFeatExtCat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@GRID/Top/Cell/Comp/Data/Desc/Desc/$(DEPDIR)/libCOMMON_la-BlobFeatExtDesc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR)/libCOMMON_la-FeatExtFlagDesc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/libCOMMON_la-EmptyFlagDesc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@GRID/Top/Cell/Comp/Data/DoubleFeat/$(DEPDIR)/libCOMMON_la-DoubleFeature.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@GRID/Top/Cell/Comp/Data/Fac/$(DEPDIR)/libCOMMON_la-BlobFeatExtFac.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR)/libCOMMON_la-NGramRanker.Plo@am__quote@
@@ -890,6 +906,13 @@ GRID/Top/Cell/Comp/Data/Desc/Flag/libCOMMON_la-FeatExtFlagDesc.lo: GRID/Top/Cell
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libCOMMON_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GRID/Top/Cell/Comp/Data/Desc/Flag/libCOMMON_la-FeatExtFlagDesc.lo `test -f 'GRID/Top/Cell/Comp/Data/Desc/Flag/FeatExtFlagDesc.cpp' || echo '$(srcdir)/'`GRID/Top/Cell/Comp/Data/Desc/Flag/FeatExtFlagDesc.cpp
 
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/libCOMMON_la-EmptyFlagDesc.lo: GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libCOMMON_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/libCOMMON_la-EmptyFlagDesc.lo -MD -MP -MF GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/libCOMMON_la-EmptyFlagDesc.Tpo -c -o GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/libCOMMON_la-EmptyFlagDesc.lo `test -f 'GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp' || echo '$(srcdir)/'`GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/libCOMMON_la-EmptyFlagDesc.Tpo GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/libCOMMON_la-EmptyFlagDesc.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp' object='GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/libCOMMON_la-EmptyFlagDesc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libCOMMON_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/libCOMMON_la-EmptyFlagDesc.lo `test -f 'GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp' || echo '$(srcdir)/'`GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp
+
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/libCOMMON_la-NGramRanker.lo: GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libCOMMON_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GRID/Top/Cell/Comp/Data/NGram/NGProfile/libCOMMON_la-NGramRanker.lo -MD -MP -MF GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR)/libCOMMON_la-NGramRanker.Tpo -c -o GRID/Top/Cell/Comp/Data/NGram/NGProfile/libCOMMON_la-NGramRanker.lo `test -f 'GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.cpp' || echo '$(srcdir)/'`GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR)/libCOMMON_la-NGramRanker.Tpo GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR)/libCOMMON_la-NGramRanker.Plo
@@ -915,6 +938,7 @@ clean-libtool:
 	-rm -rf GRID/Top/Cell/Comp/Data/Desc/Cat/.libs GRID/Top/Cell/Comp/Data/Desc/Cat/_libs
 	-rm -rf GRID/Top/Cell/Comp/Data/Desc/Desc/.libs GRID/Top/Cell/Comp/Data/Desc/Desc/_libs
 	-rm -rf GRID/Top/Cell/Comp/Data/Desc/Flag/.libs GRID/Top/Cell/Comp/Data/Desc/Flag/_libs
+	-rm -rf GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/.libs GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/_libs
 	-rm -rf GRID/Top/Cell/Comp/Data/DoubleFeat/.libs GRID/Top/Cell/Comp/Data/DoubleFeat/_libs
 	-rm -rf GRID/Top/Cell/Comp/Data/Fac/.libs GRID/Top/Cell/Comp/Data/Fac/_libs
 	-rm -rf GRID/Top/Cell/Comp/Data/NGram/NGProfile/.libs GRID/Top/Cell/Comp/Data/NGram/NGProfile/_libs
@@ -1055,6 +1079,8 @@ distclean-generic:
 	-rm -f GRID/Top/Cell/Comp/Data/Desc/Desc/$(am__dirstamp)
 	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR)/$(am__dirstamp)
 	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/$(am__dirstamp)
+	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR)/$(am__dirstamp)
+	-rm -f GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(am__dirstamp)
 	-rm -f GRID/Top/Cell/Comp/Data/DoubleFeat/$(DEPDIR)/$(am__dirstamp)
 	-rm -f GRID/Top/Cell/Comp/Data/DoubleFeat/$(am__dirstamp)
 	-rm -f GRID/Top/Cell/Comp/Data/Fac/$(DEPDIR)/$(am__dirstamp)
@@ -1089,7 +1115,7 @@ clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
 	mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf GRID/$(DEPDIR) GRID/Top/Cell/$(DEPDIR) GRID/Top/Cell/Comp/Data/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Cat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Desc/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR) GRID/Top/Cell/Comp/Data/DoubleFeat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Fac/$(DEPDIR) GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR) GRID/Top/Cell/Comp/Data/Stopword/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/Sentence/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Char/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Row/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Word/$(DEPDIR) GRID/Top/Cell/Comp/Spatial/Merge/$(DEPDIR) GRID/Top/Fac/$(DEPDIR) UTIL/$(DEPDIR)
+	-rm -rf GRID/$(DEPDIR) GRID/Top/Cell/$(DEPDIR) GRID/Top/Cell/Comp/Data/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Cat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Desc/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR) GRID/Top/Cell/Comp/Data/DoubleFeat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Fac/$(DEPDIR) GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR) GRID/Top/Cell/Comp/Data/Stopword/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/Sentence/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Char/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Row/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Word/$(DEPDIR) GRID/Top/Cell/Comp/Spatial/Merge/$(DEPDIR) GRID/Top/Fac/$(DEPDIR) UTIL/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1135,7 +1161,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf GRID/$(DEPDIR) GRID/Top/Cell/$(DEPDIR) GRID/Top/Cell/Comp/Data/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Cat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Desc/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR) GRID/Top/Cell/Comp/Data/DoubleFeat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Fac/$(DEPDIR) GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR) GRID/Top/Cell/Comp/Data/Stopword/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/Sentence/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Char/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Row/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Word/$(DEPDIR) GRID/Top/Cell/Comp/Spatial/Merge/$(DEPDIR) GRID/Top/Fac/$(DEPDIR) UTIL/$(DEPDIR)
+	-rm -rf GRID/$(DEPDIR) GRID/Top/Cell/$(DEPDIR) GRID/Top/Cell/Comp/Data/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Cat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Desc/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Flag/$(DEPDIR) GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/$(DEPDIR) GRID/Top/Cell/Comp/Data/DoubleFeat/$(DEPDIR) GRID/Top/Cell/Comp/Data/Fac/$(DEPDIR) GRID/Top/Cell/Comp/Data/NGram/NGProfile/$(DEPDIR) GRID/Top/Cell/Comp/Data/Stopword/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Block/Sentence/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Char/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Row/$(DEPDIR) GRID/Top/Cell/Comp/RecData/Word/$(DEPDIR) GRID/Top/Cell/Comp/Spatial/Merge/$(DEPDIR) GRID/Top/Fac/$(DEPDIR) UTIL/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

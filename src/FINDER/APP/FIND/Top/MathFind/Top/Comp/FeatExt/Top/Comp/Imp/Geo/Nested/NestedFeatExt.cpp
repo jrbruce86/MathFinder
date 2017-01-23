@@ -16,6 +16,8 @@
 #include <NestedData.h>
 #include <DoubleFeature.h>
 #include <M_Utils.h>
+#include <FinderInfo.h>
+#include <Utils.h>
 
 #include <baseapi.h>
 
@@ -25,11 +27,18 @@
 
 //#define DBG_NESTED_FEATURE
 //#define DBG_FEAT2
+#define DBG_WRITE_NESTED
 
 NumCompletelyNestedBlobsFeatureExtractor
 ::NumCompletelyNestedBlobsFeatureExtractor(
-    NumCompletelyNestedBlobsFeatureExtractorDescription* const description) {
+    NumCompletelyNestedBlobsFeatureExtractorDescription* const description,
+    FinderInfo* const finderInfo)
+: highCertaintyThresh(Utils::getCertaintyThresh() / 2){
   this->description = description;
+  this->nestedDir =
+      Utils::checkTrailingSlash(
+          finderInfo->getFinderTrainingPaths()->getFeatureExtDirPath()) +
+          std::string("Nested/");
 }
 
 void NumCompletelyNestedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* const blobDataGrid) {
@@ -55,6 +64,33 @@ void NumCompletelyNestedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* con
                 countNestedBlobs(blob,
                     blobDataGrid))));
   }
+
+#ifdef DBG_WRITE_NESTED
+  gridSearch.StartFullSearch();
+  blob = NULL;
+  PIX* dbgnested_im = pixCopy(NULL, blobDataGrid->getBinaryImage());
+  dbgnested_im = pixConvertTo32(dbgnested_im);
+  while((blob = gridSearch.NextFullSearch()) != NULL) {
+    NumCompletelyNestedBlobsData* const data =
+        (NumCompletelyNestedBlobsData*)blob->getVariableDataAt(blobDataKey);
+    if(data->getNestedBlobsCount() > 0) {
+      M_Utils::drawHlBlobDataRegion(blob, dbgnested_im, LayoutEval::RED);
+    }
+  }
+  if(!Utils::existsDirectory(nestedDir)) {
+    Utils::exec(std::string("mkdir -p ") + nestedDir);
+  }
+  pixWrite((Utils::checkTrailingSlash(nestedDir) +
+      blobDataGrid->getImageName() +
+      std::string(".png")).c_str(),
+    dbgnested_im,
+    IFF_PNG);
+#ifdef DBG_DISPLAY
+  pixDisplay(dbgnested_im, 100, 100);
+  M_Utils::waitForInput();
+#endif
+  pixDestroy(&dbgnested_im);
+#endif
 }
 
 std::vector<DoubleFeature*> NumCompletelyNestedBlobsFeatureExtractor::extractFeatures(BlobData* const blobData) {
@@ -67,9 +103,15 @@ int NumCompletelyNestedBlobsFeatureExtractor::countNestedBlobs(BlobData* const b
   int nested = 0;
 
   // ----------------COMMENT AND/OR CODE IN QUESTION START---------------------
-//  if(blob->validword || blob->onRowNormal()) {
-//    return 0;
-//  }
+  // if the blob was recognized with high confidence as being part of a word matching
+  // tesseract's dictionary then discard here. also discard if it doesn't match a
+  // word in the dictionary and yet still belongs to a character recognized with extra
+  // high confidence by Tesseract.
+  if((blob->belongsToRecognizedWord()
+      && blob->getWordRecognitionConfidence() > Utils::getCertaintyThresh())
+      || (blob->getCharRecognitionConfidence() > highCertaintyThresh)) {
+    return 0;
+  }
   // ----------------COMMENT AND/OR CODE IN QUESTION END----------------------
   NumCompletelyNestedBlobsData* data = (NumCompletelyNestedBlobsData*)blob->getVariableDataAt(blobDataKey);
   BlobDataGridSearch bigs(blobDataGrid);

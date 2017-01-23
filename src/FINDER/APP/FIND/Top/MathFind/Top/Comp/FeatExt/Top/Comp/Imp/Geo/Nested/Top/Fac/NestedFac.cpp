@@ -23,7 +23,10 @@ NumCompletelyNestedBlobsFeatureExtractorFactory
 BlobFeatureExtractor*
 NumCompletelyNestedBlobsFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
-  return dynamic_cast<BlobFeatureExtractor*>(new NumCompletelyNestedBlobsFeatureExtractor(blobFeatureExtractorDescription));
+  return dynamic_cast<BlobFeatureExtractor*>(
+      new NumCompletelyNestedBlobsFeatureExtractor(
+          blobFeatureExtractorDescription,
+          finderInfo));
 }
 
 BlobFeatureExtractorDescription* NumCompletelyNestedBlobsFeatureExtractorFactory::getDescription() {

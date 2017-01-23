@@ -10,6 +10,7 @@
 
 #include <string>
 #include <baseapi.h>
+#include <locale.h>
 
 class StopwordFileReader {
 
@@ -24,7 +25,6 @@ class StopwordFileReader {
  private:
 
   GenericVector<std::string> stopwords;
-
 };
 
 

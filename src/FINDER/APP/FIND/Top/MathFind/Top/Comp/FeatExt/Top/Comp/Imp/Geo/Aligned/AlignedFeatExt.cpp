@@ -15,6 +15,7 @@
 #include <M_Utils.h>
 #include <BlobFeatExtDesc.h>
 #include <FeatExtFlagDesc.h>
+#include <Utils.h>
 
 #include <baseapi.h>
 
@@ -24,7 +25,7 @@
 
 //#define DBG_COVER_FEATURE
 //#define DBG_COVER_FEATURE_ALOT
-#define DBG_FEATURE
+//#define DBG_FEATURE
 
 NumAlignedBlobsFeatureExtractor::NumAlignedBlobsFeatureExtractor(NumAlignedBlobsFeatureExtractorDescription* description)
 : rightwardFeatureEnabled(false),
@@ -75,13 +76,13 @@ std::vector<DoubleFeature*> NumAlignedBlobsFeatureExtractor::extractFeatures(Blo
   double rhabc = (double)(data->getRhabcCount());
   double uvabc = (double)(data->getUvabcCount());
   double dvabc = (double)(data->getDvabcCount());
-  if(rhabc > 1 && rightwardFeatureEnabled)
+  if(rhabc > 0 && rightwardFeatureEnabled)
     std::cout << "Displayed blob has rhabc = " << rhabc << std::endl;
-  if(uvabc > 1 && upwardFeatureEnabled)
+  if(uvabc > 0 && upwardFeatureEnabled)
     std::cout << "Displayed blob has uvabc = " << uvabc << std::endl;
-  if(dvabc > 1 && downwardFeatureEnabled)
+  if(dvabc > 0 && downwardFeatureEnabled)
     std::cout << "Displayed blob has dvabc = " << dvabc << std::endl;
-  if(rhabc > 1 || uvabc > 1 || dvabc > 1)
+  if(rhabc > 0 || uvabc > 0 || dvabc > 0)
     M_Utils::dbgDisplayBlob(blob);
 #endif
 
@@ -149,15 +150,17 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
 #endif
   // Below code and comment currently in question.... Should I do this?? I'm thinking not. All blobs should have this feature I think. Can't rely on Tesseract in face of math, so no telling if it's right or wrong.
   // ----------------COMMENT AND CODE IN QUESTION START---------------------
-  // if the blob in question belongs to a valid word then
-  // I discard it immediately, unless it belongs to an "abnormal row"
-  // in which case the feature is still found. see findAllRowCharacteristics() method
-  // of the BlobInfoGrid for what factors that are used to determine this. This feature
-  // really isn't too effective for normal rows
-  if(blob->belongsToRecognizedWord()
-      && blob->belongsToRecognizedNormalRow()
-      && !seg_mode
-      && blob->getCharRecognitionConfidence() > -5) {
+  // Some filters. First off I don't filter anything if I'm using this at the
+  // heuristic merge stage (the seg_mode flag would be set to true). So with
+  // that out of the way, I filter if the blob belongs to a word matching
+  // an entry in Tesseract's dictionary and the word was recognized with a
+  // high confidence. I also filter if the blob resides on a row that was
+  // found to have a high likelihood of being part of a paragraph (i.e.,
+  // 'normal' row of text).
+  if(!seg_mode &&
+      ((blob->belongsToRecognizedWord() &&
+          (blob->getWordRecognitionConfidence() > Utils::getCertaintyThresh()))
+       || blob->belongsToRecognizedNormalRow())) {
     return 0;
   }
   // ----------------COMMENT AND CODE IN QUESTION END---------------------

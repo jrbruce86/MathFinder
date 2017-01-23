@@ -12,3 +12,7 @@ std::ostream& operator<<(
   stream << f.getName() + ":\n" + f.getDescriptionText();
   return stream;
 }
+
+FeatureExtractorFlagDescription::
+~FeatureExtractorFlagDescription() {};
+

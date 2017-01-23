@@ -28,7 +28,7 @@ class FeatureExtractorFlagDescription {
    */
   virtual std::string getDescriptionText() = 0;
 
-  virtual ~FeatureExtractorFlagDescription(){};
+  virtual ~FeatureExtractorFlagDescription();
 
   friend std::ostream& operator<<(
       std::ostream& stream, FeatureExtractorFlagDescription& f);

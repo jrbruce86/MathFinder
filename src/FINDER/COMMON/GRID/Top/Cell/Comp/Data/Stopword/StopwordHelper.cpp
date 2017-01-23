@@ -48,7 +48,7 @@ GenericVector<std::string> StopwordFileReader::getStopwords() {
 bool StopwordFileReader::isStopWord(std::string word) {
   stopwords = getStopwords();
   for(int i = 0; i < stopwords.length(); ++i) {
-    if(word == stopwords[i]) {
+    if(Utils::toLower(word) == Utils::toLower(stopwords[i])) {
       return true;
     }
   }

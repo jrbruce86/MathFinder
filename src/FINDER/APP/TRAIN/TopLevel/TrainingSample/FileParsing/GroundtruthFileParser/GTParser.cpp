@@ -22,13 +22,13 @@ GroundTruthEntry* GtParser::parseGTLine(const std::string& line) {
   std::vector<std::string> tmp = Utils::stringSplit(imgname, '.');
   int imgnum = atoi(tmp[0].c_str());
   GT_Entry::GTEntryType entrytype;
-  if(type == "displayed")
+  if(type == "displayed") {
     entrytype = GT_Entry::DISPLAYED;
-  else if(type == "embedded")
+  } else if(type == "embedded") {
     entrytype = GT_Entry::EMBEDDED;
-  else if(type == "label")
+  } else if(type == "label") {
     entrytype = GT_Entry::LABEL;
-  else {
+  } else {
     std::cout << "ERROR: Groundtruth entry of unknown type. Invalid Groundtruth file!\n";
     exit(EXIT_FAILURE);
   }

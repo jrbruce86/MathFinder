@@ -34,9 +34,6 @@
 BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     tesseract::TessBaseAPI* tessBaseApi, const std::string imageName) {
 
-  std::cout << "Creating grid with image name of: " << imageName << std::endl;
-  Utils::waitForInput();
-
   // Initialize the tesseract api
   tessBaseApi->Init("/usr/local/share/", "eng");
 

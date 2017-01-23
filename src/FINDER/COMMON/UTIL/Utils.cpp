@@ -28,13 +28,23 @@
 #include <assert.h>
 #include <stdio.h>
 #include <baseapi.h>
-
+#include <locale.h>
 
 // convert integer to string
 std::string Utils::intToString(int i) {
   char buf[digit_count(i)];
   sprintf(buf, "%d", i);
   return (std::string) buf;
+}
+
+static std::locale l;
+// convert string to all lowercase (makes copy and returns that,
+// doesn't muck with the original
+std::string Utils::toLower(std::string str) {
+  for(int i = 0; i < str.size(); ++i) {
+    str[i] = std::tolower(str[i], l);
+  }
+  return str;
 }
 
 // Read in an image using Leptonica, end execution with error

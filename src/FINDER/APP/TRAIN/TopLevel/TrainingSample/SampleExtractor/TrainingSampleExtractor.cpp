@@ -26,10 +26,10 @@
 #include <assert.h>
 #include <stddef.h>
 
-#define DBG
+//#define DBG
 #define DBG_MEDS_TRAINER_SHOW_TRAINDATA
-#define DBG_DISPLAY
-#define DBG_SHOW_GRID
+//#define DBG_DISPLAY
+//#define DBG_SHOW_GRID
 
 TrainingSampleExtractor::TrainingSampleExtractor(FinderInfo* const finderInfo,
     MathExpressionFeatureExtractor* const featureExtractor)
@@ -96,7 +96,7 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
 
   // Extract the features for each image in the groundtruth dataset
   std::cout << "Extracting the features for each image in the groundtruth dataset.\n";
-  Utils::waitForInput();
+  //Utils::waitForInput();
   for(int i = 0; i < finderInfo->getGroundtruthImagePaths().size(); ++i) {
     tesseract::TessBaseAPI api; // the tesseract api that will be used for features which require it during feature extraction
 
@@ -109,8 +109,8 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
     ScrollView* gridviewer = blobDataGrid->MakeWindow(100, 100, winname.c_str());
     blobDataGrid->DisplayBoxes(gridviewer);
     Utils::waitForInput();
-    //delete gridviewer; // TODO put this back!!!!
-    //gridviewer = NULL;
+    delete gridviewer;
+    gridviewer = NULL;
 #endif
 
     // now to get the features from the grid and append them to the
@@ -135,8 +135,18 @@ void TrainingSampleExtractor::getNewSamples(bool writeToFile) {
       else
         Lept_Utils::fillBoxForeground(colorimg, sample->blobbox, LayoutEval::BLUE);
     }
-    std::string dbgname = "dbg_training_im" + Utils::intToString(i) + ".png";
-    pixWrite(dbgname.c_str(), colorimg, IFF_PNG);
+    std::string coloredGtDir =
+        Utils::checkTrailingSlash(finderInfo->getGroundtruthDirPath()) +
+        "coloredImages/";
+    if(!Utils::existsDirectory(coloredGtDir)) {
+      Utils::exec(std::string("mkdir -p ") + coloredGtDir);
+    }
+    pixWrite(
+        (coloredGtDir +
+          std::string(Utils::intToString(i) +
+          std::string(".png"))).c_str(),
+        colorimg,
+        IFF_PNG);
 #ifdef DBG_DISPLAY
     pixDisplay(colorimg, 100, 100);
     M_Utils::waitForInput();
@@ -179,12 +189,12 @@ std::vector<BLSample*> TrainingSampleExtractor::getGridSamples(BlobDataGrid* con
   std::cout << "Starting feature extraction for training image " << image_index << std::endl;
   featureExtractor->extractFeatures(blobDataGrid);
   std::cout << "Finished extracting features for training image " << image_index << std::endl;
-  Utils::waitForInput();
   BlobDataGridSearch bdgs(blobDataGrid);
   bdgs.StartFullSearch();
   BlobData* blob = NULL;
   std::vector<BLSample*> samples;
   int blobnum = 0;
+  assert(DatasetSelectionMenu::getFileNumFromPath(finderInfo->getGroundtruthImagePaths()[image_index]) == image_index); // sanity
   while((blob = bdgs.NextFullSearch()) != NULL) {
     if(blob->getExtractedFeatures().empty()) {
       std::cout << "ERROR: Attempting to create a training sample from a blob "
@@ -202,7 +212,6 @@ std::vector<BLSample*> TrainingSampleExtractor::getGridSamples(BlobDataGrid* con
       lsample->label = true;
     lsample->imageName = finderInfo->getGroundtruthImagePaths()[image_index].substr(finderInfo->getGroundtruthDirPath().size());
     lsample->imageIndex = image_index;
-    assert(DatasetSelectionMenu::getFileNumFromPath(finderInfo->getGroundtruthImagePaths()[image_index]) == image_index); // sanity
     samples.push_back(lsample);
     ++blobnum;
   }
@@ -217,7 +226,7 @@ std::vector<BLSample*> TrainingSampleExtractor::getGridSamples(BlobDataGrid* con
 GroundTruthEntry* TrainingSampleExtractor::getBlobGTEntry(BlobData* const blob, const int image_index, Pix* const img) {
   // open the groundtruth file
   std::ifstream gtfile;
-  std::string gtfilename = finderInfo->getGroundtruthImagePaths()[image_index];
+  std::string gtfilename = finderInfo->getGroundtruthFilePath();
   gtfile.open(gtfilename.c_str(), std::ifstream::in);
   if((gtfile.rdstate() & std::ifstream::failbit) != 0) {
     std::cout << "ERROR: Could not open Groundtruth.dat in " \

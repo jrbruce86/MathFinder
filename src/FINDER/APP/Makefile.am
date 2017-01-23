@@ -241,6 +241,7 @@ MathFinder_CPPFLAGS = -IEVAL \
 -I$(commonpath)/GRID/Top/Cell/Comp/Data/Stopword \
 -I$(commonpath)/GRID/Top/Cell/Comp/Data/Desc/Cat \
 -I$(commonpath)/GRID/Top/Cell/Comp/Data/Desc/Flag \
+-I$(commonpath)/GRID/Top/Cell/Comp/Data/Desc/Flag/Empty \
 -I$(commonpath)/GRID/Top/Cell/Comp/Data/NGram/NGProfile \
 -I$(commonpath)/GRID/Top/Cell/Comp/RecData/Block/Sentence \
 -I$(tesspath)/api \

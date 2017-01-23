@@ -14,6 +14,7 @@
 #include <BlobData.h>
 #include <BlobFeatExtDesc.h>
 #include <DoubleFeature.h>
+#include <FinderInfo.h>
 
 #include <vector>
 
@@ -23,7 +24,8 @@ class NumCompletelyNestedBlobsFeatureExtractor
  public:
 
   NumCompletelyNestedBlobsFeatureExtractor(
-      NumCompletelyNestedBlobsFeatureExtractorDescription* const description);
+      NumCompletelyNestedBlobsFeatureExtractorDescription* const description,
+      FinderInfo* const finderInfo);
 
   void doPreprocessing(BlobDataGrid* const blobDataGrid);
 
@@ -38,6 +40,11 @@ class NumCompletelyNestedBlobsFeatureExtractor
   int blobDataKey;
 
   NumCompletelyNestedBlobsFeatureExtractorDescription* description;
+
+  const float highCertaintyThresh;
+
+  // dbg
+  std::string nestedDir;
 };
 
 #endif /* NUMCOMPLETELYNESTEDBLOBSFEATUREEXTRACTOR_H_ */

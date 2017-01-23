@@ -9,8 +9,12 @@
 
 #include <BlobDataGrid.h>
 #include <Utils.h>
+#include <M_Utils.h>
 
 #define DBG_FEAT_EXT
+#define DBG_AFTER_EXTRACTION
+//#define DBG_FEAT_EXT_WAIT
+//#define DBG_FEATURE_ORDERING
 
 MathExpressionFeatureExtractor::MathExpressionFeatureExtractor(
     FinderInfo* finderInfo,
@@ -31,8 +35,12 @@ void MathExpressionFeatureExtractor::doTrainerInitialization() {
     std::cout << "Running trainer intialization on extractor " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << std::endl;
 #endif
     blobFeatureExtractors[i]->doTrainerInitialization();
+#ifdef DBG_FEAT_EXT
     std::cout << "Done running trainer initialization on extractor " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << std::endl;
+#ifdef DBG_FEAT_EXT_WAIT
     Utils::waitForInput();
+#endif
+#endif
   }
 }
 
@@ -40,10 +48,16 @@ void MathExpressionFeatureExtractor::extractFeatures(BlobDataGrid* const blobDat
 
   // For each feature extractor, first do any necessary preprocessing
   for(int i = 0; i < blobFeatureExtractors.size(); ++i) {
+#ifdef DBG_FEAT_EXT
     std::cout << "Running preprocessing for the " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << " extractor.\n";
+#endif
     blobFeatureExtractors[i]->doPreprocessing(blobDataGrid);
+#ifdef DBG_FEAT_EXT
     std::cout << "Done running preprocessing for the " << blobFeatureExtractors[i]->getFeatureExtractorDescription()->getName() << " extractor.\n";
+#ifdef DBG_FEAT_EXT_WAIT
     Utils::waitForInput();
+#endif
+#endif
   }
 
   // Now, for each blob on the grid, run all of the blob feature extraction logic
@@ -79,14 +93,13 @@ void MathExpressionFeatureExtractor::extractFeatures(BlobDataGrid* const blobDat
         }
         assert(found); // sanity
       }
+      assert(orderedFlagFeatures.size() > 1); // sanity
       blob->appendExtractedFeatures(orderedFlagFeatures);
     }
+#ifdef DBG_FEATURE_ORDERING
+      dbgShowFeatureOrdering(blob);
+#endif
   }
-
-  #ifdef DBG_AFTER_EXTRACTION
-      // TODO: Preserve logic that used to exist here somehow
-      feat_ext.dbgAfterExtraction();
-  #endif
 }
 
 std::vector<BlobFeatureExtractor*> MathExpressionFeatureExtractor::getBlobFeatureExtractors() {
@@ -103,4 +116,15 @@ MathExpressionFeatureExtractor::~MathExpressionFeatureExtractor() {
     delete blobFeatureExtractors[i];
   }
   blobFeatureExtractors.clear();
+}
+
+void MathExpressionFeatureExtractor::dbgShowFeatureOrdering(
+    BlobData* const blobData) {
+  std::cout << "Finished adding features for the displayed blob. Here are the features (format -> [featurName]_[featureFlag]):\n";
+  for(int j = 0; j < blobData->getExtractedFeatures().size(); ++j) {
+    std::cout << blobData->getExtractedFeatures()[j]->getFeatureExtractorDescription()->getName()
+        << "_" << blobData->getExtractedFeatures()[j]->getFlagDescription()->getName()
+        << ": " << blobData->getExtractedFeatures()[j]->getFeature() << std::endl;
+  }
+  M_Utils::dbgDisplayBlob(blobData);
 }

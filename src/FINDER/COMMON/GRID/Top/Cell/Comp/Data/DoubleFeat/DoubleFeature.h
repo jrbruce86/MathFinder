@@ -11,13 +11,16 @@
 #include <string>
 
 #include <BlobFeatExtDesc.h>
+#include <EmptyFlagDesc.h>
 
 class DoubleFeature {
 
  public:
 
   DoubleFeature(BlobFeatureExtractorDescription* featureDescription,
-      const double feature, FeatureExtractorFlagDescription* flagDescription=NULL);
+      const double feature,
+      FeatureExtractorFlagDescription* flagDescription=
+          new EmptyFlagDescription());
 
   double getFeature();
 

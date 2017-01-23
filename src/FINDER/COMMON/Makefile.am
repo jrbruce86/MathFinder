@@ -21,6 +21,7 @@ GRID/Top/Cell/Comp/Spatial/Merge/BlobMergeData.h \
 GRID/Top/Cell/Comp/Data/Desc/Cat/BlobFeatExtCat.h \
 GRID/Top/Cell/Comp/Data/Desc/Desc/BlobFeatExtDesc.h \
 GRID/Top/Cell/Comp/Data/Desc/Flag/FeatExtFlagDesc.h \
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.h \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGram.h \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.h \
 GRID/Top/Cell/Comp/RecData/Block/Sentence/SentenceData.h \
@@ -43,6 +44,7 @@ GRID/Top/Cell/Comp/Spatial/Merge/BlobMergeData.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Cat/BlobFeatExtCat.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Desc/BlobFeatExtDesc.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Flag/FeatExtFlagDesc.cpp \
+GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.cpp \
 GRID/Top/Cell/Comp/RecData/Block/Sentence/SentenceData.cpp
 
@@ -64,6 +66,7 @@ libCOMMON_la_CPPFLAGS = -IGRID \
 -IGRID/Top/Cell/Comp/Data/Stopword \
 -IGRID/Top/Cell/Comp/Data/Desc/Cat \
 -IGRID/Top/Cell/Comp/Data/Desc/Flag \
+-IGRID/Top/Cell/Comp/Data/Desc/Flag/Empty \
 -IGRID/Top/Cell/Comp/Data/NGram/NGProfile \
 -IGRID/Top/Cell/Comp/RecData/Block/Sentence \
 -I/usr/local/include/leptonica \

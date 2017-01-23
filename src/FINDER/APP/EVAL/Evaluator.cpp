@@ -30,7 +30,7 @@ Evaluator::Evaluator(
   this->groundtruthDirPath = Utils::checkTrailingSlash(groundtruthDirPath);
   this->typeSpecificMode = typeSpecificMode;
 
-  this->coloredGroundtruthImageDirPath = Utils::checkTrailingSlash(this->groundtruthDirPath + coloredImageSubDirName);
+  this->coloredGroundtruthImageDirPath = Utils::checkTrailingSlash(this->groundtruthDirPath) + coloredImageSubDirName;
 
   this->groundtruthRectFilePath = this->groundtruthDirPath + std::string("groundtruth.rect");
   this->resultsRectFilePath = this->resultsDirPath + std::string("results.rect");
@@ -178,7 +178,8 @@ bool Evaluator::coloredImageCopiesExist(const std::vector<std::string>& inputIma
     return false;
   }
   for(int i = 0; i < inputImagePaths.size(); ++i) {
-    if(!Utils::existsFile(coloredGroundtruthImageDirPath + Utils::intToString(i) + std::string("*"))) {
+    if(!Utils::existsFile(Utils::checkTrailingSlash(coloredGroundtruthImageDirPath) +
+        Utils::intToString(i) + std::string("*"))) {
       return false;
     }
   }

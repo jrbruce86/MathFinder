@@ -67,6 +67,10 @@ class MathExpressionFeatureExtractor {
   FinderInfo* finderInfo;
 
   std::vector<BlobFeatureExtractor*> blobFeatureExtractors;
+
+  //dbg
+  void dbgShowFeatureOrdering(
+      BlobData* const blobData);
 };
 
 
