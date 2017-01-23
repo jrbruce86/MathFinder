@@ -61,7 +61,7 @@ void SampleFileParser::writeSample(BLSample* const sample, std::ofstream& fs) {
     fs << 0 << " ";
   int numfeat = (sample->features).size();
   for(int i = 0; i < numfeat; ++i) {
-    fs << std::setprecision(20) << sample->features[i];
+    fs << std::setprecision(20) << sample->features[i]->getFeature();
     fs << (((i + 1) < numfeat) ? "," : " ");
   }
   fs << sample->imageName << " ";
