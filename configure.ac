@@ -47,12 +47,28 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 
+# Check for libpng
+AC_MSG_CHECKING([for libpng-dev])
+if test -d /usr/include/libpng; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_ERROR([libpng-dev not found])
+fi
+
 #Check for qt4
 AC_MSG_CHECKING([for Qt])
 if test -d /usr/include/qt*; then
   AC_MSG_RESULT([yes])
 else
   AC_MSG_ERROR([Qt not found])
+fi
+
+# Check for libjpeg
+AC_MSG_CHECKING([for libjpeg-dev])
+if test -f /usr/include/jpeglib.h; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_ERROR([libjpeg-dev not found])
 fi
 
 # Checks for libraries.
@@ -98,5 +114,11 @@ AC_MSG_CHECKING(for leptonica)
 AC_ARG_VAR(LIBLEPT_HEADERSDIR,[Leptonica headers directory])
 
 #AC_CONFIG_COMMANDS_PRE([./src/TOOLS/GROUNDTRUTH_GENERATION/MathFinderGtGen/qbuild])
+
+# Create the user's local directories
+mkdir -p ~/.mathfinder/training
+cp training/* ~/.mathfinder/training -R
+mkdir -p ~/.mathfinder/groundtruth/advcalc1
+cp data/Groundtruth/WithoutLabels/advcalc1/* ~/.mathfinder/groundtruth/advcalc1 -R
 
 AC_OUTPUT

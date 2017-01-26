@@ -29,6 +29,10 @@
 
 #define SHOW_GRID
 
+// ***********
+// Note see http://dlib.net/svm_ex.cpp.html
+// Much of this is copied from that example.
+// ************
 TrainedSvmDetector::TrainedSvmDetector(
     const std::string& detectorDirPath) {
   std::string classifierName =
@@ -112,8 +116,11 @@ void TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& 
   // from different distributions during cross validation training. The
   // samples are grouped by the image from which they came and each image
   // can, in some regards, be seen as a separate distribution.
+  // *** see http://dlib.net/svm_ex.cpp.html for a better explanation.
+  // *** basically need to randomize the ordering of the samples to avoid
+  // *** screwing up cross validation
   randomize_samples(training_samples, labels);
-  std::cout << "done randomizing smaples\n";
+  std::cout << "done randomizing samples\n";
 
   // Here we normalize all the samples by subtracting their mean and dividing by their
   // standard deviation.  This is generally a good idea since it often heads off
@@ -221,7 +228,7 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
          << std::endl;
 #endif
     dlib::matrix<double> result = cross_validate_trainer_threaded(trainer, training_samples,
-        labels, folds, folds);
+        labels, folds, folds); // last arg is the number of threads (using same as folds)
     std::cout << "C: " << std::setw(11) << C
 #ifdef RBF_KERNEL
          << "  Gamma: " << std::setw(11) << gamma

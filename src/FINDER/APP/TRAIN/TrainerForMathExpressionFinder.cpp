@@ -27,8 +27,7 @@ TrainerForMathExpressionFinder::TrainerForMathExpressionFinder(
     FinderInfo* finderInfo,
     MathExpressionFeatureExtractor* mathExpressionFeatureExtractor,
     MathExpressionDetector* mathExpressionDetector,
-    MathExpressionSegmentor* mathExpressionSegmentor)
-: samples(std::vector<std::vector<BLSample*> >()){
+    MathExpressionSegmentor* mathExpressionSegmentor) {
   this->finderInfo = finderInfo;
   this->featureExtractor = mathExpressionFeatureExtractor;
   this->detector = mathExpressionDetector;

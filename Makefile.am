@@ -7,7 +7,7 @@ src/TOOLS/GROUNDTRUTH_GENERATION \
 src/FINDER/COMMON \
 src/FINDER/APP
 
-EXTRA_DIST = autogen.sh data thesis final_results design/design_doc test_sets
+EXTRA_DIST = data thesis test training
 toolsSrcDir=src/TOOLS/GROUNDTRUTH_GENERATION
 toolsDestDir=$(DESTDIR)$(bindir)
 shareDir=/usr/local/share
@@ -25,7 +25,6 @@ install-exec-hook:
 	cd src/THIRDPARTY/Tesseract/java; make ScrollView.jar; chmod 755 ScrollView.jar; \
   mkdir $(shareDir)/scrollview; cp *.jar $(shareDir)/scrollview; \
 	cd ..; tar -xzvf tesseract-ocr-3.02.eng.tar.gz; cd tesseract-ocr; cp tessdata /usr/local/share -R;
-	mkdir -p ~/.mathfinder/training; cp training/* ~/.mathfinder/training -R; chmod 777 ~/.mathfinder -R
 
 # Get rid of my stuff, Deciding to leave tessdata in case its been updated or used for other purposes
 uninstall-hook:

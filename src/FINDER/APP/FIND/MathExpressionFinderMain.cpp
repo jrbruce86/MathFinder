@@ -37,41 +37,7 @@
  */
 int main(int argc, char* argv[]) {
 
-  // Testing out features in isolation
-  DetectorSelectionMenu detSel(NULL);
-  SegmentorSelectionMenu segSel(NULL);
-  FeatureSelectionMenuMain featureSelection(NULL);
-  featureSelection.selectAllFeatures();
-  std::vector<BlobFeatureExtractorFactory*> featureFactories =
-      featureSelection.getSelectedFactories();
-  std::string groundtruthDirPath = FinderTrainingPaths::getGroundtruthRoot() + std::string("advcalc1/");
-  FinderInfo* finderInfo = FinderInfoBuilder().setFinderName("a")
-        ->setFeatureExtractorUniqueNames(DoTrainingMenu::getFeatureExtractorUniqueNames(featureFactories))
-        ->setDetectorName(detSel.getDefaultDetectorName())
-        ->setSegmentorName(segSel.getDefaultSegmentorName())
-        ->setDescription("a")
-        ->setGroundtruthName("advcalc1")
-        ->setGroundtruthDirPath(groundtruthDirPath)
-        ->setGroundtruthFilePath(DatasetSelectionMenu::findGroundtruthFilePath(groundtruthDirPath))
-        ->setFinderTrainingPaths(FinderTrainingPathsFactory().createFinderTrainingPaths("a"))
-        ->setGroundtruthImagePaths(DatasetSelectionMenu::findGroundtruthImagePaths(groundtruthDirPath))
-        ->build();
 
-    // Build the trainer (let the trainer own the finder info, the feature extractor,
-    // the detector, and the segmentor and destroy them all when done)
-    MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor =
-        MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
-            finderInfo, featureFactories);
-    TrainerForMathExpressionFinder trainer(
-        finderInfo,
-        mathExpressionFeatureExtractor,
-        MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
-        MathExpressionSegmentorFactory().createMathExpressionSegmentor(
-            finderInfo,
-            mathExpressionFeatureExtractor));
-
-    // Run the trainer, indicate success/failure
-    trainer.runTraining();
 
 
 
@@ -118,6 +84,42 @@ int main(int argc, char* argv[]) {
   } else {
     MathExpressionFinderUsage::printUsage();
   }
+
+  // Testing out features in isolation
+  DetectorSelectionMenu detSel(NULL);
+  SegmentorSelectionMenu segSel(NULL);
+  FeatureSelectionMenuMain featureSelection(NULL);
+  featureSelection.selectAllFeatures();
+  std::vector<BlobFeatureExtractorFactory*> featureFactories =
+      featureSelection.getSelectedFactories();
+  std::string groundtruthDirPath = FinderTrainingPaths::getGroundtruthRoot() + std::string("advcalc1/");
+  FinderInfo* finderInfo = FinderInfoBuilder().setFinderName("a")
+        ->setFeatureExtractorUniqueNames(DoTrainingMenu::getFeatureExtractorUniqueNames(featureFactories))
+        ->setDetectorName(detSel.getDefaultDetectorName())
+        ->setSegmentorName(segSel.getDefaultSegmentorName())
+        ->setDescription("a")
+        ->setGroundtruthName("advcalc1")
+        ->setGroundtruthDirPath(groundtruthDirPath)
+        ->setGroundtruthFilePath(DatasetSelectionMenu::findGroundtruthFilePath(groundtruthDirPath))
+        ->setFinderTrainingPaths(FinderTrainingPathsFactory().createFinderTrainingPaths("a"))
+        ->setGroundtruthImagePaths(DatasetSelectionMenu::findGroundtruthImagePaths(groundtruthDirPath))
+        ->build();
+
+    // Build the trainer (let the trainer own the finder info, the feature extractor,
+    // the detector, and the segmentor and destroy them all when done)
+    MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor =
+        MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
+            finderInfo, featureFactories);
+    TrainerForMathExpressionFinder trainer(
+        finderInfo,
+        mathExpressionFeatureExtractor,
+        MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
+        MathExpressionSegmentorFactory().createMathExpressionSegmentor(
+            finderInfo,
+            mathExpressionFeatureExtractor));
+
+    // Run the trainer, indicate success/failure
+    trainer.runTraining();
 }
 
 void runInteractiveMenu() {
