@@ -29,6 +29,9 @@
 
 #define SHOW_GRID
 
+#define PROGRESS_TO_FILE
+#define RUNNING_BACKGROUND
+
 // ***********
 // Note see http://dlib.net/svm_ex.cpp.html
 // Much of this is copied from that example.
@@ -43,6 +46,7 @@ TrainedSvmDetector::TrainedSvmDetector(
       (std::string)"LinearSVM";
 #endif
   predictorPath = std::string(Utils::checkTrailingSlash(detectorDirPath)) + classifierName + "Predictor";
+  progressFilePath = std::string(Utils::checkTrailingSlash(detectorDirPath)) + classifierName + "Progress";
 #ifdef RBF_KERNEL
 #ifdef LINEAR_KERNEL
     cout << "ERROR: Can only train SVM with RBF or Linear kernel exclusively. "
@@ -87,7 +91,21 @@ std::string TrainedSvmDetector::getDetectorPath() {
   return predictorPath;
 }
 
-void TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
+bool TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& samples) {
+
+#ifdef PROGRESS_TO_FILE
+    progressFile.open(progressFilePath.c_str());
+    if(!progressFile.is_open()) {
+      std::cout << "ERROR: Failed to open " << progressFilePath << std::endl <<
+          "Training failed.\n";
+      // I wouldn't want to run this thing unless I get progress (it can take hours)
+      // This is for if I'm on a remote server and the pipe goes down. I'd want this
+      // as a background process so I can just leave the server and let it do it's thing
+      // and come back to check on the file later to see the progress.
+      return false;
+    }
+#endif
+
   // Convert the samples into format suitable for DLib
   std::cout << "started libSVM's doTraining\n";
   int num_features = samples[0][0]->features.size();
@@ -110,7 +128,7 @@ void TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& 
         labels.push_back(-1);
     }
   }
-  std::cout << "done pushing back samples\n";
+  outputProgress("done pushing back samples\n");
 
   // Randomize the order of the samples so that they do not appear to be
   // from different distributions during cross validation training. The
@@ -120,7 +138,7 @@ void TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& 
   // *** basically need to randomize the ordering of the samples to avoid
   // *** screwing up cross validation
   randomize_samples(training_samples, labels);
-  std::cout << "done randomizing samples\n";
+  outputProgress("done randomizing samples\n");
 
   // Here we normalize all the samples by subtracting their mean and dividing by their
   // standard deviation.  This is generally a good idea since it often heads off
@@ -129,12 +147,12 @@ void TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& 
   // so you can see an easy way to accomplish this with the library.
   // let the normalizer learn the mean and standard deviation of the samples
   normalizer.train(training_samples);
-  std::cout << "done setting up normalizing\n";
+  outputProgress("done setting up normalizing\n");
 
   // now normalize each sample
   for (unsigned long i = 0; i < training_samples.size(); ++i)
     training_samples[i] = normalizer(training_samples[i]);
-  std::cout << "done normalizing each sample\n";
+  outputProgress("done normalizing each sample\n");
 
   // Now ready to find the optimal C and Gamma parameters through a coarse
   // grid search then through a finer one. Once the "optimal" C and Gamma
@@ -142,6 +160,10 @@ void TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& 
   // predictor which can be serialized and saved for later usage.
   bool doParamCalc = true;
   if(loadOptParams()) {
+#ifdef RUNNING_BACKGROUND
+    doParamCalc = true;
+#endif
+#ifndef RUNNING_BACKGROUND
     std::cout << "Training previously carried out resulted in the following optimal "
         << "parameters being found: C->" << C_optimal << ", gamma->" << gamma_optimal
         << ". Would you like to recompute these paramaters? If you answer yes, then "
@@ -149,19 +171,21 @@ void TrainedSvmDetector::doTraining(const std::vector<std::vector<BLSample*> >& 
         << "If you answer no then the parameters shown above will be re-used and the part "
         << "of training which calculates them will be skipped. ";
     doParamCalc = Utils::promptYesNo();
+#endif
   }
   if(doParamCalc) {
     doCoarseCVTraining(10);
     doFineCVTraining(10);
     saveOptParams();
   }
-  std::cout << "about to do training\n";
+  outputProgress("about to do training\n");
   trainFinalClassifier();
-  std::cout << "done with trainFinalClassifier\n";
+  outputProgress("done with trainFinalClassifier\n");
   savePredictor();
-  std::cout << "done with savePredictor\n";
-  std::cout << "Training Complete! The predictor has been saved to "
-       << predictorPath << std::endl;
+  outputProgress("done with savePredictor\n");
+  outputProgress(std::string("Training Complete! The predictor has been saved to ")
+       + predictorPath + std::string("\n"));
+  return true;
 }
 
 // Much of the functionality of this training is inspired by:
@@ -179,7 +203,7 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
   // was taking hours to do a single fold of cross validation...).
   dlib::matrix<double> C_vec = dlib::logspace(log10(1e-3), log10(1000), 10);
 #ifdef RBF_KERNEL
-  std::cout << "Started coarse training for RBF Kernel.\n";
+  outputProgress("Started coarse training for RBF Kernel.\n");
   dlib::matrix<double> Gamma_vec = dlib::logspace(log10(1e-7), log10(1000), 10);
 #endif
   // The vectors are then combined to create a 10x10 (C,Gamma) pair grid, on which
@@ -194,7 +218,8 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
   grid = C_vec;
 #endif
 
-  std::cout << "Predictor Path: " << predictorPath << std::endl;
+  outputProgress(std::string("Predictor Path: ") +
+      predictorPath + std::string("\n"));
 
   //    Carry out course grid search. The grid is actually implemented as a
   //    2x100 matrix where row 1 is the C part of the grid pair and row 2
@@ -220,20 +245,23 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
 #endif
     trainer.set_c(C);
     // do the cross validation
-    std::cout << "Running cross validation for " << "C: " << std::setw(11) << C
+    outputProgress(std::string("Running cross validation for ") +
+        std::string("C: ") + Utils::doubleToString(C, 11) +
 #ifdef RBF_KERNEL
-         << "  Gamma: " << std::setw(11) << gamma << std::endl;
+         std::string("  Gamma: ") + Utils::doubleToString(gamma, 11) +
+         std::string("\n"));
 #endif
 #ifdef LINEAR_KERNEL
-         << std::endl;
+         std::string("\n"));
 #endif
     dlib::matrix<double> result = cross_validate_trainer_threaded(trainer, training_samples,
         labels, folds, folds); // last arg is the number of threads (using same as folds)
-    std::cout << "C: " << std::setw(11) << C
+    outputProgress(std::string("C: ") +  Utils::doubleToString(C, 11) +
 #ifdef RBF_KERNEL
-         << "  Gamma: " << std::setw(11) << gamma
+         std::string("  Gamma: ") + Utils::doubleToString(gamma, 11) +
 #endif
-         <<  "  cross validation accuracy (positive, negative): " << result;
+         std::string("  cross validation accuracy (positive, negative): ") +
+         Utils::doubleToString(result) + std::string("\n"));
     if(sum(result) > sum(best_result)) {
       best_result = result;
 #ifdef RBF_KERNEL
@@ -243,8 +271,9 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
     }
   }
 #ifdef RBF_KERNEL
-  std::cout << "Best Result: " << best_result << ". Gamma = " << std::setw(11) << gamma_optimal
-       << ". C = " << std::setw(11) << C_optimal << std::endl;
+  outputProgress(std::string("Best Result: ") + Utils::doubleToString(best_result) +
+      std::string(". Gamma = ") + Utils::doubleToString(gamma_optimal, 11) +
+       std::string(". C = ") + Utils::doubleToString(C_optimal, 11) + std::string("\n"));
 #endif
 #ifdef LINEAR_KERNEL
   std::cout << "Best Result: " << best_result
@@ -303,11 +332,16 @@ void TrainedSvmDetector::doFineCVTraining(int folds) {
 #ifdef RBF_KERNEL
   gamma_optimal = opt_params(1);
 #endif
-  std::cout << "Optimal C after BOBYQA: " << std::setw(11) << C_optimal << std::endl;
+  outputProgress(std::string("Optimal C after BOBYQA: ") +
+      Utils::doubleToString(C_optimal, 11) +
+      std::string("\n"));
 #ifdef RBF_KERNEL
-  std::cout << "Optimal gamma after BOBYQA: " << std::setw(11) << gamma_optimal << std::endl;
+  outputProgress(std::string("Optimal gamma after BOBYQA: ") +
+      Utils::doubleToString(gamma_optimal, 11) +
+      std::string("\n"));
 #endif
-  std::cout << "BOBYQA Score: " << best_score << std::endl;
+  outputProgress(std::string("BOBYQA Score: ") +
+      Utils::doubleToString(best_score) + std::string("\n"));
 }
 
 void TrainedSvmDetector::saveOptParams() {
@@ -361,12 +395,13 @@ void TrainedSvmDetector::trainFinalClassifier() {
   dlib::svm_c_trainer<LinearKernel> trainer;
 #endif
   trainer.set_c(C_optimal);
-  std::cout << "setting normalizer\n";
+  outputProgress("setting normalizer\n");
   final_predictor.normalizer = normalizer;
-  std::cout << "calling trainer.train()\n";
+  outputProgress("calling trainer.train()\n");
   final_predictor.function = trainer.train(training_samples, labels);
-  std::cout << "The number of support vectors in the final learned function is: "
-       << final_predictor.function.basis_vectors.size() << std::endl;
+  outputProgress(std::string("The number of support vectors in the final learned function is: ") +
+      Utils::intToString(final_predictor.function.basis_vectors.size()) +
+      std::string("\n"));
 }
 
 void TrainedSvmDetector::savePredictor() {
@@ -397,4 +432,12 @@ bool TrainedSvmDetector::predict(const std::vector<DoubleFeature*>& sample) {
     return true;
 }
 
+void TrainedSvmDetector::outputProgress(std::string progressStr) {
 
+  std::cout << progressStr << std::endl;
+
+#ifdef PROGRESS_TO_FILE
+  progressFile << progressStr << std::endl;
+  progressFile.flush();
+#endif
+}

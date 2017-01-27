@@ -43,6 +43,9 @@ namespace Utils {
   // convert integer to string
   std::string intToString(int i);
 
+  // convert double to string with given precision (doesn't specify by default)
+  std::string doubleToString(const double& d, const int& precision=0);
+
   // convert string to all lowercase (makes copy and returns that,
   // doesn't muck with the original
   std::string toLower(std::string str);

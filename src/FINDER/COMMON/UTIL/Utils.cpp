@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <baseapi.h>
+#include <iomanip>
 #include <locale.h>
 
 // convert integer to string
@@ -35,6 +36,17 @@ std::string Utils::intToString(int i) {
   char buf[digit_count(i)];
   sprintf(buf, "%d", i);
   return (std::string) buf;
+}
+
+// convert double to string with given precision (doesn't specify by default)
+std::string Utils::doubleToString(const double& d, const int& precision) {
+  std::stringstream sstr;
+  if(precision <= 0) {
+    sstr << d;
+  } else {
+    sstr << std::setw(precision) << d;
+  }
+  return sstr.str();
 }
 
 static std::locale l;

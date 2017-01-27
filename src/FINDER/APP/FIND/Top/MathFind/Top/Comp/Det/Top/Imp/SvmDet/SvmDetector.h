@@ -109,7 +109,7 @@ class TrainedSvmDetector : virtual public MathExpressionDetector {
 
   std::string getDetectorPath();
 
-  void doTraining(const std::vector<std::vector<BLSample*> >& samples);
+  bool doTraining(const std::vector<std::vector<BLSample*> >& samples);
 
  private:
 
@@ -150,6 +150,10 @@ class TrainedSvmDetector : virtual public MathExpressionDetector {
 #endif
 
   std::string predictorPath;
+
+  std::string progressFilePath;
+  std::ofstream progressFile;
+  void outputProgress(std::string progressStr);
 };
 
 

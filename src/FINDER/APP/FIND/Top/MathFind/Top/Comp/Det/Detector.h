@@ -40,9 +40,9 @@ class MathExpressionDetector {
   virtual std::string getDetectorPath()=0;
 
   /**
-   * Trains the detector
+   * Trains the detector. Returns true if the training succeeded, false if it failed
    */
-  virtual void doTraining(const std::vector<std::vector<BLSample*> >& samples)=0;
+  virtual bool doTraining(const std::vector<std::vector<BLSample*> >& samples)=0;
 
   virtual ~MathExpressionDetector(){};
 

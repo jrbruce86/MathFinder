@@ -30,11 +30,11 @@
 #define DBG_MEDS_TRAINER_SHOW_TRAINDATA
 //#define DBG_DISPLAY
 //#define DBG_SHOW_GRID
+//#define RUNNING_BACKGROUND
+
 
 TrainingSampleExtractor::TrainingSampleExtractor(FinderInfo* const finderInfo,
-    MathExpressionFeatureExtractor* const featureExtractor)
-: samples_extracted(std::vector<std::vector<BLSample*> >()),
-  samples_read(std::vector<std::vector<BLSample*> >()) {
+    MathExpressionFeatureExtractor* const featureExtractor) {
   this->finderInfo = finderInfo;
   this->featureExtractor = featureExtractor;
 }
@@ -65,7 +65,12 @@ std::vector<std::vector<BLSample*> > TrainingSampleExtractor::getSamples() {
     std::cout << "The training samples were already previously extracted for this Finder "
         "and stored to a file. Would you like to re-use the previously extracted samples "
         "for this training? ";
+#ifndef RUNNING_BACKGROUND
     generateNewSamples = !Utils::promptYesNo();
+#endif
+#ifdef RUNNING_BACKGROUND
+    generateNewSamples = false;
+#endif
   }
 
   if(generateNewSamples) {
