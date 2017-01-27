@@ -30,7 +30,7 @@
 #define SHOW_GRID
 
 #define PROGRESS_TO_FILE
-#define RUNNING_BACKGROUND
+//#define RUNNING_BACKGROUND
 
 // ***********
 // Note see http://dlib.net/svm_ex.cpp.html
