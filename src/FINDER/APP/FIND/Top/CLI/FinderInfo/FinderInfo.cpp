@@ -245,6 +245,10 @@ std::vector<std::string> FinderInfoBuilder::getGroundtruthImagePaths() {
   return groundtruthImagePaths;
 }
 
+FinderInfo::~FinderInfo() {
+  delete finderTrainingPaths;
+}
+
 /**
  * From the given data, provides info pertaining to a Finder
  * including all of the relevant training paths. Output memory

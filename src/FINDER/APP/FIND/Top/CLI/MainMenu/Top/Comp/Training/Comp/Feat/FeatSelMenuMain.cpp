@@ -31,11 +31,16 @@ FeatureSelectionMenuMain::FeatureSelectionMenuMain(
           this)),
   this->subMenus.push_back(this->spatialMenu);
   this->subMenus.push_back(this->recognitionMenu);
-  this->subMenus.push_back(trainingMain);
+  if(trainingMain != NULL) {
+    this->subMenus.push_back(trainingMain);
+  }
 }
 
 FeatureSelectionMenuMain::~FeatureSelectionMenuMain() {
   for(int i = 0; i < subMenus.size(); ++i) {
+    if(subMenus[i] == NULL) {
+      continue;
+    }
     if(subMenus[i]->getName() != TrainingMenu::TrainingMenuName()) {
       delete subMenus[i];
     }

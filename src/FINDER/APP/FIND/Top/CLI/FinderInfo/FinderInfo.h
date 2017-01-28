@@ -29,6 +29,8 @@ class FinderInfo {
       std::string description,
       std::vector<std::string> groundtruthImagePaths);
 
+  ~FinderInfo();
+
   /**
    * The finder name holds a user-defined name for distinguishing
    * a feature/detector/segmentor combo from others. For instance

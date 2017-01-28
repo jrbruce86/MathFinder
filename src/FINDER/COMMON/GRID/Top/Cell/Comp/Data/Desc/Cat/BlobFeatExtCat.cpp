@@ -48,7 +48,6 @@ BlobFeatureExtractorFactory* BlobFeatureExtractorCategory
 }
 
 BlobFeatureExtractorCategory::~BlobFeatureExtractorCategory() {
-  std::cout << "base constructor for category, " << this->getName() << " invoked...\n";
   for(int i = 0; i < getFeatureExtractorFactories().size(); ++i) {
     delete getFeatureExtractorFactories()[i];
   }

@@ -125,8 +125,6 @@ int main(int argc, char* argv[]) {
 
     // Run the trainer, indicate success/failure
     //trainer.runTraining();
-
-    std::cout << "end!\n";
 }
 
 void runInteractiveMenu() {
