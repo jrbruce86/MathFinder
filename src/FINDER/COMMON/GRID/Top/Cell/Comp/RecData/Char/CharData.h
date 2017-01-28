@@ -46,6 +46,8 @@ class TesseractCharData {
   TesseractCharData(TBOX charResultBoundingBox,
       TesseractWordData* const parentWord);
 
+  ~TesseractCharData();
+
   /**
    * Setters (these only set the values once.. no-op if you try doing it again)
    */

@@ -24,6 +24,10 @@ TesseractCharData::TesseractCharData(
   this->parentWord = parentWord;
 }
 
+TesseractCharData::~TesseractCharData() {
+  // Blobs are deleted by the grid. Don't think there's anything to delete here?
+}
+
 /**
  * Setters
  */

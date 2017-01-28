@@ -26,10 +26,7 @@ BlobData::BlobData(TBOX box, PIX* blobImage, BlobDataGrid* parentGrid)
 }
 
 BlobData::~BlobData() {
-  // have to check for null because this ref might be shared by multiple blobs
-  if(tesseractCharData != NULL) {
-    delete tesseractCharData;
-  }
+  pixDestroy(&blobImage);
 }
 
 TBOX BlobData::bounding_box() const {

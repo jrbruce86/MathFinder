@@ -42,6 +42,16 @@ BlobDataGrid::~BlobDataGrid() {
   if(binaryImage != NULL) {
     delete binaryImage;
   }
+
+  BlobDataGridSearch search(this);
+  search.StartFullSearch();
+  BlobData* blob = NULL;
+  while((blob = search.NextFullSearch()) != NULL) {
+    if(blob != NULL) {
+      delete blob;
+      blob = NULL;
+    }
+  }
 }
 
 std::vector<TesseractBlockData*>& BlobDataGrid::getTesseractBlocks() {

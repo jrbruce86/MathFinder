@@ -27,8 +27,10 @@ TesseractWordData::TesseractWordData(TBOX boundingBox,
 TesseractWordData::~TesseractWordData() {
   parentRow = NULL;
   wordRes = NULL;
-  for(int i = 0; i < tesseractChars.size(); ++i)
+  for(int i = 0; i < tesseractChars.size(); ++i) {
+    delete tesseractChars[i];
     tesseractChars[i] = NULL;
+  }
   tesseractChars.clear();
 }
 
