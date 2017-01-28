@@ -23,6 +23,11 @@ NumAlignedBlobsFeatureExtractorFactory
       new NumAlignedBlobsFeatureExtractorDescription(category);
 }
 
+NumAlignedBlobsFeatureExtractorFactory::
+~NumAlignedBlobsFeatureExtractorFactory() {
+  delete description;
+}
+
 NumAlignedBlobsFeatureExtractor* NumAlignedBlobsFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
 

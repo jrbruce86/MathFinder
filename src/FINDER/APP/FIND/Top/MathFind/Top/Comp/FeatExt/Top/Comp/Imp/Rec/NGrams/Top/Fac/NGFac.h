@@ -22,6 +22,8 @@ class SentenceNGramsFeatureExtractorFactory
 
   SentenceNGramsFeatureExtractorFactory(RecognitionBasedExtractorCategory* const category);
 
+  ~SentenceNGramsFeatureExtractorFactory();
+
   SentenceNGramsFeatureExtractor* create(FinderInfo* const finderInfo);
 
   BlobFeatureExtractorDescription* getDescription();

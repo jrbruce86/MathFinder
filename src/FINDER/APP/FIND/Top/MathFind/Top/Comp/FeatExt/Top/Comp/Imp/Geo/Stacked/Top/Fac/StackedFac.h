@@ -23,6 +23,8 @@ class NumVerticallyStackedBlobsFeatureExtractorFactory
   NumVerticallyStackedBlobsFeatureExtractorFactory(
       BlobFeatureExtractorCategory* const category);
 
+  ~NumVerticallyStackedBlobsFeatureExtractorFactory();
+
   NumVerticallyStackedBlobsFeatureExtractor* create(FinderInfo* const finderInfo);
 
   BlobFeatureExtractorDescription* getDescription();
@@ -30,7 +32,7 @@ class NumVerticallyStackedBlobsFeatureExtractorFactory
  private:
 
   NumVerticallyStackedBlobsFeatureExtractorDescription*
-    blobFeatureExtractorDescription;
+    description;
 };
 
 

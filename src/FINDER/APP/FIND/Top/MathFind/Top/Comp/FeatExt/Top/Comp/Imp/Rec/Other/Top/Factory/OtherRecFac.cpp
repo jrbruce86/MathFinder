@@ -23,6 +23,11 @@ OtherRecognitionFeatureExtractorFactory
       new OtherRecognitionFeatureExtractorDescription(category);
 }
 
+OtherRecognitionFeatureExtractorFactory::
+~OtherRecognitionFeatureExtractorFactory() {
+  delete description;
+}
+
 OtherRecognitionFeatureExtractor* OtherRecognitionFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
 

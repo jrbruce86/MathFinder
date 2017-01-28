@@ -20,6 +20,11 @@ SentenceNGramsFeatureExtractorFactory::SentenceNGramsFeatureExtractorFactory(
   this->description = new SentenceNGramsFeatureExtractorDescription(category);
 }
 
+SentenceNGramsFeatureExtractorFactory::
+~SentenceNGramsFeatureExtractorFactory() {
+  delete description;
+}
+
 SentenceNGramsFeatureExtractor* SentenceNGramsFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
 

@@ -21,6 +21,8 @@ class NumAlignedBlobsFeatureExtractorFactory : public BlobFeatureExtractorFactor
   NumAlignedBlobsFeatureExtractorFactory(
       BlobFeatureExtractorCategory* const category);
 
+  ~NumAlignedBlobsFeatureExtractorFactory();
+
   NumAlignedBlobsFeatureExtractor* create(FinderInfo* const finderInfo);
 
   NumAlignedBlobsFeatureExtractorDescription* getDescription();

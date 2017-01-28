@@ -10,11 +10,13 @@
 
 #include <BlobFeatExtCat.h>
 
-class GeometryBasedExtractorCategory : public BlobFeatureExtractorCategory {
+class GeometryBasedExtractorCategory : public virtual BlobFeatureExtractorCategory {
 
 public:
 
   GeometryBasedExtractorCategory();
+
+  ~GeometryBasedExtractorCategory();
 
   std::string getName();
 

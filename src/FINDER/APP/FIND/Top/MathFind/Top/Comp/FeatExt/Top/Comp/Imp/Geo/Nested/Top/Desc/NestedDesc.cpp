@@ -17,6 +17,14 @@ NumCompletelyNestedBlobsFeatureExtractorDescription
   this->category = category;
 }
 
+NumCompletelyNestedBlobsFeatureExtractorDescription::
+~NumCompletelyNestedBlobsFeatureExtractorDescription() {
+  std::vector<FeatureExtractorFlagDescription*> flags = getFlagDescriptions();
+  for(int i = 0; i < flags.size(); ++i) {
+    delete flags[i];
+  }
+}
+
 std::string NumCompletelyNestedBlobsFeatureExtractorDescription
 ::getName() {
   return "NumCompletelyNestedBlobsFeatureExtractor";

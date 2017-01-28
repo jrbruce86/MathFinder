@@ -12,10 +12,5 @@ std::vector<FeatureExtractorFlagDescription*> BlobFeatureExtractorDescription
   return std::vector<FeatureExtractorFlagDescription*>();
 }
 
-BlobFeatureExtractorDescription::~BlobFeatureExtractorDescription() {
-  std::vector<FeatureExtractorFlagDescription*> flags = getFlagDescriptions();
-  for(int i = 0; i < flags.size(); ++i) {
-    delete flags[i];
-  }
-}
+BlobFeatureExtractorDescription::~BlobFeatureExtractorDescription() {}
 

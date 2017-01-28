@@ -28,6 +28,14 @@ SubOrSuperscriptsFeatureExtractorDescription
   this->flagDescriptions.push_back(isSuperscript);
 }
 
+SubOrSuperscriptsFeatureExtractorDescription::
+~SubOrSuperscriptsFeatureExtractorDescription() {
+  std::vector<FeatureExtractorFlagDescription*> flags = getFlagDescriptions();
+  for(int i = 0; i < flags.size(); ++i) {
+    delete flags[i];
+  }
+}
+
 std::string SubOrSuperscriptsFeatureExtractorDescription
 ::getName() {
   return "SubOrSuperscriptsFeature";

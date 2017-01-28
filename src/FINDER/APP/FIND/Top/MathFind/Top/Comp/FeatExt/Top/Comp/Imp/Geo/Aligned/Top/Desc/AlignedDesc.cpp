@@ -25,6 +25,14 @@ NumAlignedBlobsFeatureExtractorDescription::NumAlignedBlobsFeatureExtractorDescr
   this->flagDescriptions.push_back(upwardFlagDescription);
 }
 
+NumAlignedBlobsFeatureExtractorDescription::
+~NumAlignedBlobsFeatureExtractorDescription() {
+  std::vector<FeatureExtractorFlagDescription*> flags = getFlagDescriptions();
+  for(int i = 0; i < flags.size(); ++i) {
+    delete flags[i];
+  }
+}
+
 std::string NumAlignedBlobsFeatureExtractorDescription
 ::getName() {
   return getName_();

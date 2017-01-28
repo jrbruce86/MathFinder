@@ -15,9 +15,14 @@
 NumCompletelyNestedBlobsFeatureExtractorFactory
 ::NumCompletelyNestedBlobsFeatureExtractorFactory(
     BlobFeatureExtractorCategory* const category) {
-  this->blobFeatureExtractorDescription =
+  this->description =
       new NumCompletelyNestedBlobsFeatureExtractorDescription(
           category);
+}
+
+NumCompletelyNestedBlobsFeatureExtractorFactory::
+~NumCompletelyNestedBlobsFeatureExtractorFactory() {
+  delete description;
 }
 
 BlobFeatureExtractor*
@@ -25,10 +30,10 @@ NumCompletelyNestedBlobsFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
   return dynamic_cast<BlobFeatureExtractor*>(
       new NumCompletelyNestedBlobsFeatureExtractor(
-          blobFeatureExtractorDescription,
+          description,
           finderInfo));
 }
 
 BlobFeatureExtractorDescription* NumCompletelyNestedBlobsFeatureExtractorFactory::getDescription() {
-  return blobFeatureExtractorDescription;
+  return description;
 }

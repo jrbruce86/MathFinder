@@ -22,6 +22,8 @@ class SubOrSuperscriptsFeatureExtractorFactory : public virtual BlobFeatureExtra
   SubOrSuperscriptsFeatureExtractorFactory(
       RecognitionBasedExtractorCategory* const category);
 
+  ~SubOrSuperscriptsFeatureExtractorFactory();
+
   SubOrSuperscriptsFeatureExtractor* create(FinderInfo* const finderInfo);
 
   BlobFeatureExtractorDescription* getDescription();

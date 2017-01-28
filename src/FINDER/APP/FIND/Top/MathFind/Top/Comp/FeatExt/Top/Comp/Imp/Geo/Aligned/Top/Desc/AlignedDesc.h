@@ -24,6 +24,8 @@ public virtual BlobFeatureExtractorDescription {
   NumAlignedBlobsFeatureExtractorDescription(
       BlobFeatureExtractorCategory* const category);
 
+  ~NumAlignedBlobsFeatureExtractorDescription();
+
   std::string getName();
 
   static std::string getName_();

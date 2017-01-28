@@ -17,6 +17,14 @@ NumVerticallyStackedBlobsFeatureExtractorDescription
   this->category = category;
 }
 
+NumVerticallyStackedBlobsFeatureExtractorDescription::
+~NumVerticallyStackedBlobsFeatureExtractorDescription() {
+  std::vector<FeatureExtractorFlagDescription*> flags = getFlagDescriptions();
+  for(int i = 0; i < flags.size(); ++i) {
+    delete flags[i];
+  }
+}
+
 std::string NumVerticallyStackedBlobsFeatureExtractorDescription
 ::getName() {
   return getName_();

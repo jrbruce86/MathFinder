@@ -23,6 +23,10 @@ SubOrSuperscriptsFeatureExtractorFactory
   this->description = new SubOrSuperscriptsFeatureExtractorDescription(category);
 }
 
+SubOrSuperscriptsFeatureExtractorFactory::
+~SubOrSuperscriptsFeatureExtractorFactory() {
+  delete description;
+}
 
 SubOrSuperscriptsFeatureExtractor*
 SubOrSuperscriptsFeatureExtractorFactory::create(FinderInfo* const finderInfo) {

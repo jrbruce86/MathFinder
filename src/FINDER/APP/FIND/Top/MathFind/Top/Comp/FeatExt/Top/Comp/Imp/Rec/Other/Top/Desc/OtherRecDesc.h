@@ -25,6 +25,8 @@ public virtual BlobFeatureExtractorDescription {
   OtherRecognitionFeatureExtractorDescription(
       RecognitionBasedExtractorCategory* const category);
 
+  ~OtherRecognitionFeatureExtractorDescription();
+
   std::string getName();
 
   std::string getUniqueName();

@@ -23,6 +23,8 @@ class NumCompletelyNestedBlobsFeatureExtractorFactory : public virtual BlobFeatu
   NumCompletelyNestedBlobsFeatureExtractorFactory(
       BlobFeatureExtractorCategory* const category);
 
+  ~NumCompletelyNestedBlobsFeatureExtractorFactory();
+
   BlobFeatureExtractor* create(FinderInfo* const finderInfo);
 
   BlobFeatureExtractorDescription* getDescription();
@@ -30,7 +32,7 @@ class NumCompletelyNestedBlobsFeatureExtractorFactory : public virtual BlobFeatu
  private:
 
   NumCompletelyNestedBlobsFeatureExtractorDescription*
-    blobFeatureExtractorDescription;
+    description;
 };
 
 

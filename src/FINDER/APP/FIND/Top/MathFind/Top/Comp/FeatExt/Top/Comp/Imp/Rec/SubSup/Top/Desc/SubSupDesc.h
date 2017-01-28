@@ -23,6 +23,8 @@ class SubOrSuperscriptsFeatureExtractorDescription
   SubOrSuperscriptsFeatureExtractorDescription(
       BlobFeatureExtractorCategory* const category);
 
+  ~SubOrSuperscriptsFeatureExtractorDescription();
+
   std::string getName();
 
   std::string getUniqueName();

@@ -47,11 +47,7 @@ BlobFeatureExtractorFactory* BlobFeatureExtractorCategory
   return NULL;
 }
 
-BlobFeatureExtractorCategory::~BlobFeatureExtractorCategory() {
-  for(int i = 0; i < getFeatureExtractorFactories().size(); ++i) {
-    delete getFeatureExtractorFactories()[i];
-  }
-}
+BlobFeatureExtractorCategory::~BlobFeatureExtractorCategory() {}
 
 std::string BlobFeatureExtractorCategory::getName() {
   return "";

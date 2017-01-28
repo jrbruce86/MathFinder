@@ -43,6 +43,14 @@ OtherRecognitionFeatureExtractorDescription
   this->flagDescriptions.push_back(isInOcrStopwordFlag);
 }
 
+OtherRecognitionFeatureExtractorDescription::
+~OtherRecognitionFeatureExtractorDescription() {
+  std::vector<FeatureExtractorFlagDescription*> flags = getFlagDescriptions();
+  for(int i = 0; i < flags.size(); ++i) {
+    delete flags[i];
+  }
+}
+
 std::string OtherRecognitionFeatureExtractorDescription
 ::getName() {
   return "OtherRecognitionFeatureExtractor";

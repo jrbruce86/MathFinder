@@ -21,6 +21,8 @@ public virtual BlobFeatureExtractorDescription {
   NumCompletelyNestedBlobsFeatureExtractorDescription(
       BlobFeatureExtractorCategory* const category);
 
+  ~NumCompletelyNestedBlobsFeatureExtractorDescription();
+
   std::string getName();
 
   std::string getUniqueName();

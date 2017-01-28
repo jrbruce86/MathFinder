@@ -20,6 +20,8 @@ class OtherRecognitionFeatureExtractorFactory
   OtherRecognitionFeatureExtractorFactory(
       RecognitionBasedExtractorCategory* const category);
 
+  ~OtherRecognitionFeatureExtractorFactory();
+
   OtherRecognitionFeatureExtractor* create(FinderInfo* const finderInfo);
 
   /**

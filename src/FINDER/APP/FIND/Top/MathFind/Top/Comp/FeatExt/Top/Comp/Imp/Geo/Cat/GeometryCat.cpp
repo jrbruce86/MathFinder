@@ -24,6 +24,11 @@ GeometryBasedExtractorCategory::GeometryBasedExtractorCategory() {
   this->featureExtractorFactories.push_back(new NumVerticallyStackedBlobsFeatureExtractorFactory(this));
 }
 
+GeometryBasedExtractorCategory::~GeometryBasedExtractorCategory() {
+  for(int i = 0; i < getFeatureExtractorFactories().size(); ++i) {
+    delete getFeatureExtractorFactories()[i];
+  }
+}
 
 std::string GeometryBasedExtractorCategory
 ::getName() {

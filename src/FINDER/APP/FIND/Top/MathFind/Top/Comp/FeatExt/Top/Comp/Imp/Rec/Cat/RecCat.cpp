@@ -53,6 +53,9 @@ StopwordFileReader* RecognitionBasedExtractorCategory::getStopwordHelper() {
 }
 
 RecognitionBasedExtractorCategory::~RecognitionBasedExtractorCategory() {
+  for(int i = 0; i < getFeatureExtractorFactories().size(); ++i) {
+    delete getFeatureExtractorFactories()[i];
+  }
   delete stopwordHelper;
 }
 

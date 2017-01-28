@@ -10,18 +10,23 @@
 NumVerticallyStackedBlobsFeatureExtractorFactory
 ::NumVerticallyStackedBlobsFeatureExtractorFactory(
     BlobFeatureExtractorCategory* const category) {
-  this->blobFeatureExtractorDescription =
+  this->description =
       new NumVerticallyStackedBlobsFeatureExtractorDescription(
           category);
+}
+
+NumVerticallyStackedBlobsFeatureExtractorFactory::
+~NumVerticallyStackedBlobsFeatureExtractorFactory() {
+  delete description;
 }
 
 NumVerticallyStackedBlobsFeatureExtractor*
 NumVerticallyStackedBlobsFeatureExtractorFactory
 ::create(FinderInfo* const finderInfo) {
-  return new NumVerticallyStackedBlobsFeatureExtractor(blobFeatureExtractorDescription, finderInfo);
+  return new NumVerticallyStackedBlobsFeatureExtractor(description, finderInfo);
 }
 
 BlobFeatureExtractorDescription* NumVerticallyStackedBlobsFeatureExtractorFactory::getDescription() {
-  return blobFeatureExtractorDescription;
+  return description;
 }
 
