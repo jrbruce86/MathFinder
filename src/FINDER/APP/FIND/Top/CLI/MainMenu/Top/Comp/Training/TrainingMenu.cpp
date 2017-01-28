@@ -21,7 +21,7 @@
 
 TrainingMenu::TrainingMenu(MainMenu* back) {
   NameSelectionMenu* nameSelectionMenu = new NameSelectionMenu(this);
-  FeatureSelectionMenuMain* featureSelectionMenu = new FeatureSelectionMenuMain(this);
+  FeatureSelectionMenuMain* featureSelectionMenu = new FeatureSelectionMenuMain(this, back);
   DetectorSelectionMenu* detectorSelectionMenu = new DetectorSelectionMenu(this);
   SegmentorSelectionMenu* segmentorSelectionMenu = new SegmentorSelectionMenu(this);
   DatasetSelectionMenu* datasetSelectionMenu = new DatasetSelectionMenu(this);

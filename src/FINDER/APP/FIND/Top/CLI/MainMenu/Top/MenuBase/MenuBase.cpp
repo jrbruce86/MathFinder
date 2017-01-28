@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-MenuBase::MenuBase() {}
+MenuBase::MenuBase(){}
 
 MenuBase* MenuBase::getNextSelected() {
   std::cout << "------------------------------\n"

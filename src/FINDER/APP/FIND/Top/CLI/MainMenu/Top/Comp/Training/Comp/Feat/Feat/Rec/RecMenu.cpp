@@ -7,6 +7,7 @@
 
 #include <RecMenu.h>
 
+#include <MainMenu.h>
 #include <FeatSelMenuMain.h>
 #include <RecCat.h>
 
@@ -14,13 +15,10 @@
 #include <string>
 
 RecognitionFeatureMenu::RecognitionFeatureMenu(
-    FeatureSelectionMenuMain* back) {
+    FeatureSelectionMenuMain* const back,
+    MainMenu* const mainMenu) {
   this->subMenus.push_back(back);
-  this->recognitionCategory = new RecognitionBasedExtractorCategory();
-}
-
-RecognitionFeatureMenu::~RecognitionFeatureMenu() {
-  delete recognitionCategory;
+  this->recognitionCategory = mainMenu->getRecognitionCategory();
 }
 
 std::string RecognitionFeatureMenu::getName() const {

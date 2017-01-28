@@ -12,6 +12,7 @@
 
 #include <string>
 
+class MainMenu;
 class FeatureSelectionMenuMain;
 
 class BlobFeatureExtractorCategory;
@@ -22,9 +23,8 @@ class RecognitionFeatureMenu : public virtual FeatureSelectionMenuBase {
 
  public:
 
-  RecognitionFeatureMenu(FeatureSelectionMenuMain* back);
-
-  ~RecognitionFeatureMenu();
+  RecognitionFeatureMenu(FeatureSelectionMenuMain* const back,
+      MainMenu* const mainMenu);
 
   std::string getName() const;
 

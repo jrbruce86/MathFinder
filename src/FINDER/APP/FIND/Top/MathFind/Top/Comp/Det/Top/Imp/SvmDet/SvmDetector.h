@@ -17,6 +17,8 @@
 #include <vector>
 #include <string>
 
+#define PROGRESS_TO_FILE_OBJECTIVE
+
 // only one of the following should be enabled!
 // the chosen kernel is used for training
 #define RBF_KERNEL
@@ -42,8 +44,11 @@ typedef dlib::normalized_function<LinearSVMPredictor> LinearSVMNormalizedPredict
 class cross_validation_objective {
  public:
   cross_validation_objective (const std::vector<sample_type>& samples_,
-      const std::vector<double>& labels_, int folds_) :
-        samples(samples_), labels(labels_), folds(folds_) {}
+      const std::vector<double>& labels_, int folds_,
+      std::ofstream* const progressFile) :
+        samples(samples_), labels(labels_), folds(folds_) {
+    this->progressFile = progressFile;
+  }
 
   double operator() (const dlib::matrix<double>& params) const {
     // Pull out the two SVM model parameters.  Note that, in this case,
@@ -64,8 +69,7 @@ class cross_validation_objective {
 
     // Finally, perform 10-fold cross validation and then print and return the results.
 #ifdef RBF_KERNEL
-    std::cout << "Running cross validation on RBF Kernel SVM with ";
-    std::cout << "C: " << std::setw(11) << C << ", gamma: " << std::setw(11) << gamma << std::endl;
+    outputProgress("hello");
 #endif
 #ifdef LINEAR_KERNEL
     cout << "Running cross validation on Linear Kernel SVM with ";
@@ -94,6 +98,15 @@ class cross_validation_objective {
   const std::vector<sample_type>& samples;
   const std::vector<double>& labels;
   int folds;
+
+  std::ofstream* progressFile;
+  void outputProgress(std::string progressStr) const {
+    std::cout << progressStr << std::endl;
+  #ifdef PROGRESS_TO_FILE_OBJECTIVE
+    *progressFile << progressStr << std::endl;
+    progressFile->flush();
+  #endif
+  }
 };
 
 class TrainedSvmDetector : virtual public MathExpressionDetector {

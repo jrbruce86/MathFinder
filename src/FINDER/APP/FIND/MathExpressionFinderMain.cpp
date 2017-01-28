@@ -14,6 +14,8 @@
 #include <Usage.h>
 #include <FinderInfo.h>
 #include <InfoFileParser.h>
+#include <GeometryCat.h>
+#include <RecCat.h>
 
 #include <allheaders.h> // leptonica
 
@@ -86,9 +88,12 @@ int main(int argc, char* argv[]) {
   }
 
   // Testing out features in isolation
+  RecognitionBasedExtractorCategory recCategory;
+  GeometryBasedExtractorCategory spatialCategory;
+  MainMenu mainMenu(&spatialCategory, &recCategory);
   DetectorSelectionMenu detSel(NULL);
   SegmentorSelectionMenu segSel(NULL);
-  FeatureSelectionMenuMain featureSelection(NULL);
+  FeatureSelectionMenuMain featureSelection(NULL, &mainMenu);
   featureSelection.selectAllFeatures();
   std::vector<BlobFeatureExtractorFactory*> featureFactories =
       featureSelection.getSelectedFactories();
@@ -119,11 +124,17 @@ int main(int argc, char* argv[]) {
             mathExpressionFeatureExtractor));
 
     // Run the trainer, indicate success/failure
-    trainer.runTraining();
+    //trainer.runTraining();
+
+    std::cout << "end!\n";
 }
 
 void runInteractiveMenu() {
-  MainMenu* const mainMenu = new MainMenu();
+  GeometryBasedExtractorCategory spatialCategory;
+  RecognitionBasedExtractorCategory recognitionCategory;
+  MainMenu* const mainMenu = new MainMenu(
+      &spatialCategory,
+      &recognitionCategory);
   MenuBase* menuSelected = (MenuBase*)mainMenu;
   while(menuSelected->isNotExit()) {
     menuSelected = menuSelected->getNextSelected();

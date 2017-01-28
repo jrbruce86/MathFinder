@@ -1,7 +1,8 @@
 This project requires Qt, libpng-dev, libjpeg-dev, and Leptonica 
 (http://www.leptonica.com/) to be pre-installed and on the system path. Need 
 to install the png and jpeg libraries before Leptonica for it to be able to 
-read/write png and jpeg images. 
+read/write png and jpeg images. It optionally requires Java for some of the 
+debugging features work. 
 
 This project can be compiled and installed by running the following commands 
 from this directory:

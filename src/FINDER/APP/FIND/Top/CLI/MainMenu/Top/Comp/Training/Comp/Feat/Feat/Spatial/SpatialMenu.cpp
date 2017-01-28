@@ -7,6 +7,7 @@
 
 #include <SpatialMenu.h>
 
+#include <MainMenu.h>
 #include <FeatSelMenuMain.h>
 #include <BlobFeatExtCat.h>
 #include <GeometryCat.h>
@@ -15,13 +16,10 @@
 #include <vector>
 
 SpatialFeatureMenu::SpatialFeatureMenu(
-    FeatureSelectionMenuMain* back) {
+    FeatureSelectionMenuMain* back,
+    MainMenu* mainMenu) {
   this->subMenus.push_back(back);
-  this->spatialCategory = new GeometryBasedExtractorCategory();
-}
-
-SpatialFeatureMenu::~SpatialFeatureMenu() {
-  delete spatialCategory;
+  this->spatialCategory = mainMenu->getSpatialCategory();
 }
 
 std::string SpatialFeatureMenu::getName() const {

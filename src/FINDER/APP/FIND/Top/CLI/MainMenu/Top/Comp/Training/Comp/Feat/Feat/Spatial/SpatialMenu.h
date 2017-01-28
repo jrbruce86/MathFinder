@@ -12,6 +12,7 @@
 
 #include <FeatSelMenuBase.h>
 
+class MainMenu;
 class FeatureSelectionMenuMain;
 class GeometryBasedExtractorCategory;
 class BlobFeatureExtractorCategory;
@@ -21,9 +22,8 @@ class SpatialFeatureMenu : public virtual FeatureSelectionMenuBase {
 
  public:
 
-  SpatialFeatureMenu(FeatureSelectionMenuMain* const back);
-
-  ~SpatialFeatureMenu();
+  SpatialFeatureMenu(FeatureSelectionMenuMain* const back,
+      MainMenu* const mainMenu);
 
   std::string getName() const;
 

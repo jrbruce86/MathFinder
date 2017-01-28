@@ -53,10 +53,6 @@ StopwordFileReader* RecognitionBasedExtractorCategory::getStopwordHelper() {
 }
 
 RecognitionBasedExtractorCategory::~RecognitionBasedExtractorCategory() {
-  std::cout << "Recognition category desctructor invoked... Is the base class destructor invoked too??\n";
-  for(int i = 0; i < featureExtractorFactories.size(); ++i) {
-    delete featureExtractorFactories[i];
-  }
   delete stopwordHelper;
 }
 

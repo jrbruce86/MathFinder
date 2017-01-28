@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+class MainMenu;
 class TrainingMenu;
 class SpatialFeatureMenu;
 class RecognitionFeatureMenu;
@@ -23,7 +24,8 @@ class FeatureSelectionMenuMain: public virtual MenuBase {
  public:
 
   FeatureSelectionMenuMain(
-      TrainingMenu* trainingMain);
+      TrainingMenu* const trainingMain,
+      MainMenu* const mainMenu);
 
   ~FeatureSelectionMenuMain();
 

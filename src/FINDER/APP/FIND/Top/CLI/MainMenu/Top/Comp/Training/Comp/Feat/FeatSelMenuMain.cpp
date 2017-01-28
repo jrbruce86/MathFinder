@@ -7,6 +7,7 @@
 
 #include <FeatSelMenuMain.h>
 
+#include <MainMenu.h>
 #include <TrainingMenu.h>
 #include <SpatialMenu.h>
 #include <RecMenu.h>
@@ -19,9 +20,10 @@
 #include <vector>
 
 FeatureSelectionMenuMain::FeatureSelectionMenuMain(
-    TrainingMenu* trainingMain) {
-  this->spatialMenu = new SpatialFeatureMenu(this);
-  this->recognitionMenu = new RecognitionFeatureMenu(this);
+    TrainingMenu* const trainingMain,
+    MainMenu* const mainMenu) {
+  this->spatialMenu = new SpatialFeatureMenu(this, mainMenu);
+  this->recognitionMenu = new RecognitionFeatureMenu(this, mainMenu);
   this->subMenus.push_back(new AboutFeatureMenu(this));
   this->subMenus.push_back(
       new AllFeatMenu(this->spatialMenu,

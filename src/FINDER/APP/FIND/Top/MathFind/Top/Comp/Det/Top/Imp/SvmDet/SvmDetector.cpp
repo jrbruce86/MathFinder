@@ -261,7 +261,8 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
          std::string("  Gamma: ") + Utils::doubleToString(gamma, 11) +
 #endif
          std::string("  cross validation accuracy (positive, negative): ") +
-         Utils::doubleToString(result) + std::string("\n"));
+         Utils::doubleToString(result(0,0)) + std::string(", ") +
+         Utils::doubleToString(result(0,1)) + std::string("\n"));
     if(sum(result) > sum(best_result)) {
       best_result = result;
 #ifdef RBF_KERNEL
@@ -271,7 +272,9 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
     }
   }
 #ifdef RBF_KERNEL
-  outputProgress(std::string("Best Result: ") + Utils::doubleToString(best_result) +
+  outputProgress(std::string("Best Result: (positive, negative)") +
+      Utils::doubleToString(best_result(0,0)) + std::string(", ") +
+      Utils::doubleToString(best_result(0,1)) + std::string("\n") +
       std::string(". Gamma = ") + Utils::doubleToString(gamma_optimal, 11) +
        std::string(". C = ") + Utils::doubleToString(C_optimal, 11) + std::string("\n"));
 #endif
@@ -318,7 +321,7 @@ void TrainedSvmDetector::doFineCVTraining(int folds) {
   upperbound = dlib::log(upperbound);
 
   double best_score = dlib::find_max_bobyqa(
-      cross_validation_objective(training_samples, labels, folds), // Function to maximize
+      cross_validation_objective(training_samples, labels, folds, &progressFile), // Function to maximize
       opt_params,                                      // starting point
       opt_params.size()*2 + 1,                         // See BOBYQA docs, generally size*2+1 is a good setting for this
       lowerbound,                                 // lower bound
@@ -342,6 +345,23 @@ void TrainedSvmDetector::doFineCVTraining(int folds) {
 #endif
   outputProgress(std::string("BOBYQA Score: ") +
       Utils::doubleToString(best_score) + std::string("\n"));
+
+  // Get and display the true positive and negative rate of best result (have to do another round of
+  // cross validation since bobyqa algorithm has no easy way of storing this
+  // that I know of...
+  outputProgress(std::string("Running cross validation again on optimal c and gamma") +
+      std::string(" to get the true positive and true negative rate (should sum") +
+      std::string(" up to the score above.\n"));
+  dlib::svm_c_trainer<RBFKernel> trainer;
+  trainer.set_kernel(RBFKernel(gamma_optimal));
+  trainer.set_c(C_optimal);
+  dlib::matrix<double> result = cross_validate_trainer_threaded(trainer, training_samples,
+      labels, folds, folds); // last arg is the number of threads (using same as folds)
+  outputProgress(std::string("C: ") +  Utils::doubleToString(C_optimal, 11) +
+       std::string("  Gamma: ") + Utils::doubleToString(gamma_optimal, 11) +
+       std::string("  cross validation accuracy (positive, negative): ") +
+       Utils::doubleToString(result(0,0)) + std::string(", ") +
+       Utils::doubleToString(result(0,1)) + std::string("\n"));
 }
 
 void TrainedSvmDetector::saveOptParams() {

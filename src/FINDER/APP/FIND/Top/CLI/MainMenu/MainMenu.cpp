@@ -16,7 +16,10 @@
 
 #include <string>
 
-MainMenu::MainMenu() {
+MainMenu::MainMenu(GeometryBasedExtractorCategory* const spatialCategory,
+    RecognitionBasedExtractorCategory* const recCategory) {
+  this->spatialCategory = spatialCategory;
+  this->recCategory = recCategory;
   subMenus.push_back(new AboutMenu(this));
   subMenus.push_back(new TrainingMenu(this));
   subMenus.push_back(new FinderInfoMenu(this));
@@ -38,5 +41,21 @@ std::string MainMenu::getName() const {
 
 std::string MainMenu::MainMenuName() {
   return "Main Menu";
+}
+
+/**
+ * The feature extractor category for spatial feature extractors
+ * (manages the memory for the factories and descriptions)
+ */
+GeometryBasedExtractorCategory* MainMenu::getSpatialCategory() {
+  return spatialCategory;
+}
+
+/**
+ * The feature extractor category for recognition feature extractors
+ * (manages the memory for the factories and descriptions)
+ */
+RecognitionBasedExtractorCategory* MainMenu::getRecognitionCategory() {
+  return recCategory;
 }
 
