@@ -260,16 +260,28 @@ std::string DatasetSelectionMenu::findGroundtruthFilePath(std::string path) {
   return "";
 }
 
-std::vector<std::string> DatasetSelectionMenu::findGroundtruthImagePaths(std::string groundtruthDirPath) {
-  std::vector<std::string> fileNames = Utils::getFileList(groundtruthDirPath);
-  std::vector<std::string> trainingImagePaths;
+std::vector<std::string> DatasetSelectionMenu::findImagePaths(
+    const std::string& dirPath_) {
+  std::string dirPath = Utils::checkTrailingSlash(dirPath_);
+  std::vector<std::string> fileNames = Utils::getFileList(dirPath);
+  std::vector<std::string> imagePaths;
   for(int i = 0; i < fileNames.size(); ++i) {
-    if(fileNames[i].find(".rect") == std::string::npos && !Utils::existsDirectory(groundtruthDirPath + fileNames[i])) {
-      trainingImagePaths.push_back(groundtruthDirPath + fileNames[i]); // assume if not the .rect file or dir then its an image
+    if(fileNames[i].find(".rect") == std::string::npos &&
+        !Utils::existsDirectory(dirPath + fileNames[i])) {
+      // assume if not the .rect file or dir then its an image
+      imagePaths.push_back(dirPath + fileNames[i]);
     }
   }
+  return imagePaths;
+}
 
-  // make sure they are in the right order
+std::vector<std::string> DatasetSelectionMenu::findGroundtruthImagePaths(
+    std::string groundtruthDirPath) {
+
+  // Get the image paths
+  std::vector<std::string> trainingImagePaths = findImagePaths(groundtruthDirPath);
+
+  // Make sure they are in the right order
   std::vector<std::string> trainingImagePathsOrdered;
   for(int i = 0; i < trainingImagePaths.size(); ++i) {
     trainingImagePathsOrdered.push_back("");
@@ -287,10 +299,13 @@ std::vector<std::string> DatasetSelectionMenu::findGroundtruthImagePaths(std::st
 }
 
 int DatasetSelectionMenu::getFileNumFromPath(const std::string& path) {
+  return atoi(getFileNameFromPath(path).c_str());
+}
+
+std::string DatasetSelectionMenu::getFileNameFromPath(const std::string& path) {
   const std::string curPath = path;
   const int lastSlashIndex = curPath.find_last_of("/");
   const int dotIndex = curPath.find_last_of(".");
-  const std::string curName = curPath.substr(lastSlashIndex + 1, dotIndex - lastSlashIndex);
-  return atoi(curName.c_str());
+  return curPath.substr(lastSlashIndex + 1, dotIndex - lastSlashIndex - 1);
 }
 

@@ -11,7 +11,7 @@
 #include <Utils.h>
 #include <M_Utils.h>
 
-#define DBG_FEAT_EXT
+//#define DBG_FEAT_EXT
 #define DBG_AFTER_EXTRACTION
 //#define DBG_FEAT_EXT_WAIT
 //#define DBG_FEATURE_ORDERING
@@ -67,7 +67,8 @@ void MathExpressionFeatureExtractor::extractFeatures(BlobDataGrid* const blobDat
   while((blob = search.NextFullSearch()) != NULL) {
     for(int i = 0; i < blobFeatureExtractors.size(); ++i) {
       // Do the feature extraction
-      std::vector<DoubleFeature*> unorderedBlobFeatures = blobFeatureExtractors[i]->extractFeatures(blob);
+      std::vector<DoubleFeature*> unorderedBlobFeatures =
+          blobFeatureExtractors[i]->extractFeatures(blob);
       assert(unorderedBlobFeatures.size() > 0);
 
       // If it's just one feature then go ahead and append it to the blob's extracted feature list

@@ -18,7 +18,7 @@
 
 #include <stddef.h>
 
-#define DBG_SHOW_SUB_SUPER
+//#define DBG_SHOW_SUB_SUPER
 //#define DBG_FEAT3
 //#define DBG_DISPLAY
 //#define DBG_SUB_SUPER

@@ -141,7 +141,7 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
 
   TBOX blobbox = blob->bounding_box();
   if(blobbox.left() == dbgleft && blobbox.top() == dbgtop) {
-    cout << "found it!\n";
+    std::cout << "found it!\n";
     M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
     M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
     M_Utils::waitForInput();
@@ -249,11 +249,11 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
 #ifdef DBG_COVER_FEATURE
     if(indbg) {
       if(was_added) {
-        cout << "the displayed element is being added to the covered list\n";
+        std::cout << "the displayed element is being added to the covered list\n";
         M_Utils::waitForInput();
       }
       else {
-        cout << "the displayed element was not added to the covered list\n";
+        std::cout << "the displayed element was not added to the covered list\n";
         if(!dbgdontcare)
           M_Utils::waitForInput();
       }
@@ -262,7 +262,7 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   }
 #ifdef DBG_COVER_FEATURE
   if(count > 1 && !single_mode) {
-    cout << "the highlighted blob is the one being evaluated and has " << count
+    std::cout << "the highlighted blob is the one being evaluated and has " << count
          << " covered blobs " << "in the " << ((dir == BlobSpatial::RIGHT) ? " rightward "
              : ((dir == BlobSpatial::UP) ? " upward " : " downward ")) << "direction\n";
     M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
@@ -362,7 +362,7 @@ bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(const TBOX& neighbor,
 #ifdef DBG_COVER_FEATURE
         else {
           if(indbg)
-            cout << "The neighbor is not covered because it's distance from the "
+            std::cout << "The neighbor is not covered because it's distance from the "
                  << "blob of interest is too great in relation to it's size.\n";
         }
 #endif
@@ -370,14 +370,14 @@ bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(const TBOX& neighbor,
 #ifdef DBG_COVER_FEATURE
       else {
       if(indbg)
-        cout << "The neighbor is not covered because it is too small\n";
+        std::cout << "The neighbor is not covered because it is too small\n";
       }
 #endif
     }
 #ifdef DBG_COVER_FEATURE
     else {
       if(indbg) {
-        cout << "The neighbor is not covered because its distance is above the threshold of "
+        std::cout << "The neighbor is not covered because its distance is above the threshold of "
            << "half of the blob's width\n";
         dbgdontcare = true;
       }
@@ -387,7 +387,7 @@ bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(const TBOX& neighbor,
 #ifdef DBG_COVER_FEATURE
   else {
     if(indbg)
-      cout << "The neighbor is not covered because its center is outside the boundary\n";
+      std::cout << "The neighbor is not covered because its center is outside the boundary\n";
   }
 #endif
   return false;

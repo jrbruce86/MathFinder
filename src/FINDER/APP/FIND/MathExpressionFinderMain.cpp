@@ -93,15 +93,21 @@ void runFinder(char* path) {
 
   std::string imagePath = std::string(path);
   Pixa* images = pixaCreate(0);
+  std::vector<std::string> imageNames;
   // if the image path is a directory, then read in all of the files in that
   // directory (assumes they are images)
   if(Utils::existsDirectory(imagePath)) {
-    std::vector<std::string> imageNames = Utils::getFileList(imagePath);
-    for(int i = 0; i < imageNames.size(); ++i) {
-      pixaAddPix(images, Utils::leptReadImg(imagePath), L_INSERT);
+    std::vector<std::string> imagePaths =
+        DatasetSelectionMenu::findImagePaths(imagePath);
+    for(int i = 0; i < imagePaths.size(); ++i) {
+      pixaAddPix(images,
+          Utils::leptReadImg(imagePaths[i]),
+          L_INSERT);
+      imageNames.push_back(DatasetSelectionMenu::getFileNameFromPath(imagePaths[i]));
     }
   } else if(Utils::existsFile(imagePath)) {
     pixaAddPix(images, Utils::leptReadImg(imagePath), L_INSERT);
+    imageNames.push_back(DatasetSelectionMenu::getFileNameFromPath(imagePath));
   } else {
     std::cout << "Unable to read in the image(s) on the given path." << std::endl;
     return MathExpressionFinderUsage::printUsage();
@@ -116,25 +122,27 @@ void runFinder(char* path) {
           finderInfo);
 
   std::vector<MathExpressionFinderResults*> results =
-      finder->detectMathExpressions(images,
-          Utils::getFileList(imagePath));
+      finder->detectMathExpressions(images, imageNames);
 
   pixaDestroy(&images); // destroy finished image(s)
 
-  // Destroy the finder
-  delete finder;
-  delete finderInfo;
-
-  // Display the results and/or write to path
+  // Display the results
   for(int i = 0; i < results.size(); ++i) {
-    results[i]->displayResults();
-    results[i]->printResultsToFiles();
+    results[i]->displaySegmentationResults();
   }
+
+  // Write the results to a directory in the current location (creates
+  // the directory)
+  MathExpressionFinderResults::printResultsToFiles(results, finderInfo->getFinderName());
 
   // Destroy results
   for(int i = 0; i < results.size(); ++i) {
     delete results[i];
   }
+
+  // Destroy the finder
+  delete finder;
+  delete finderInfo;
 }
 
 

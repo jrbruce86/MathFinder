@@ -6,6 +6,8 @@
  */
 #include <MathExpressionFinder.h>
 
+//#define SHOW_GRID
+
 MathExpressionFinder::MathExpressionFinder(
     MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor,
     MathExpressionDetector* const mathExpressionDetector,
@@ -68,6 +70,8 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
    */
   for(int i = 0; i < images->n; ++i) {
 
+    std::cout << "Processing image " << imageNames[i] << ".\n";
+
     Pix* image = pixaGetPix(images, i, L_CLONE);
 
     /**
@@ -81,6 +85,9 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
     tesseract::TessBaseAPI api;
     BlobDataGrid* const blobDataGrid =
         BlobDataGridFactory().createBlobDataGrid(image, &api, Utils::getNameFromPath(imageNames[i]));
+#ifdef SHOW_GRID
+    blobDataGrid->show();
+#endif
 
     /**
      * ---------------

@@ -39,6 +39,11 @@ class DatasetSelectionMenu : public virtual MenuBase {
 
   static int getFileNumFromPath(const std::string& path);
 
+  static std::string getFileNameFromPath(const std::string& path);
+
+  static std::vector<std::string> findImagePaths(const std::string& dirPath);
+
+
   static std::vector<std::string> findGroundtruthImagePaths(std::string groundtruthDirPath);
 
   static std::string findGroundtruthFilePath(std::string path);

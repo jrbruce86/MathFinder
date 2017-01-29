@@ -68,17 +68,17 @@ class cross_validation_objective {
     trainer.set_c(C);
 
     // Finally, perform 10-fold cross validation and then print and return the results.
-#ifdef RBF_KERNEL
-    outputProgress("hello");
-#endif
 #ifdef LINEAR_KERNEL
     cout << "Running cross validation on Linear Kernel SVM with ";
     cout << "C: " << setw(11) << C << endl;
 #endif
     dlib::matrix<double> result = dlib::cross_validate_trainer_threaded(trainer, samples, labels, folds, folds);
 #ifdef RBF_KERNEL
-    std::cout << "C: " << std::setw(11) << C << "  gamma: " << std::setw(11) << gamma
-        <<  "  cross validation accuracy: " << result;
+    outputProgress(std::string("C: ") + Utils::doubleToString(C, 11) +
+        std::string("  gamma: ") + Utils::doubleToString(gamma, 11) +
+        std::string("  cross validation accuracy: ") +
+        Utils::doubleToString(result(0, 0), 11) + std::string(", ") +
+        Utils::doubleToString(result(0, 1), 11) + std::string("\n"));
 #endif
 #ifdef LINEAR_KERNEL
     std::cout << "C: " << std::setw(11) << C

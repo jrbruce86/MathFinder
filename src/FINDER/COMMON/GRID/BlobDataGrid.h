@@ -108,6 +108,12 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
    */
   Pix* getVisualSegmentationResultsDisplay();
 
+  /**
+   * Show the grid, waiting for enter to be pressed before deleting the
+   * display.
+   */
+  void show();
+
   void HandleClick(int x, int y);
 
  private:

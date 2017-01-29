@@ -26,6 +26,7 @@
 
 //#define DBG_ROW_CHARACTERISTICS
 //#define DBG_INFO_GRID
+//#define LEAVE_GRID_OPEN
 //#define DBG_VERBOSE
 //#define DBG_SHOW_ALL_BLOB_RESULT
 //#define DBG_MULTI_PARENT_ISSUE
@@ -102,7 +103,9 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
         "Grid");
     blobDataGrid->DisplayBoxes(sv);
     M_Utils::waitForInput();
+#ifndef LEAVE_GRID_OPEN
     delete sv;
+#endif
   }
 #endif
 
@@ -318,7 +321,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     } // done iterating rows in block
     bres_it.forward();
   } // done iterating blocks on the page
-#ifdef DBG_INFO_GRID
+#ifdef DBG_INFO_GRID_MARKED
   {
     ScrollView* sv = blobDataGrid->MakeWindow(100, 100,
         "The BlobDataGrid (before deleting marked entries)");
@@ -340,7 +343,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
       b = bdgs.NextFullSearch();
     }
   }
-#ifdef DBG_INFO_GRID
+#ifdef DBG_INFO_GRID_MARKED
   {
     ScrollView* sv = blobDataGrid->MakeWindow(100, 100,
         "The BlobDataGrid (after deleting marked entries)");

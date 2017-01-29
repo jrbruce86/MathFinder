@@ -262,8 +262,8 @@ void TrainedSvmDetector::doCoarseCVTraining(int folds) {
          std::string("  Gamma: ") + Utils::doubleToString(gamma, 11) +
 #endif
          std::string("  cross validation accuracy (positive, negative): ") +
-         Utils::doubleToString(result(0,0)) + std::string(", ") +
-         Utils::doubleToString(result(0,1)) + std::string("\n"));
+         Utils::doubleToString(result(0,0), 11) + std::string(", ") +
+         Utils::doubleToString(result(0,1), 11) + std::string("\n"));
     if(sum(result) > sum(best_result)) {
       best_result = result;
 #ifdef RBF_KERNEL

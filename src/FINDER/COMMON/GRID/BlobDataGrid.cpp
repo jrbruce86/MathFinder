@@ -187,6 +187,14 @@ Pix* BlobDataGrid::getVisualSegmentationResultsDisplay() {
   return display;
 }
 
+void BlobDataGrid::show() {
+  ScrollView* sv = MakeWindow(image->w, image->h,
+      imageName.c_str());
+  DisplayBoxes(sv);
+  M_Utils::waitForInput();
+  delete sv;
+}
+
 void BlobDataGrid::HandleClick(int x, int y) {
   std::cout << "-----------------------------------\n";
   std::cout << "\nx,y: " << x << ", " << y << std::endl;
