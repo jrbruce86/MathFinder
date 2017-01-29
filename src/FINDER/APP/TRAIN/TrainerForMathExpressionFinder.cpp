@@ -70,11 +70,8 @@ void TrainerForMathExpressionFinder::trainDetector() {
 
   // first get all of the binary labeled samples using the chosen feature extractors
   samples = getSamples();
-  std::cout << "finished calling getSamples() method\n";
-#ifdef JUST_GET_SAMPLES
   std::cout << "Finished getting samples.\n";
-  Utils::waitForInput();
-#endif
+
   detector->doTraining(samples);
   std::cout << "Finished training the detector.\n";
 }
