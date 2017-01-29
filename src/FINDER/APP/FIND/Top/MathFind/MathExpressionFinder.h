@@ -28,12 +28,34 @@ class MathExpressionFinder {
  public:
 
   MathExpressionFinder(
-      MathExpressionFeatureExtractor* featureExtractor,
-      MathExpressionDetector* detector,
-      MathExpressionSegmentor* segmentor);
+      MathExpressionFeatureExtractor* const featureExtractor,
+      MathExpressionDetector* const detector,
+      MathExpressionSegmentor* const segmentor,
+      FinderInfo* const finderInfo);
 
+  /**
+   * Detects the math expressions in one or more images provided, returning the
+   * results as a vector where the result vector indexes correspond with the
+   * image ones (i.e., the result at the first index is for the image at that
+   * same index in its array). "Detecting" the math expressions involves just
+   * running the detector algorithm and returning those results (without running
+   * segmentation). Prints error message returns empty vector if something went
+   * wrong.
+   */
+  std::vector<MathExpressionFinderResults*> detectMathExpressions(
+      Pixa* const images,
+      std::vector<std::string> imageNames);
 
-  std::vector<MathExpressionFinderResults*> findMathExpressions(Pixa* const images,
+  /**
+   * Finds the math expressions in one or more images provided, returning the
+   * results as a vector where the result vector indexes correspond with the
+   * image ones (i.e., the result at the first index is for the image at that
+   * same index in its array). "Finding" the math expressions involves running
+   * the detector algorithm followed by the segmentation one. Prints error
+   * message and returns empty vector if something went wrong.
+   */
+  std::vector<MathExpressionFinderResults*> findMathExpressions(
+      Pixa* const images,
       std::vector<std::string> imageNames);
 
   MathExpressionFeatureExtractor* getFeatureExtractor();
@@ -41,9 +63,17 @@ class MathExpressionFinder {
   ~MathExpressionFinder();
 
  private:
+
+  // Modes to run in (either just detect, or both detect and segment)
+  std::vector<MathExpressionFinderResults*> getResultsInRunMode(
+      RunMode runMode,
+      Pixa* const images,
+      std::vector<std::string> imageNames);
+
   MathExpressionFeatureExtractor* mathExpressionFeatureExtractor;
   MathExpressionDetector* mathExpressionDetector;
   MathExpressionSegmentor* mathExpressionSegmentor;
+  FinderInfo* finderInfo;
 
   // internal variables/flags
   bool init;

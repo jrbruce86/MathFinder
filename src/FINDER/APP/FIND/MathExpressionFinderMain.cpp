@@ -116,7 +116,8 @@ void runFinder(char* path) {
           finderInfo);
 
   std::vector<MathExpressionFinderResults*> results =
-      finder->findMathExpressions(images, Utils::getFileList(imagePath));
+      finder->detectMathExpressions(images,
+          Utils::getFileList(imagePath));
 
   pixaDestroy(&images); // destroy finished image(s)
 
@@ -136,6 +137,11 @@ void runFinder(char* path) {
   }
 }
 
+
+/**
+ * Method put in for quickly debugging a trainer (not meant to be invoked
+ * outside of development purposes)
+ */
 void runTrainer() {
   // Testing out features in isolation
   RecognitionBasedExtractorCategory recCategory;

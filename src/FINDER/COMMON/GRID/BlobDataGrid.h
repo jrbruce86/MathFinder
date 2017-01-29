@@ -19,6 +19,7 @@ class TesseractBlockData;
 class TesseractSentenceData;
 class BlobMergeData;
 class Segmentation;
+class MathExpressionFinderResults;
 
 class BlobData;
 CLISTIZEH(BlobData)
@@ -72,13 +73,48 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
    */
   BlobData* getEntryWithBoundingBox(const TBOX box);
 
+  /**
+   * Builds out and returns the results of detection. The allocated memory
+   * is owned by the caller.
+   */
+  MathExpressionFinderResults* getDetectionResults(
+      const std::string& resultsDirName);
+
+  /**
+   * Returns the blobs detected as math as "segment" objects.
+   * Although the segmentation algorithm wouldn't have been carried out
+   * at this stage, the detection results are effectively segments all the
+   * same. Just a whole ton of very small ones that have yet to be merged
+   * properly into expressions.
+   */
+  GenericVector<Segmentation*> getDetectionSegments();
+
+  /**
+   * Gets a visual display of the results of detection.
+   * The pix memory is allocated on the heap and owned by the caller
+   */
+  Pix* getVisualDetectionResultsDisplay();
+
+  /**
+   * Builds out and returns the results of segmentation. The allocated memory
+   * is owned by the caller.
+   */
+  MathExpressionFinderResults* getSegmentationResults(
+      const std::string& resultsDirName);
+
+  /**
+   * Gets a visual display of the results of segmentation.
+   * The pix memory is allocated on the heap and owned by the caller
+   */
+  Pix* getVisualSegmentationResultsDisplay();
+
   void HandleClick(int x, int y);
 
  private:
 
   tesseract::TessBaseAPI* tessBaseAPI; // the api this grid relies on
 
-  Pix* image; // the document image used as input to generate this grid
+  Pix* image; // the document image used as input to generate this grid (not owned by the grid)
 
   Pix* binaryImage; // the image after being thresholded by Tesseract
 

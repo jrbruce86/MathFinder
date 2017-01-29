@@ -25,7 +25,7 @@ class HeuristicMerge : public virtual MathExpressionSegmentor {
  public:
   HeuristicMerge(MathExpressionFeatureExtractor* const featureExtractor);
 
-  MathExpressionFinderResults* runSegmentation(BlobDataGrid* grid);
+  void runSegmentation(BlobDataGrid* grid);
 
   ~HeuristicMerge();
 
@@ -53,12 +53,6 @@ class HeuristicMerge : public virtual MathExpressionSegmentor {
    * Caller has to cast back to correct type.
    */
   BlobFeatureExtractor* getFeatureExtractor(const std::string& name);
-
-  /**
-   * Gets a visual display of the results of segmentation.
-   * The pix memory is allocated on the heap and owned by the caller
-   */
-  Pix* getVisualResultsDisplay();
 
   MathExpressionFeatureExtractor* featureExtractor;
 

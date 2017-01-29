@@ -443,7 +443,7 @@ void TrainedSvmDetector::loadPredictor() {
 
 bool TrainedSvmDetector::predict(const std::vector<DoubleFeature*>& sample) {
   sample_type sample_;
-  sample_.set_size(sample.size(), 1); // TODO: Make it so the sample vector memory is pre-allocated
+  sample_.set_size(sample.size(), 1);
   for(int i = 0; i < sample.size(); ++i)
     sample_(i) = sample[i]->getFeature();
   double result = final_predictor(sample_);

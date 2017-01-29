@@ -13,7 +13,6 @@ FIND/Top/CLI/MainMenu/MainMenu.h \
 FIND/Top/CLI/Usage/Usage.h \
 TRAIN/TopLevel/TrainingSample/SampleExtractor/TrainingSampleExtractor.h \
 FIND/Top/MathFind/Top/Provider/MFinderProvider.h \
-FIND/Top/MathFind/Top/Results/MFinderResults.h \
 TRAIN/TopLevel/TrainingSample/FileParsing/GroundtruthFileParser/GTParser.h \
 TRAIN/TopLevel/TrainingSample/FileParsing/SampleFileParser/SampleFileParser.h \
 FIND/Top/CLI/MainMenu/Top/MenuBase/MenuBase.h \
@@ -86,7 +85,6 @@ FIND/Top/CLI/MainMenu/MainMenu.cpp \
 FIND/Top/CLI/Usage/Usage.cpp \
 TRAIN/TopLevel/TrainingSample/SampleExtractor/TrainingSampleExtractor.cpp \
 FIND/Top/MathFind/Top/Provider/MFinderProvider.cpp \
-FIND/Top/MathFind/Top/Results/MFinderResults.cpp \
 TRAIN/TopLevel/TrainingSample/FileParsing/GroundtruthFileParser/GTParser.cpp \
 TRAIN/TopLevel/TrainingSample/FileParsing/SampleFileParser/SampleFileParser.cpp \
 FIND/Top/CLI/MainMenu/Top/MenuBase/MenuBase.cpp \
@@ -163,7 +161,6 @@ MathFinder_CPPFLAGS = -IEVAL \
 -IFIND/Top/MathFind/Top/Comp/Det \
 -ITRAIN/TopLevel/TrainingSample \
 -IFIND/Top/MathFind/Top/Comp/Seg \
--IFIND/Top/MathFind/Top/Results \
 -IFIND/Top/MathFind/Top/Provider \
 -IFIND/Top/MathFind/Top/Comp/FeatExt/Top/Comp/Imp/Geo/Cat \
 -IFIND/Top/MathFind/Top/Comp/FeatExt/Top/Comp/Imp/Rec/Cat \
@@ -244,6 +241,7 @@ MathFinder_CPPFLAGS = -IEVAL \
 -I$(commonpath)/GRID/Top/Cell/Comp/Data/Desc/Flag/Empty \
 -I$(commonpath)/GRID/Top/Cell/Comp/Data/NGram/NGProfile \
 -I$(commonpath)/GRID/Top/Cell/Comp/RecData/Block/Sentence \
+-I$(commonpath)/RESULTS \
 -I$(tesspath)/api \
 -I$(tesspath)/ccmain -I$(tesspath)/ccstruct \
 -I$(tesspath)/ccutil -I$(tesspath)/classify \

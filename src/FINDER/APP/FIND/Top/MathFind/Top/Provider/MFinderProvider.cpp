@@ -57,7 +57,8 @@ MathExpressionFinder* MathExpressionFinderProvider
   return new MathExpressionFinder(
       mathExpressionFeatureExtractor,
       MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
-      MathExpressionSegmentorFactory().createMathExpressionSegmentor(finderInfo, mathExpressionFeatureExtractor));
+      MathExpressionSegmentorFactory().createMathExpressionSegmentor(finderInfo, mathExpressionFeatureExtractor),
+      finderInfo);
 }
 
 std::string MathExpressionFinderProvider::stripFeatureFlags(

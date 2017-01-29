@@ -14,7 +14,13 @@
 class MathExpressionSegmentor {
  public:
   MathExpressionSegmentor(){};
-  virtual MathExpressionFinderResults* runSegmentation(BlobDataGrid* const grid)=0;
+
+  /**
+   * Runs the segmentation algorithm. The results should get stored on
+   * the grid.
+   */
+  virtual void runSegmentation(BlobDataGrid* const grid)=0;
+
   virtual ~MathExpressionSegmentor(){};
 };
 

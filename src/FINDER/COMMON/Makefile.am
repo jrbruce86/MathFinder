@@ -25,6 +25,7 @@ GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.h \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGram.h \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.h \
 GRID/Top/Cell/Comp/RecData/Block/Sentence/SentenceData.h \
+RESULTS/MFinderResults.h \
 GRID/BlobDataGrid.cpp \
 UTIL/Lept_Utils.cpp \
 UTIL/M_Utils.cpp \
@@ -46,7 +47,8 @@ GRID/Top/Cell/Comp/Data/Desc/Desc/BlobFeatExtDesc.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Flag/FeatExtFlagDesc.cpp \
 GRID/Top/Cell/Comp/Data/Desc/Flag/Empty/EmptyFlagDesc.cpp \
 GRID/Top/Cell/Comp/Data/NGram/NGProfile/NGramRanker.cpp \
-GRID/Top/Cell/Comp/RecData/Block/Sentence/SentenceData.cpp
+GRID/Top/Cell/Comp/RecData/Block/Sentence/SentenceData.cpp \
+RESULTS/MFinderResults.cpp
 
 tesspath=../../THIRDPARTY/Tesseract
 
@@ -69,6 +71,7 @@ libCOMMON_la_CPPFLAGS = -IGRID \
 -IGRID/Top/Cell/Comp/Data/Desc/Flag/Empty \
 -IGRID/Top/Cell/Comp/Data/NGram/NGProfile \
 -IGRID/Top/Cell/Comp/RecData/Block/Sentence \
+-IRESULTS \
 -I/usr/local/include/leptonica \
 -I$(tesspath)/api \
 -I$(tesspath)/ccmain -I$(tesspath)/ccstruct \

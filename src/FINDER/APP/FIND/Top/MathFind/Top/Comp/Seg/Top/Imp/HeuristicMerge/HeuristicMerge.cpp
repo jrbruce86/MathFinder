@@ -56,7 +56,7 @@ HeuristicMerge::HeuristicMerge(MathExpressionFeatureExtractor* const featureExtr
   this->numVerticallyStackedFeatureExtractor = dynamic_cast<NumVerticallyStackedBlobsFeatureExtractor*>(getFeatureExtractor(NumVerticallyStackedBlobsFeatureExtractorDescription::getName_()));
 }
 
-MathExpressionFinderResults* HeuristicMerge::runSegmentation(BlobDataGrid* const blobDataGrid) {
+void HeuristicMerge::runSegmentation(BlobDataGrid* const blobDataGrid) {
   // now do the segmentation step
   dbgim = blobDataGrid->getImage(); // allows for optional debugging
 
@@ -139,13 +139,6 @@ MathExpressionFinderResults* HeuristicMerge::runSegmentation(BlobDataGrid* const
 #endif
     ++seg_id;
   }
-
-  return MathExpressionFinderResultsBuilder()
-      .setResults(blobDataGrid->getSegments())
-      ->setVisualResultsDisplay(getVisualResultsDisplay())
-      ->setResultsName(blobDataGrid->getImageName())
-      ->setResultsDirName(featureExtractor->getFinderInfo()->getFinderName())
-      ->build();
 }
 
 // make the merge decision for left, right, up, and down
@@ -186,7 +179,7 @@ void HeuristicMerge::decideAndMerge(BlobData* blob,
     Segmentation* seg = new Segmentation;
     seg->box = blob_segment;
     seg->res = res;
-    blobDataGrid->getSegments().push_back(seg); // the allocated memory is owned by the grid
+    blobDataGrid->getSegments().push_back(seg); // the allocated memory is owned at a higher level
   }
   if(was_already_processed) {
     assert(blob_merge_info.seg_id > -1);
@@ -588,24 +581,5 @@ BlobFeatureExtractor* HeuristicMerge::getFeatureExtractor(const std::string& nam
     */
   }
   return blobsFeatureExtractor;
-}
-
-Pix* HeuristicMerge::getVisualResultsDisplay() {
-
-  Pix* dbgimg = pixCopy(NULL, blobDataGrid->getBinaryImage());
-  dbgimg = pixConvertTo32(dbgimg);
-
-  GenericVector<Segmentation*> segments = blobDataGrid->getSegments();
-  for(int i = 0; i < segments.length(); ++i ) {
-    const Segmentation* seg = segments[i];
-    BOX* bbox = M_Utils::tessTBoxToImBox(seg->box, blobDataGrid->getBinaryImage());
-    const RESULT_TYPE& restype = seg->res;
-    M_Utils::drawHlBoxRegion(bbox, dbgimg, ((restype == DISPLAYED) ?
-        LayoutEval::RED : (restype == EMBEDDED) ? LayoutEval::BLUE
-            : LayoutEval::GREEN));
-    boxDestroy(&bbox);
-  }
-
-  return dbgimg;
 }
 

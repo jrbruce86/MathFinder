@@ -7,12 +7,14 @@
 #include <MathExpressionFinder.h>
 
 MathExpressionFinder::MathExpressionFinder(
-    MathExpressionFeatureExtractor* mathExpressionFeatureExtractor,
-    MathExpressionDetector* mathExpressionDetector,
-    MathExpressionSegmentor* mathExpressionSegmentor) : init(false) {
+    MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor,
+    MathExpressionDetector* const mathExpressionDetector,
+    MathExpressionSegmentor* const mathExpressionSegmentor,
+    FinderInfo* const finderInfo) : init(false) {
   this->mathExpressionFeatureExtractor = mathExpressionFeatureExtractor;
   this->mathExpressionDetector = mathExpressionDetector;
   this->mathExpressionSegmentor = mathExpressionSegmentor;
+  this->finderInfo = finderInfo;
 }
 
 
@@ -22,25 +24,33 @@ MathExpressionFinder::~MathExpressionFinder() {
   delete mathExpressionSegmentor;
 }
 
-/**
- * Finds the math expressions in one or more images provided, returning the
- * results as a vector where the result vector indexes correspond with the
- * image ones (i.e., the result at the first index is for the image at that
- * same index in its array).
- */
 std::vector<MathExpressionFinderResults*> MathExpressionFinder
-::findMathExpressions(Pixa* const images, std::vector<std::string> imageNames) {
+::detectMathExpressions(Pixa* const images,
+    std::vector<std::string> imageNames) {
+  return getResultsInRunMode(DETECT, images, imageNames);
+}
 
-  //TODO: Incorporate option to find math expressions using the default tesseract
-  //      implementation
+std::vector<MathExpressionFinderResults*> MathExpressionFinder
+::findMathExpressions(Pixa* const images,
+    std::vector<std::string> imageNames) {
+  return getResultsInRunMode(FIND, images, imageNames);
+}
 
+MathExpressionFeatureExtractor* MathExpressionFinder::getFeatureExtractor() {
+  return mathExpressionFeatureExtractor;
+}
 
-  //TODO: (Very low priority) Investigate whether or not it's do-able to add in
-  //      feature to sub in my equation detector in place of Tesseract's default
-  //      one and then see tesseract's results with that
+std::vector<MathExpressionFinderResults*> MathExpressionFinder
+::getResultsInRunMode(
+    RunMode runMode,
+    Pixa* const images,
+    std::vector<std::string> imageNames) {
 
-  // Initialize the results vector
-  std::vector<MathExpressionFinderResults*> results;
+  // Make sure the run mode is correct
+  if(!(runMode == FIND || runMode == DETECT)) {
+    std::cout << "Error: Unexpected run mode.\n";
+    return std::vector<MathExpressionFinderResults*>();
+  }
 
   // Call the finder initialization logic if not already called
   if(!init) {
@@ -50,6 +60,12 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
 
   assert(pixaGetCount(images) == imageNames.size());
 
+  // Initialize the results vector
+  std::vector<MathExpressionFinderResults*> results;
+
+  /**
+   * Get the results for each image, appending them to the vector
+   */
   for(int i = 0; i < images->n; ++i) {
 
     Pix* image = pixaGetPix(images, i, L_CLONE);
@@ -91,22 +107,8 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
      * embedded math, or a label for math.
      */
     mathExpressionDetector->detectMathExpressions(blobDataGrid);
-
-    /*if(res == DETECTION) {
-      // print the detection results to both file and image
-      BLOBINFO* blob;
-      BlobInfoGridSearch bigs(blobinfogrid);
-      bigs.StartFullSearch();
-      while((blob = bigs.NextFullSearch()) != NULL) {
-        if(blob->predicted_math) {
-          BOX* bbox = M_Utils::getBlobInfoBox(blob, img);
-          rectstream << dbg_img_index << ".png embedded "
-                     << bbox->x << " " << bbox->y << " "
-                     << bbox->x + bbox->w << " " << bbox->y + bbox->h << endl;
-          M_Utils::drawHlBlobInfoRegion(blob, dbgimg, LayoutEval::RED);
-          boxDestroy(&bbox);
-        }
-      }
+    if(runMode == DETECT) {
+      results.push_back(blobDataGrid->getDetectionResults(finderInfo->getFinderName()));
     }
 
     /**
@@ -119,11 +121,11 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
      * labels for them if applicable). This involves combining neighboring blobs
      * into single math expressions which will be the output of the program.
      */
-    results.push_back(mathExpressionSegmentor->runSegmentation(blobDataGrid));
+    if(runMode == FIND) {
+      mathExpressionSegmentor->runSegmentation(blobDataGrid);
+      results.push_back(blobDataGrid->getSegmentationResults(finderInfo->getFinderName()));
+    }
 
-    // TODO: do all necessary deallocations.. make sure blob data grid destructor
-    //       invoked and does necessary stuff
-    // be careful with leptonica stuff!!!!! make sure to call the destroy method on all references!!!!
     delete blobDataGrid;
     pixDestroy(&image);
   }
@@ -131,6 +133,3 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
   return results;
 }
 
-MathExpressionFeatureExtractor* MathExpressionFinder::getFeatureExtractor() {
-  return mathExpressionFeatureExtractor;
-}
