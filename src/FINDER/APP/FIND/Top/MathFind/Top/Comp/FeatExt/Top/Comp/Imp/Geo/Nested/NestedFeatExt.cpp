@@ -33,7 +33,7 @@ NumCompletelyNestedBlobsFeatureExtractor
 ::NumCompletelyNestedBlobsFeatureExtractor(
     NumCompletelyNestedBlobsFeatureExtractorDescription* const description,
     FinderInfo* const finderInfo)
-: highCertaintyThresh(Utils::getCertaintyThresh() / 2){
+: highCertaintyThresh(Utils::getCertaintyThresh() / 2) {
   this->description = description;
   this->nestedDir =
       Utils::checkTrailingSlash(

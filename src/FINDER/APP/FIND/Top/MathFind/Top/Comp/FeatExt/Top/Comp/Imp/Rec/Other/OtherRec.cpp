@@ -29,16 +29,16 @@
 #include <vector>
 
 //#define DBG_TRAINTER_INIT_OTHER
-#define DBG_AVG
-#define SHOW_ABNORMAL_ROWS
+//#define DBG_AVG
+//#define SHOW_ABNORMAL_ROWS
 //#define DBG_DISPLAY
-#define DBG_DRAW_BASELINE
-#define DBG_DRAW_BASELINES
-#define DBG_SHOW_MATHWORDS
-#define DBG_SHOW_ITALIC
-#define DBG_CERTAINTY
-#define SHOW_STOP_WORDS
-#define SHOW_VALID_WORDS
+//#define DBG_DRAW_BASELINE
+//#define DBG_DRAW_BASELINES
+//#define DBG_SHOW_MATHWORDS
+//#define DBG_SHOW_ITALIC
+//#define DBG_CERTAINTY
+//#define SHOW_STOP_WORDS
+//#define SHOW_VALID_WORDS
 
 OtherRecognitionFeatureExtractor
 ::OtherRecognitionFeatureExtractor(

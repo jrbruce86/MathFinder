@@ -61,19 +61,15 @@ class NGramProfileGenerator {
   // matching non-math n-gram counts are subtracted from the math n-gram ones.
   RankedNGramVecs generateMathNGrams();
 
+  // use existing n-grams if they were already written to the given dir
+  RankedNGramVecs readInOldNGrams(const std::string& ngramdir);
+
  private:
 
   FinderInfo* finderInfo;
   NGramRanker* ngramRanker;
   std::string ngramdir;
   std::string groundtruthFilePath;
-
-  // use existing n-grams to avoid the time overhead when I
-  // already have the n-grams I need and don't need to remake
-  // them each time I run the program. This reads them in from
-  // the file that they should have been written to by generateNewNGrams
-  // in a previous run.
-  RankedNGramVecs readInOldNGrams(const std::string& ngramdir);
 
   // create the n-gram profile from scratch using the training data
   RankedNGramVecs generateNewNGrams();

@@ -105,25 +105,32 @@ FinderInfo* TrainingInfoFileParser::readInfoFromFile(std::string finderName) {
 
     if(key == finderNameKey) {
       assertLineNumber(lineNumber++, 0, infoFilePath);
+      value = Utils::removeEmpty(value);
       assert(finderName == value);
       builder.setFinderName(finderName);
     } else if(key == descriptionKey) {
       assertLineNumber(lineNumber++, 1, infoFilePath);
+      value = Utils::removeEmpty(value);
       builder.setDescription(value);
     } else if(key == detectorNameKey) {
       assertLineNumber(lineNumber++, 2, infoFilePath);
+      value = Utils::removeEmpty(value);
       builder.setDetectorName(value);
     } else if(key == segmentorNameKey) {
       assertLineNumber(lineNumber++, 3, infoFilePath);
+      value = Utils::removeEmpty(value);
       builder.setSegmentorName(value);
     } else if(key == groundtruthNameKey) {
       assertLineNumber(lineNumber++, 4, infoFilePath);
+      value = Utils::removeEmpty(value);
       builder.setGroundtruthName(value);
     } else if(key == groundtruthDirPathKey) {
       assertLineNumber(lineNumber++, 5, infoFilePath);
+      value = Utils::removeEmpty(value);
       builder.setGroundtruthDirPath(value);
     } else if(key == groundtruthFilePathKey) {
       assertLineNumber(lineNumber++, 6, infoFilePath);
+      value = Utils::removeEmpty(value);
       builder.setGroundtruthFilePath(value);
     } else if(key == groundtruthImagePathsKey) {
       assertLineNumber(lineNumber++, 7, infoFilePath);
@@ -137,6 +144,10 @@ FinderInfo* TrainingInfoFileParser::readInfoFromFile(std::string finderName) {
     }
 
   }
+
+  builder.setFinderTrainingPaths(
+      FinderTrainingPathsFactory().createFinderTrainingPaths(
+          finderName));
 
   return builder.build();
 }

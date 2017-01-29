@@ -34,7 +34,8 @@ GenericVector<Segmentation*> MathExpressionFinderResults::getResults() {
 /**
  * Constructor (only invoked by builder)
  */
-MathExpressionFinderResults::MathExpressionFinderResults(Pix* const visualResultsDisplay,
+MathExpressionFinderResults::MathExpressionFinderResults(
+    Pix* const visualResultsDisplay,
     GenericVector<Segmentation*> results,
     std::string resultsName,
     std::string resultsDirName) {
@@ -127,7 +128,7 @@ MathExpressionFinderResultsBuilder::MathExpressionFinderResultsBuilder()
  * Setters
  */
 MathExpressionFinderResultsBuilder* MathExpressionFinderResultsBuilder::setVisualResultsDisplay(
-    Pix* const visualResultsDispaly) {
+    Pix* const visualResultsDisplay) {
   this->visualResultsDisplay = visualResultsDisplay;
   return this;
 }

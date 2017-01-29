@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <ios>
 
-#define SHOW_GRID
+//#define SHOW_GRID
 
 #define PROGRESS_TO_FILE
 //#define RUNNING_BACKGROUND
@@ -78,6 +78,7 @@ void TrainedSvmDetector::detectMathExpressions(
   }
 
 #ifdef SHOW_GRID
+  std::cout << "Done running predictions for image " << blobDataGrid->getImageName() << std::endl;
   std::string winname = "BlobInfoGrid for Image " + blobDataGrid->getImageName();
   ScrollView* gridviewer = blobDataGrid->MakeWindow(100, 100, winname.c_str());
   blobDataGrid->DisplayBoxes(gridviewer);

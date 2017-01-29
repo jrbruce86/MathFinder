@@ -267,6 +267,15 @@ std::string Utils::chop(std::string str) {
   return str;
 }
 
+std::string Utils::removeEmpty(std::string str) {
+  for(int i = str.size() - 1; i >= 0; --i) {
+    if(str.at(i) == ' ' || str.at(i) == '\n') {
+      str.erase(i, 1);
+    }
+  }
+  return str;
+}
+
 float Utils::getCertaintyThresh() {
   return -5;
 }
@@ -350,8 +359,12 @@ int Utils::fileCount(std::string dir) {
 
 std::vector<std::string> Utils::getFileList(std::string dir) {
   const std::string res = exec("ls " + dir);
-  if(!(res.empty() || res.size() < 3)) {
-    if(res.substr(3) != "ls:") {
+  if(!(res.empty())) {
+    if(res.size() >= 3) {
+      if(res.substr(3) != "ls:") {
+        return stringSplit(res, 10);
+      }
+    } else {
       return stringSplit(res, 10);
     }
   }

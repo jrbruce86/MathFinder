@@ -80,9 +80,8 @@ namespace Utils {
   // Removes any trailing new line if it exists
   std::string chop(std::string str);
 
-  // splits txt into separate lines
-  // (TAKEN OUT BECAUSE IT'S BUGGY... SEE M_UTILS.H FOR REPLACEMENT!!!)
-  //vector<char*> lineSplit(const char* txt);
+  // Removes any space or new lines
+  std::string removeEmpty(std::string str);
 
   // Common Tesseract confidence threshold
   float getCertaintyThresh();

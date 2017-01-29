@@ -75,7 +75,9 @@ void SentenceNGramsFeatureExtractor
 }
 
 void SentenceNGramsFeatureExtractor::doFinderInitialization() {
-  doTrainerInitialization();
+  mathNGramProfile =
+      NGramProfileGenerator(finderInfo, ngramRanker, ngramdir)
+      .readInOldNGrams(ngramdir);
 }
 
 void SentenceNGramsFeatureExtractor::doPreprocessing(

@@ -25,7 +25,7 @@ class NumCompletelyNestedBlobsFeatureExtractorFactory : public virtual BlobFeatu
 
   ~NumCompletelyNestedBlobsFeatureExtractorFactory();
 
-  BlobFeatureExtractor* create(FinderInfo* const finderInfo);
+  NumCompletelyNestedBlobsFeatureExtractor* create(FinderInfo* const finderInfo);
 
   BlobFeatureExtractorDescription* getDescription();
 

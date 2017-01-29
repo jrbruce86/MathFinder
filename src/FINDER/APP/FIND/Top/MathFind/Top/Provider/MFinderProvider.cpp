@@ -31,7 +31,6 @@ MathExpressionFinder* MathExpressionFinderProvider
   std::vector<std::string> featureExtractorUniqueNames = finderInfo->getFeatureExtractorUniqueNames();
 
   std::vector<BlobFeatureExtractorFactory*> featureExtractorFactories;
-
   for(int i = 0; i < featureExtractorUniqueNames.size(); ++i) {
     std::string uniqueName = stripFeatureFlags(featureExtractorUniqueNames[i]);
     std::vector<std::string> flags = getFeatureFlags(featureExtractorUniqueNames[i]);
@@ -54,6 +53,7 @@ MathExpressionFinder* MathExpressionFinderProvider
   MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor =
       MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
           finderInfo, featureExtractorFactories);
+
   return new MathExpressionFinder(
       mathExpressionFeatureExtractor,
       MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
@@ -67,24 +67,26 @@ std::string MathExpressionFinderProvider::stripFeatureFlags(
       uniqueFeatureName.find(TrainingInfoFileParser::FlagDelimiter()));
 }
 
-// TODO make sure this works!!!!!!!!!
 std::vector<std::string> MathExpressionFinderProvider::getFeatureFlags(const std::string& uniqueFeatureName) {
+
+  // Check if there are flags or not
   std::size_t flagIndex = uniqueFeatureName.find(TrainingInfoFileParser::FlagDelimiter());
   if(flagIndex == std::string::npos) {
     return std::vector<std::string>(); // no flags, return empty vector
   }
 
-  // flags found, get the flags as a substring first
+  // Flags found, parse them from the string
   std::vector<std::string> flags;
   do {
     std::size_t prevFlagIndex = flagIndex;
     flagIndex = uniqueFeatureName.find(TrainingInfoFileParser::FlagDelimiter(), prevFlagIndex + 1);
+    const int flagLength = TrainingInfoFileParser::FlagDelimiter().size();
     flags.push_back(
         uniqueFeatureName.substr(
             prevFlagIndex + TrainingInfoFileParser::FlagDelimiter().size(),
             (flagIndex == std::string::npos) ?
                 std::string::npos // copy to the end
-                  : flagIndex - prevFlagIndex + 1)); // copy to the start of the next flag
+                  : flagIndex - prevFlagIndex - flagLength)); // copy to the start of the next flag
   } while(flagIndex != std::string::npos);
 
   return flags;
