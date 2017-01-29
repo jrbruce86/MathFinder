@@ -261,6 +261,9 @@ namespace Utils {
     return false;
   }
 
+  // wrapper around cin getline to avoid annoying /n issue.
+  void getline(std::string& str);
+
   template <typename T> GenericVector<int> promptMultiSelectFromLabeledMatrix(
       const std::vector<T*>& vec,
       const int& rowSize) {
@@ -272,8 +275,7 @@ namespace Utils {
           << intToString(0) << ":" << intToString(vec.size() - 1)
           << "] and press enter.\n------------------------------\n:-> ";
       std::string input;
-      std::cin.ignore();
-      std::getline(std::cin, input);
+      getline(input);
       std::vector<std::string> splitInput = Utils::stringSplit(input);
       for(int i = 0; i < splitInput.size(); ++i) {
         int inputVal = atoi(splitInput[i].c_str());
@@ -286,9 +288,6 @@ namespace Utils {
     std::cout << std::endl;
     return selections;
   }
-
-  // wrapper around cin getline to avoid annoying /n issue.
-  void getline(std::string& str);
 
   // wait for user input
   void waitForInput();

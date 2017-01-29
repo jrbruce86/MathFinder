@@ -19,6 +19,6 @@ void MathExpressionFinderUsage::printUsage() {
       << "For all other options including training, evaluation, groundtruth "
       << "generation, and documentation, there is an interactive menu which can "
       << "be run as follows:\n"
-      << "MathFinder -menu\n";
+      << "MathFinder -m\n";
 }
 
