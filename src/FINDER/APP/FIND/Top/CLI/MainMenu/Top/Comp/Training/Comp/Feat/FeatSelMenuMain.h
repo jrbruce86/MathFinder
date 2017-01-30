@@ -18,6 +18,7 @@ class TrainingMenu;
 class SpatialFeatureMenu;
 class RecognitionFeatureMenu;
 class BlobFeatureExtractorFactory;
+class FinderInfo;
 
 class FeatureSelectionMenuMain: public virtual MenuBase {
 

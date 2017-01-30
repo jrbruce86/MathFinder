@@ -37,6 +37,8 @@ class NameSelectionMenu : public virtual MenuBase {
  private:
 
   std::string finderName;
+
+  TrainingMenu* trainingMenu;
 };
 
 

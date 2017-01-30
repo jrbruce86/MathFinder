@@ -145,17 +145,12 @@ void DoTrainingMenu::doTask() {
 
   // Build the trainer (let the trainer own the finder info, the feature extractor,
   // the detector, and the segmentor and destroy them all when done)
-  MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor =
-      MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
-          finderInfo, featureFactories);
-  TrainerForMathExpressionFinder trainer(
-      finderInfo,
-      mathExpressionFeatureExtractor,
-      MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
-      MathExpressionSegmentorFactory().createMathExpressionSegmentor(finderInfo, mathExpressionFeatureExtractor));
+  TrainerForMathExpressionFinder* trainer =
+      TrainerForMathExpressionFinderFactory().create(finderInfo,
+      featureFactories);
 
   // Run the trainer, indicate success/failure
-  trainer.runTraining();
+  trainer->runTraining();
 
   std::cout << "All resources generated during training were written to "
       << finderInfo->getFinderTrainingPaths()->getTrainingDirPath() << "."
@@ -165,6 +160,8 @@ void DoTrainingMenu::doTask() {
       << "If there is more than one trained Finder then the application will prompt to select one. "
       << "The name of the Finder that was just trained was set to " << finderInfo->getFinderName()
       << ", so if prompted and you want to test this Finder then select " << finderInfo->getFinderName() << ".\n";
+
+  delete trainer;
 }
 
 std::vector<std::string> DoTrainingMenu::getFeatureExtractorUniqueNames(

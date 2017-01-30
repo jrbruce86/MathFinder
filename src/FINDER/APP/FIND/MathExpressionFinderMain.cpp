@@ -176,18 +176,18 @@ void runTrainer() {
 
     // Build the trainer (let the trainer own the finder info, the feature extractor,
     // the detector, and the segmentor and destroy them all when done)
+
     MathExpressionFeatureExtractor* const mathExpressionFeatureExtractor =
         MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
             finderInfo, featureFactories);
-    TrainerForMathExpressionFinder trainer(
+    TrainerForMathExpressionFinder* trainer =
+        TrainerForMathExpressionFinderFactory().create(
         finderInfo,
-        mathExpressionFeatureExtractor,
-        MathExpressionDetectorFactory().createMathExpressionDetector(finderInfo),
-        MathExpressionSegmentorFactory().createMathExpressionSegmentor(
-            finderInfo,
-            mathExpressionFeatureExtractor));
+        mathExpressionFeatureExtractor);
 
     // Run the trainer, indicate success/failure
-    trainer.runTraining();
+    trainer->runTraining();
+
+    delete trainer;
 }
 

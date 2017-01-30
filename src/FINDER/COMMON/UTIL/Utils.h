@@ -164,6 +164,9 @@ namespace Utils {
   // return true if user answers y/Y, false if n/N
   bool promptYesNo();
 
+  // return true if the given string is on the given list
+  bool isStrOnList(std::string str, std::vector<std::string> strList);
+
   // prompts for a string value until one that doesn't match
   // the contents of the provided list is given as input
   std::string promptForValueNotOnList(

@@ -15,6 +15,10 @@
 #include <string>
 
 class NameSelectionMenu;
+class FeatureSelectionMenuMain;
+class DetectorSelectionMenu;
+class SegmentorSelectionMenu;
+class DatasetSelectionMenu;
 
 class TrainingMenu : public virtual MenuBase {
 
@@ -32,10 +36,20 @@ class TrainingMenu : public virtual MenuBase {
 
   void doTask();
 
+  FeatureSelectionMenuMain* getFeatureSelectionMenu();
+  DetectorSelectionMenu* getDetectorSelectionMenu();
+  SegmentorSelectionMenu* getSegmentorSelectionMenu();
+  DatasetSelectionMenu* getDatasetSelectionMenu();
+  MainMenu* getMainMenu();
+
  private:
 
   NameSelectionMenu* nameMenu;
-
+  FeatureSelectionMenuMain* featureSelectionMenu;
+  DetectorSelectionMenu* detectorSelectionMenu;
+  SegmentorSelectionMenu* segmentorSelectionMenu;
+  DatasetSelectionMenu* datasetSelectionMenu;
+  MainMenu* mainMenu;
 };
 
 

@@ -16,6 +16,9 @@
 #include <string>
 #include <vector>
 
+class GeometryBasedExtractorCategory;
+class RecognitionBasedExtractorCategory;
+
 /**
  * Factory for creating the math expression feature extractor. This consists of
  * one or more "blob feature extractors". The "blob feature extractors" each extract
@@ -25,6 +28,11 @@
  */
 class MathExpressionFeatureExtractorFactory {
  public:
+
+  MathExpressionFeatureExtractor* createMathExpressionFeatureExtractor(
+      FinderInfo* const finderInfo,
+      GeometryBasedExtractorCategory* const spatialCategory,
+      RecognitionBasedExtractorCategory* const recognitionCategory);
 
   MathExpressionFeatureExtractor* createMathExpressionFeatureExtractor(
       FinderInfo* const finderInfo,
@@ -38,6 +46,10 @@ class MathExpressionFeatureExtractorFactory {
    */
   bool isNameAlreadyOnList(const std::string& name,
       std::vector<BlobFeatureExtractor*>* const list);
+
+  std::string stripFeatureFlags(const std::string& uniqueFeatureName);
+  std::vector<std::string> getFeatureFlags(const std::string& uniqueFeatureName);
+
 };
 
 #endif /* MATHEXPRESSIONFEATUREEXTRACTORFACTORY_H_ */

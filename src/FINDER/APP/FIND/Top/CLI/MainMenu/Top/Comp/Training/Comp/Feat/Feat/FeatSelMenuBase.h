@@ -16,6 +16,7 @@ class FeatureSelectionMenuMain;
 class BlobFeatureExtractorCategory;
 class BlobFeatureExtractorFactory;
 class FeatureExtractorFlagDescription;
+class FinderInfo;
 
 class FeatureSelectionMenuBase : public virtual MenuBase {
 

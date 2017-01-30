@@ -9,7 +9,7 @@
 #include <FeatSelMenuMain.h>
 #include <BlobFeatExtCat.h>
 #include <BlobFeatExtFac.h>
-
+#include <FinderInfo.h>
 #include <Utils.h>
 
 #include <baseapi.h>

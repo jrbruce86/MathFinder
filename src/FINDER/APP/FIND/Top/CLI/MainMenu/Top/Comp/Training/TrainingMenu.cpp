@@ -42,6 +42,11 @@ TrainingMenu::TrainingMenu(MainMenu* back) {
   this->subMenus.push_back(back);
 
   this->nameMenu = nameSelectionMenu;
+  this->featureSelectionMenu = featureSelectionMenu;
+  this->detectorSelectionMenu = detectorSelectionMenu;
+  this->segmentorSelectionMenu = segmentorSelectionMenu;
+  this->datasetSelectionMenu = datasetSelectionMenu;
+  this->mainMenu = mainMenu;
 }
 
 TrainingMenu::~TrainingMenu() {
@@ -76,4 +81,22 @@ void TrainingMenu::doTask() {
       << "Select from the following options:\n";
 }
 
+FeatureSelectionMenuMain* TrainingMenu::getFeatureSelectionMenu() {
+  return featureSelectionMenu;
+}
 
+DetectorSelectionMenu* TrainingMenu::getDetectorSelectionMenu() {
+  return detectorSelectionMenu;
+}
+
+SegmentorSelectionMenu* TrainingMenu::getSegmentorSelectionMenu() {
+  return segmentorSelectionMenu;
+}
+
+DatasetSelectionMenu* TrainingMenu::getDatasetSelectionMenu() {
+  return datasetSelectionMenu;
+}
+
+MainMenu* TrainingMenu::getMainMenu() {
+  return mainMenu;
+}

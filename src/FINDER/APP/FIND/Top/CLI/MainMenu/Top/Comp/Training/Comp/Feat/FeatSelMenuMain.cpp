@@ -79,3 +79,4 @@ void FeatureSelectionMenuMain::selectAllFeatures() {
   spatialMenu->selectAllFactories();
   recognitionMenu->selectAllFactories();
 }
+

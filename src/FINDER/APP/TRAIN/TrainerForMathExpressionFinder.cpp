@@ -15,6 +15,11 @@
 #include <FeatExt.h>
 #include <Detector.h>
 #include <Seg.h>
+#include <GeometryCat.h>
+#include <RecCat.h>
+#include <FeatExtFac.h>
+#include <DetFac.h>
+#include <SegFac.h>
 
 #include <stddef.h>
 #include <assert.h>
@@ -96,5 +101,35 @@ TrainerForMathExpressionFinder::~TrainerForMathExpressionFinder() {
   TrainingSampleExtractor::destroySamples(samples);
 }
 
+TrainerForMathExpressionFinder* TrainerForMathExpressionFinderFactory
+::create(FinderInfo* const finderInfo,
+    GeometryBasedExtractorCategory* const spatialCategory,
+    RecognitionBasedExtractorCategory* const recognitionCategory) {
 
+  return create(finderInfo,
+      MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
+               finderInfo, spatialCategory, recognitionCategory));
+}
+
+TrainerForMathExpressionFinder* TrainerForMathExpressionFinderFactory
+::create(FinderInfo* const finderInfo,
+    std::vector<BlobFeatureExtractorFactory*> featureFactories) {
+
+  return create(finderInfo,
+      MathExpressionFeatureExtractorFactory().createMathExpressionFeatureExtractor(
+                finderInfo, featureFactories));
+}
+
+TrainerForMathExpressionFinder* TrainerForMathExpressionFinderFactory
+::create(FinderInfo* const finderInfo,
+    MathExpressionFeatureExtractor* const featExt) {
+  return new TrainerForMathExpressionFinder(
+      finderInfo,
+      featExt,
+      MathExpressionDetectorFactory().createMathExpressionDetector(
+          finderInfo),
+      MathExpressionSegmentorFactory().createMathExpressionSegmentor(
+          finderInfo,
+          featExt));
+}
 

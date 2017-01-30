@@ -401,23 +401,27 @@ std::string Utils::promptForValueNotOnList(
     const std::string& promptText,
     const std::vector<std::string>& list) {
   std::string enteredString = "";
-  bool enteredStringExists = true;
+  bool enteredStringExists = false;
   while(enteredStringExists) {
     std::cout << promptText << " ";
     std::cin >> enteredString;
-    bool found = false;
-    for(int i = 0; i < list.size(); ++i) {
-      if(list[i] == enteredString) {
-        found = true;
-        enteredString = "";
-        std::cout << "The value you entered is already in use. "
-            << "Choose a different one.\n";
-        break;
-      }
+    if(isStrOnList(enteredString, list)) {
+      enteredString = "";
+      std::cout << "The value you entered is already in use. "
+          << "Choose a different one.\n";
+      enteredStringExists = true;
     }
-    enteredStringExists = found;
   }
   return enteredString;
+}
+
+bool Utils::isStrOnList(std::string str, std::vector<std::string> strList) {
+  for(int i = 0; i < strList.size(); ++i) {
+    if(strList[i] == str) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Utils::displayStrVectorAsLabeledMatrix(

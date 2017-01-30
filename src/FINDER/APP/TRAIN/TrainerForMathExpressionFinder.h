@@ -16,6 +16,9 @@
 
 #include <vector>
 
+class GeometryBasedExtractorCategory;
+class RecognitionBasedExtractorCategory;
+
 class TrainerForMathExpressionFinder {
 
  public:
@@ -42,6 +45,32 @@ class TrainerForMathExpressionFinder {
   MathExpressionSegmentor* segmentor; // owned by this class
 
   std::vector<std::vector<BLSample*> > samples;
+};
+
+class TrainerForMathExpressionFinderFactory {
+ public:
+
+  /**
+   * Creates the trainer, allocating on the heap. Allocated memory owned by
+   * caller
+   */
+  TrainerForMathExpressionFinder* create(FinderInfo* const finderInfo,
+      std::vector<BlobFeatureExtractorFactory*> featExtFactories);
+
+  /**
+   * Creates the trainer, allocating on the heap. Allocated memory owned by
+   * caller
+   */
+  TrainerForMathExpressionFinder* create(FinderInfo* const finderInfo,
+      GeometryBasedExtractorCategory* const spatialCategory,
+      RecognitionBasedExtractorCategory* const recognitionCategory);
+
+  /**
+   * Creates the trainer, allocating on the heap. Allocated memory owned by
+   * caller
+   */
+  TrainerForMathExpressionFinder* create(FinderInfo* const finderInfo,
+      MathExpressionFeatureExtractor* const featExt);
 };
 
 

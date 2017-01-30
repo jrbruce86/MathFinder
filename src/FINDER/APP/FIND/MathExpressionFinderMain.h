@@ -13,6 +13,6 @@ void runInteractiveMenu();
 void runFinder(char* path);
 
 // Runs trainer in isolation (for debug/experiment purposes)
-void runTrainer();
+static void runTrainer();
 
 #endif /* MATHEXPRESSIONFINDERMAIN_H_ */
