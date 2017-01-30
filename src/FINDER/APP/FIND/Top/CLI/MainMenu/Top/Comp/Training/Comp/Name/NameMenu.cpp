@@ -74,7 +74,7 @@ void NameSelectionMenu::promptSetFinderName() {
             continue;
           }
           FinderInfo* finderInfo =
-              TrainingInfoFileParser().readInfoFromFile(infoPath);
+              TrainingInfoFileParser().readInfoFromFile(finderName);
           TrainerForMathExpressionFinder* trainer =
               TrainerForMathExpressionFinderFactory().create(finderInfo,
                   trainingMenu->getMainMenu()->getSpatialCategory(),
