@@ -73,12 +73,15 @@ void NameSelectionMenu::promptSetFinderName() {
             enterNew = true;
             continue;
           }
+
           FinderInfo* finderInfo =
               TrainingInfoFileParser().readInfoFromFile(finderName);
+
           TrainerForMathExpressionFinder* trainer =
               TrainerForMathExpressionFinderFactory().create(finderInfo,
                   trainingMenu->getMainMenu()->getSpatialCategory(),
                   trainingMenu->getMainMenu()->getRecognitionCategory());
+
           trainer->runTraining();
           std::cout << "Completed training. Press enter to return to main menu.\n";
           Utils::waitForInput();

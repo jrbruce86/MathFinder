@@ -46,7 +46,7 @@ TrainingMenu::TrainingMenu(MainMenu* back) {
   this->detectorSelectionMenu = detectorSelectionMenu;
   this->segmentorSelectionMenu = segmentorSelectionMenu;
   this->datasetSelectionMenu = datasetSelectionMenu;
-  this->mainMenu = mainMenu;
+  this->mainMenu = back;
 }
 
 TrainingMenu::~TrainingMenu() {
