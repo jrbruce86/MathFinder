@@ -82,7 +82,7 @@ void runFinder(char* path) {
   std::string finderName;
   if(trainedFinders.size() > 1) {
     std::cout << "More than one MathFinder has been trained on this system. Select one of the following."
-        << " To see more information run this program in the interactive menu mode (i.e., MathFinder -menu):\n";
+        << " To see more information run this program in the interactive menu mode (i.e., MathFinder -m):\n";
     finderName = trainedFinders[Utils::promptSelectStrFromLabeledMatrix(trainedFinders, 2)];
   } else {
     finderName = trainedFinders[0];

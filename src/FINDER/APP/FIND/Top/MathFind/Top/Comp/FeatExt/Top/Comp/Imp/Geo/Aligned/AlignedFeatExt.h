@@ -80,7 +80,10 @@ class NumAlignedBlobsFeatureExtractor : public virtual BlobFeatureExtractor {
   bool downwardFeatureEnabled;
   bool upwardFeatureEnabled;
 
+  const float highCertaintyThresh;
+
   // dbg
+  Pix* rightwardIm; // colors blobs with one or more rightward adjacent neighbors red
   bool indbg;
   bool dbgdontcare;
 };

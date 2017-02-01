@@ -26,13 +26,14 @@
 //#define DBG_COVER_FEATURE
 //#define DBG_COVER_FEATURE_ALOT
 //#define DBG_FEATURE
+//#define DBG_DRAW_RIGHTWARD
 
 NumAlignedBlobsFeatureExtractor::NumAlignedBlobsFeatureExtractor(NumAlignedBlobsFeatureExtractorDescription* description)
 : rightwardFeatureEnabled(false),
   downwardFeatureEnabled(false),
   upwardFeatureEnabled(false),
   blobDataKey(-1), indbg(false),
-  dbgdontcare(false) {
+  dbgdontcare(false), highCertaintyThresh(Utils::getCertaintyThresh() / 2) {
   this->description = description;
 }
 
@@ -40,6 +41,11 @@ void NumAlignedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* const blobDa
   // Get the key that will be used for retrieving data associated with
   // this class for each blob.
   blobDataKey = findOpenBlobDataIndex(blobDataGrid);
+
+#ifdef DBG_DRAW_RIGHTWARD
+  rightwardIm = pixCopy(NULL, blobDataGrid->getBinaryImage());
+  rightwardIm = pixConvertTo32(rightwardIm);
+#endif
 
   // Determine the adjacent covered neighbors in the rightward, downward,
   // and/or upward directions for each blob depending on which features are
@@ -66,6 +72,13 @@ void NumAlignedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* const blobDa
           ->setDvabcFeature(M_Utils::expNormalize(count));
     }
   }
+
+#ifdef DBG_DRAW_RIGHTWARD
+  pixDisplay(rightwardIm, 100, 100);
+  std::cout << "Showing the blobs that have at least one rightward adjacent neighbor (feature) in red.\n";
+  Utils::waitForInput();
+  pixDestroy(&rightwardIm);
+#endif
 }
 
 std::vector<DoubleFeature*> NumAlignedBlobsFeatureExtractor::extractFeatures(BlobData* const blob) {
@@ -160,7 +173,8 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   if(!seg_mode &&
       ((blob->belongsToRecognizedWord() &&
           (blob->getWordRecognitionConfidence() > Utils::getCertaintyThresh()))
-       || blob->belongsToRecognizedNormalRow())) {
+       || blob->belongsToRecognizedNormalRow()
+       || blob->getWordRecognitionConfidence() > highCertaintyThresh)) {
     return 0;
   }
   // ----------------COMMENT AND CODE IN QUESTION END---------------------
@@ -283,9 +297,14 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
     data->uvabc_blobs = covered_blobs;
   else if(dir == BlobSpatial::DOWN)
     data->dvabc_blobs = covered_blobs;
-  else if(dir == BlobSpatial::RIGHT)
+  else if(dir == BlobSpatial::RIGHT) {
     data->rhabc_blobs = covered_blobs;
-  else if (dir == BlobSpatial::LEFT)
+#ifdef DBG_DRAW_RIGHTWARD
+    if(covered_blobs.size() > 0) {
+      M_Utils::drawHlBlobDataRegion(blob, rightwardIm, LayoutEval::RED);
+    }
+#endif
+  } else if (dir == BlobSpatial::LEFT)
     data->lhabc_blobs = covered_blobs;
   else
     assert(false);

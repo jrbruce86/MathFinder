@@ -226,7 +226,7 @@ void BlobDataGrid::HandleClick(int x, int y) {
   TBOX t = bb->bounding_box();
   M_Utils::dispTBoxCoords(&t);
   if(bb->belongsToRecognizedNormalRow()) {
-    std::cout << "The blob is on a row with atleast one valid word!\n";
+    std::cout << "The blob is on a row that is considered 'normal' paragraph text based on average vertical spacing on the page.\n";
     std::cout << "The baseline for the blob is at y = " << bb->getParentRow()->row()->base_line(bb->left()) << std::endl;
     std::cout << "The blob's bottom y is at " << bb->bottom() << std::endl;
     //ScrollView* baselineview = new ScrollView("baseline", 300, 100,
