@@ -84,6 +84,15 @@ class M_Utils {
   // given element
   static BOX* getBlobDataBox(BlobData* b, PIX* im);
 
+  // Returns true of box2 is almost contained within box1
+  // Almost contained indicates they would be contained if adjusted
+  // by only a few pixels (a small percentage of the actual size of
+  // the containing box)
+  static bool almostContains(TBOX box1, TBOX box2);
+
+  // Displays the box top left and bottom right as coordinates
+  static void dispTBoxAsCoords(TBOX box);
+
   // Normalizes and runs OCR on the given blob. The implementation of this
   // function was borrowed from Joe Lui's MEDS module. Prior to recognition,
   // the blob is normalized in the same way as blobs are normalized for the
@@ -130,7 +139,17 @@ class M_Utils {
   // draws the box on the given image
   static void drawHlBoxRegion(BOX* bb, PIX* im, LayoutEval::Color color);
 
+  // shows the coordinates of the tbox in Tesseract coordinates (y 0 at bottom increasing upwards)
   static void dispTBoxCoords(TBOX* box);
+
+  // shows the coordinates of the tbox in Tesseract coordinates (y 0 at bottom increasing upwards)
+  static void dispTBoxCoords(TBOX box);
+
+  // shows the coordinates of the tbox in standard coordinates (y 0 at top increasing downwards)
+  static void dispTBoxLeptCoords(TBOX box, Pix* im);
+
+  // shows the coordinates of the tbox in standard coordinates (y 0 at top increasing downwards)
+  static void dispTBoxLeptCoords(TBOX* box, Pix* im);
 
   // copy contents of string into newly allocated memory
   // returns pointer to the newly allocated string

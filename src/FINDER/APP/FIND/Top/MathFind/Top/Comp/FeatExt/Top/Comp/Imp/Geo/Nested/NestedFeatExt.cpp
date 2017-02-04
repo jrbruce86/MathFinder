@@ -27,7 +27,7 @@
 
 //#define DBG_NESTED_FEATURE
 //#define DBG_FEAT2
-#define DBG_WRITE_NESTED
+//#define DBG_WRITE_NESTED
 
 NumCompletelyNestedBlobsFeatureExtractor
 ::NumCompletelyNestedBlobsFeatureExtractor(

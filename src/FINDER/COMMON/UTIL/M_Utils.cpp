@@ -143,6 +143,26 @@ BOX* M_Utils::getBlobDataBox(BlobData* b, PIX* im) {
   return tessTBoxToImBox(&t, im);
 }
 
+bool M_Utils::almostContains(TBOX box1, TBOX box2) {
+  int adjustment = 1;//(int)((double)(box1.area()) * (double).02);
+//  if(adjustment == 0) {
+//    adjustment = 1;
+//  }
+  TBOX biggerBox1(
+      box1.left() - adjustment,
+      box1.bottom() - adjustment,
+      box1.right() + adjustment,
+      box1.top() + adjustment);
+  return biggerBox1.contains(box2);
+}
+
+void M_Utils::dispTBoxAsCoords(TBOX box) {
+  std::cout << "bottom left: (" << box.botleft().x() <<
+      ", " << box.botleft().y() << "), top right " << "(" <<
+      box.topright().x() << ", " <<
+      box.topright().y() << ")\n";
+}
+
 BLOB_CHOICE* M_Utils::runBlobOCR(BLOBNBOX* blob, tesseract::Tesseract* ocrengine) {
   // * Normalize blob height to x-height (current OSD):
   // SetupNormalization(NULL, NULL, &rotation, NULL, NULL, 0,
@@ -259,6 +279,24 @@ void M_Utils::dispTBoxCoords(TBOX* box) {
   std::cout << "int left=" << box->left() << ", top=" << box->top()
        << ", right=" << box->right() << ", bottom="
        << box->bottom() << ";\n";
+}
+
+void M_Utils::dispTBoxCoords(TBOX box) {
+  std::cout << "int left=" << box.left() << ", top=" << box.top()
+       << ", right=" << box.right() << ", bottom="
+       << box.bottom() << ";\n";
+}
+
+void M_Utils::dispTBoxLeptCoords(TBOX box, Pix* im) {
+  BOX* lBox = tessTBoxToImBox(&box, im);
+  dispBoxCoords(lBox);
+  boxDestroy(&lBox);
+}
+
+void M_Utils::dispTBoxLeptCoords(TBOX* box, Pix* im) {
+  BOX* lBox = tessTBoxToImBox(box, im);
+  dispBoxCoords(lBox);
+  boxDestroy(&lBox);
 }
 
 // TODO: Move this to basic utils.. that's really where this belongs o_o

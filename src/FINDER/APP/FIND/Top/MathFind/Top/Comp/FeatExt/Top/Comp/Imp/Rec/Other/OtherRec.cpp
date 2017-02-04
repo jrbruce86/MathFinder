@@ -32,7 +32,6 @@
 //#define DBG_AVG
 //#define SHOW_ABNORMAL_ROWS
 //#define DBG_DISPLAY
-//#define DBG_DRAW_BASELINE
 //#define DBG_DRAW_BASELINES
 //#define DBG_SHOW_MATHWORDS
 //#define DBG_SHOW_ITALIC
@@ -175,7 +174,7 @@ void OtherRecognitionFeatureExtractor
       avg_baseline_dist_ = 0;
     else
       avg_baseline_dist_ /= count;
-#ifdef DBG_DRAW_BASELINE
+#ifdef DBG_DRAW_BASELINES
 std::cout << "row " << i << " average baseline dist: " << avg_baseline_dist_ << std::endl;
 #endif
 rows[i]->avg_baselinedist = avg_baseline_dist_;

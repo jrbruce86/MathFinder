@@ -191,6 +191,7 @@ void BlobDataGrid::show() {
   ScrollView* sv = MakeWindow(image->w, image->h,
       imageName.c_str());
   DisplayBoxes(sv);
+  std::cout << "Displaying scroll view. Make sure to close it when finished viewing.\n";
   M_Utils::waitForInput();
   delete sv;
 }
@@ -212,6 +213,7 @@ void BlobDataGrid::HandleClick(int x, int y) {
   if(bb->getParentWordstr() != NULL) {
     std::cout << bb->getParentWordstr() << std::endl;
     std::cout << "Word certainty: " << bb->getWordRecognitionConfidence() << std::endl;
+    std::cout << "Average blob certainty in parent word: " << bb->getWordAvgRecognitionConfidence() << std::endl;
     if(bb->belongsToRecognizedWord())
       std::cout << "the blob is in a recognized 'valid' word!\n";
     else
@@ -222,9 +224,13 @@ void BlobDataGrid::HandleClick(int x, int y) {
   if(bb->isMarkedAsTesseractSplit()) {
     std::cout << "Marked as split by Tesseract.\n";
   }
-  std::cout << "The tesseract boundingbox: \n";
+  std::cout << "The tesseract blob boundingbox: \n";
   TBOX t = bb->bounding_box();
-  M_Utils::dispTBoxCoords(&t);
+  M_Utils::dispTBoxLeptCoords(t, getBinaryImage());
+  if(bb->getParentWord() != NULL) {
+    std::cout << "The tesseract word bounding box: \n";
+    M_Utils::dispTBoxLeptCoords(bb->getParentWord()->getBoundingBox(), getBinaryImage());
+  }
   if(bb->belongsToRecognizedNormalRow()) {
     std::cout << "The blob is on a row that is considered 'normal' paragraph text based on average vertical spacing on the page.\n";
     std::cout << "The baseline for the blob is at y = " << bb->getParentRow()->row()->base_line(bb->left()) << std::endl;

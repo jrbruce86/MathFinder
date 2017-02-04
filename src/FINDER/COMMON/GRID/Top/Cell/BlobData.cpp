@@ -253,6 +253,25 @@ float BlobData::getWordRecognitionConfidence() {
   return info->certainty();
 }
 
+float BlobData::getWordAvgRecognitionConfidence() {
+  float avg = 0;
+  float total = 0;
+  TesseractWordData* const wordData = getParentWord();
+  if(wordData == NULL) {
+    return minTesseractCertainty;
+  }
+  std::vector<TesseractCharData*> childChars = wordData->getChildChars();
+  for(int i = 0; i < childChars.size(); ++i) {
+    BLOB_CHOICE* charResInfo = childChars[i]->getCharResultInfo();
+    if(charResInfo == NULL) {
+      continue;
+    }
+    avg += charResInfo->certainty();
+    ++total;
+  }
+  return avg/total;
+}
+
 FontInfo* BlobData::getFontInfo() {
   if(getParentWord() == NULL) {
     return NULL;

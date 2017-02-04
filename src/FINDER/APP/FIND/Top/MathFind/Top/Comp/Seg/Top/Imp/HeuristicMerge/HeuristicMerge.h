@@ -61,6 +61,8 @@ class HeuristicMerge : public virtual MathExpressionSegmentor {
   NumAlignedBlobsFeatureExtractor* numAlignedBlobsFeatureExtractor;
   NumVerticallyStackedBlobsFeatureExtractor* numVerticallyStackedFeatureExtractor;
   BlobDataGrid* blobDataGrid;
+
+  const float highCertaintyThresh;
 };
 
 #endif

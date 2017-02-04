@@ -122,7 +122,7 @@ void runFinder(char* path) {
           finderInfo);
 
   std::vector<MathExpressionFinderResults*> results =
-      finder->detectMathExpressions(images, imageNames);
+      finder->findMathExpressions(images, imageNames);
 
   pixaDestroy(&images); // destroy finished image(s)
 

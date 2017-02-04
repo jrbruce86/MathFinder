@@ -82,6 +82,7 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
      * their character results from running Tesseract's OCR with auto page
      * segmentation.
      */
+    std::cout << "Creating blob grid.\n";
     tesseract::TessBaseAPI api;
     BlobDataGrid* const blobDataGrid =
         BlobDataGridFactory().createBlobDataGrid(image, &api, Utils::getNameFromPath(imageNames[i]));
@@ -100,6 +101,7 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
      * The results of the feature extraction are stored within the blob's grid entry
      * within the grid that is passed into the extraction method.
      */
+    std::cout << "Extracting features.\n";
     mathExpressionFeatureExtractor->extractFeatures(blobDataGrid);
 
     /**
@@ -113,6 +115,7 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
      * being used I may also further categorize a blob as being a displayed math,
      * embedded math, or a label for math.
      */
+    std::cout << "Running detection.\n";
     mathExpressionDetector->detectMathExpressions(blobDataGrid);
     if(runMode == DETECT) {
       results.push_back(blobDataGrid->getDetectionResults(finderInfo->getFinderName()));
@@ -128,6 +131,7 @@ std::vector<MathExpressionFinderResults*> MathExpressionFinder
      * labels for them if applicable). This involves combining neighboring blobs
      * into single math expressions which will be the output of the program.
      */
+    std::cout << "Running segmentation.\n";
     if(runMode == FIND) {
       mathExpressionSegmentor->runSegmentation(blobDataGrid);
       results.push_back(blobDataGrid->getSegmentationResults(finderInfo->getFinderName()));

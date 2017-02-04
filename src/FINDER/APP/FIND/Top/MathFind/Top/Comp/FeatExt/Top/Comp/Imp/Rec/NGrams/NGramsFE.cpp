@@ -33,7 +33,7 @@
 //#define DBG_DISPLAY_NG_PROFILE
 //#define DBG_SHOW_NGRAMS
 //#define DBG_SHOW_EACH_SENTENCE_NGRAM_FEATURE
-#define DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
+//#define DBG_WRITE_EACH_SENTENCE_NGRAM_FEATURE
 
 SentenceNGramsFeatureExtractor::SentenceNGramsFeatureExtractor(
      SentenceNGramsFeatureExtractorDescription* const description,

@@ -30,7 +30,8 @@
 //#define DBG_VERBOSE
 //#define DBG_SHOW_ALL_BLOB_RESULT
 //#define DBG_MULTI_PARENT_ISSUE
-#define DBG_NO_OVERLAP
+//#define DBG_NO_OVERLAP
+//#define DBG_SHOW_SPLIT
 
 BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     tesseract::TessBaseAPI* tessBaseApi, const std::string imageName) {
@@ -203,6 +204,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
           TBOX charResultBox = tesseractWordData->getBoundingBox().intersection(
               wordResultData->box_word->BlobBox(i));
 
+
           // get the recognition data for this character (should be at the head of the choice list for this character)
           // iterator over the characters (each entry has a list of choices
           // for the corresponding character)
@@ -238,7 +240,6 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
           blobDataGridSearch.StartRectSearch(charResultBox);
           BlobData* curBlobData = blobDataGridSearch.NextRectSearch();
           while(curBlobData != NULL) { // start iterating blobs in char in word in row in block
-            // only care about blobs completely inside the current character box
             if(tesseractCharData->getBoundingBox()->contains(
                 curBlobData->getBoundingBox())) {
               if(curBlobData->getParentChar() == NULL) {
@@ -289,11 +290,18 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
                     curBlobData, image);*/
 #endif
               }
-            } else if(curBlobData->getBoundingBox().contains(charResultBox)) {
+            } else {
+#ifdef DBG_SHOW_SPLIT
+              std::cout << "Showing blob that needs to be split up according to tesseract.\n";
+              M_Utils::dispHlBlobDataRegion(curBlobData, blobDataGrid->getBinaryImage());
+              M_Utils::waitForInput();
+#endif
               // checks the condition where a blob needs to be split up
               // this happens when Tesseract has figured out that multiple characters might
               // be connected due to noise (sometimes they are just barely connected by one or two pixels)
-              curBlobData->markForDeletion(); // This needs to get removed once it's been split fully
+              if(curBlobData->getBoundingBox().contains(charResultBox)) {
+                curBlobData->markForDeletion(); // This needs to get removed once it's been split fully
+              }
               // create and insert new blob for this data if there isn't already an entry with a matching bounding box
               BlobData* splitBlob = blobDataGrid->getEntryWithBoundingBox(charResultBox);
               if(splitBlob == NULL) {
@@ -343,6 +351,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
       b = bdgs.NextFullSearch();
     }
   }
+
 #ifdef DBG_INFO_GRID_MARKED
   {
     ScrollView* sv = blobDataGrid->MakeWindow(100, 100,

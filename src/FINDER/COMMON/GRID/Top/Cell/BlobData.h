@@ -199,9 +199,16 @@ class BlobData: public ELIST_LINK {
 
   /**
    * The confidence Tesseract has in the word result that it recognized
-   * this blob as being a part of
+   * this blob as being a part of (this is the lowest confidence for all
+   * character results in the word
    */
   float getWordRecognitionConfidence();
+
+  /**
+   * The average confidence among all character results in the word that
+   * this blob was recognized as being a part of.
+   */
+  float getWordAvgRecognitionConfidence();
 
   /**
    * Gets font info from the parent if that info exists.

@@ -22,6 +22,7 @@
 #include <CharData.h>
 #include <AlignedDesc.h>
 #include <StackedDesc.h>
+#include <RowData.h>
 
 #include <baseapi.h>
 
@@ -35,13 +36,15 @@
 #define DBG_SHOW_MERGE_START  // shows the starting blob for a merge
 #define DBG_SHOW_MERGE // shows all the merges that happen between DBG_SHOW_MERGE_START and
                        // DBG_SHOW_MERGE_FINAL
-#define DBG_SHOW_MERGE_ONE_SEGMENT // requires DBG_SHOW_MERGE, DBG_SHOW_MERGE_FINAL, and/or
+//#define DBG_SHOW_MERGE_ONE_SEGMENT // requires DBG_SHOW_MERGE, DBG_SHOW_MERGE_FINAL, and/or
                                    // DBG_SHOW_MERGE_START to be turned on, only debugs a segment
                                    // of interest rather than the entire page
 #define DBG_MERGE_VERBOSE // show everything that is being added to the merge list
 #define DBG_MERGE_INTERSECTING // show all the blobs that were merged because they intersect with a segment
 #define DBG_H_ADJACENT
 #define DBG_SHOW_MERGE_FINAL // shows the result of merging
+
+#define SHOW_PASS1
 
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
 int g_dbg_x = 1786; // define the left x coord of roi
@@ -50,13 +53,14 @@ bool g_dbg_flag = true;
 #endif
 
 HeuristicMerge::HeuristicMerge(MathExpressionFeatureExtractor* const featureExtractor)
-: dbgim(NULL) {
+: dbgim(NULL), highCertaintyThresh(Utils::getCertaintyThresh() / 2) {
   this->featureExtractor = featureExtractor;
   this->numAlignedBlobsFeatureExtractor = dynamic_cast<NumAlignedBlobsFeatureExtractor*>(getFeatureExtractor(NumAlignedBlobsFeatureExtractorDescription::getName_()));
   this->numVerticallyStackedFeatureExtractor = dynamic_cast<NumVerticallyStackedBlobsFeatureExtractor*>(getFeatureExtractor(NumVerticallyStackedBlobsFeatureExtractorDescription::getName_()));
 }
 
 void HeuristicMerge::runSegmentation(BlobDataGrid* const blobDataGrid) {
+  std::cout << "starting segmentation....\n";
   // now do the segmentation step
   dbgim = blobDataGrid->getImage(); // allows for optional debugging
 
@@ -68,39 +72,79 @@ void HeuristicMerge::runSegmentation(BlobDataGrid* const blobDataGrid) {
   BlobDataGridSearch bdgs(blobDataGrid);
 
   // pass 1: does some post-processing to get rid of blobs sparsely detected within recognized words
-  // marked as valid by Tesseract with high confidence. also gets rid of any blob detected as math
-  // that's within a stop word recognized with high confidence by Tesseract.
+  // marked as valid by Tesseract with high confidence. Gets rid of any blob detected as math
+  // that's within a stop word recognized with high confidence by Tesseract. Also gets rid of
+  // blobs that are likely to be part of a header (i.e., a number at the top left).
   bdgs.StartFullSearch();
   BlobData* curblob = NULL;
   double sparseness_threshold = .6; // minimum acceptable ratio of math blobs to total blobs in a recognized as valid non-math word
+  std::cout << "Starting segmentation pass 1\n";
   while((curblob = bdgs.NextFullSearch()) != NULL) {
-    if(curblob->getParentWord() == NULL) {
-      continue; // all of the below filters assume blob was recognized as part of some word
+    if(curblob->getParentWord() == NULL ||
+        !curblob->getMathExpressionDetectionResult()) {
+      // all of the below filters assume blob was recognized as math and
+      // is also part of some word recognized by Tesseract
+      continue;
     }
-    if(curblob->getMathExpressionDetectionResult()) {
-      if(curblob->belongsToRecognizedWord() && (!curblob->belongsToRecognizedMathWord())) {
-        int num_math_in_word = 0;
-        if(curblob->belongsToRecognizedStopword()) {
-          curblob->setMathExpressionDetectionResult(false);
-          continue;
+
+    // filter blobs detected in words recognized by Tesseract to match their
+    // dictionary and be non-math with medium confidence, or that didn't match
+    // a dictionary entry but yet still have high confidence and are non-math.
+    // Any blobs in stopwords recognized with medium confidence are discarded.
+    // Other blobs are set to non math if the word they are in has a lower math
+    // to nonmath ratio than the sparseness threshold.
+    if(!curblob->belongsToRecognizedMathWord()
+        && ((curblob->belongsToRecognizedWord()
+        && (curblob->getWordRecognitionConfidence() >= Utils::getCertaintyThresh() * 2))
+        || (curblob->getWordRecognitionConfidence() >= highCertaintyThresh * 2)
+        || (curblob->getWordAvgRecognitionConfidence() >= highCertaintyThresh))){
+      int num_math_in_word = 0;
+      if(curblob->belongsToRecognizedStopword()) {
+        curblob->setMathExpressionDetectionResult(false);
+        continue;
+      }
+      std::vector<BlobData*> wordChildBlobs = getBlobsWithSameParent(curblob);
+      const int numwrdblobs = wordChildBlobs.size();
+      for(int i = 0; i < numwrdblobs; ++i) {
+        BlobData* const wrdblob = wordChildBlobs[i];
+        if(wrdblob->getMathExpressionDetectionResult()) {
+          ++num_math_in_word;
         }
-        std::vector<BlobData*> wordChildBlobs = getBlobsWithSameParent(curblob);
-        int numwrdblobs = wordChildBlobs.size();
+      }
+      double math_non_math_wrd_ratio = (double)num_math_in_word / (double)numwrdblobs;
+      if(math_non_math_wrd_ratio < sparseness_threshold) {
         for(int i = 0; i < numwrdblobs; ++i) {
-          BlobData* const wrdblob = wordChildBlobs[i];
-          if(wrdblob->getMathExpressionDetectionResult()) {
-            ++num_math_in_word;
-          }
-        }
-        double math_non_math_wrd_ratio = (double)num_math_in_word / (double)numwrdblobs;
-        if(math_non_math_wrd_ratio < sparseness_threshold) {
-          curblob->setMathExpressionDetectionResult(false);
+          wordChildBlobs[i]->setMathExpressionDetectionResult(false);
         }
       }
     }
   }
+  // Any blobs on the top row are assumed to be header....
+  GenericVector<TesseractWordData*> topRowWords =
+      blobDataGrid->getAllTessRows()[0]->getTesseractWords();
+  for(int i = 0; i < topRowWords.size(); ++i) {
+    std::vector<TesseractCharData*> chars = topRowWords[i]->getChildChars();
+    for(int j = 0; j < chars.size(); ++j) {
+      std::vector<BlobData*> blobs = chars[j]->getBlobs();
+      for(int k = 0; k < blobs.size(); ++k) {
+        blobs[k]->setMathExpressionDetectionResult(false);
+      }
+    }
+  }
+
+#ifdef SHOW_PASS1
+  {
+    Pix* pass1Im = blobDataGrid->getVisualDetectionResultsDisplay();
+    pixDisplay(pass1Im, 100, 100);
+    std::cout << "Displaying the results of segmentation pass 1.\n";
+    Utils::waitForInput();
+    pixDestroy(&pass1Im);
+  }
+  return;
+#endif
 
   // pass 2: run the segmentation algorithm
+  std::cout << "Running segmentation pass 2.\n";
   bdgs.StartFullSearch();
   curblob = NULL;
   int seg_id = 0;
@@ -545,6 +589,9 @@ HeuristicMerge::~HeuristicMerge() {
 
 std::vector<BlobData*> HeuristicMerge::getBlobsWithSameParent(BlobData* const blobData) {
   std::vector<BlobData*> blobsWithSameParent;
+  if(blobData->getParentWord() == NULL) {
+    return blobsWithSameParent;
+  }
   std::vector<TesseractCharData*> wordChildChars = blobData->getParentWord()->getChildChars();
   for(int i = 0; i < wordChildChars.size(); ++i) {
     std::vector<BlobData*> charChildBlobs = wordChildChars[i]->getBlobs();
