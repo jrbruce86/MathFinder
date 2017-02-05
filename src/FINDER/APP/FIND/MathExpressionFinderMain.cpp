@@ -90,7 +90,6 @@ void runFinder(char* path) {
 
   FinderInfo* finderInfo =
       TrainingInfoFileParser().readInfoFromFile(finderName);
-
   std::string imagePath = std::string(path);
   Pixa* images = pixaCreate(0);
   std::vector<std::string> imageNames;
@@ -101,12 +100,12 @@ void runFinder(char* path) {
         DatasetSelectionMenu::findImagePaths(imagePath);
     for(int i = 0; i < imagePaths.size(); ++i) {
       pixaAddPix(images,
-          Utils::leptReadImg(imagePaths[i]),
+          Utils::leptReadAndBinarizeImg(imagePath),
           L_INSERT);
       imageNames.push_back(DatasetSelectionMenu::getFileNameFromPath(imagePaths[i]));
     }
   } else if(Utils::existsFile(imagePath)) {
-    pixaAddPix(images, Utils::leptReadImg(imagePath), L_INSERT);
+    pixaAddPix(images, Utils::leptReadAndBinarizeImg(imagePath), L_INSERT);
     imageNames.push_back(DatasetSelectionMenu::getFileNameFromPath(imagePath));
   } else {
     std::cout << "Unable to read in the image(s) on the given path." << std::endl;

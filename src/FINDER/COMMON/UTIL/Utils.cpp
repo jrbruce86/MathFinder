@@ -70,6 +70,16 @@ Pix* Utils::leptReadImg(std::string fn) {
   return img;
 }
 
+Pix* Utils::leptReadAndBinarizeImg(std::string fn) {
+  tesseract::ImageThresholder thresh;
+  Pix* inputImg = leptReadImg(fn);
+  Pix* binImg = pixCreate(inputImg->w, inputImg->h, inputImg->d);
+  thresh.SetImage(inputImg);
+  thresh.ThresholdToPix(&binImg);
+  pixDestroy(&inputImg);
+  return binImg;
+}
+
 // returns the number of digits in a given integer decimal number
 int Utils::digit_count(int decnum) {
   int numdigits = 0;

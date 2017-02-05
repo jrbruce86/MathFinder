@@ -54,6 +54,9 @@ namespace Utils {
   // message if pixread fails
   Pix* leptReadImg(std::string fn);
 
+  // Reads in and then binarizes the image
+  Pix* leptReadAndBinarizeImg(std::string fn);
+
   // returns the number of digits in a given integer decimal number
   int digit_count(int decnum);
 
