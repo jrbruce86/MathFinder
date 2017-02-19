@@ -25,6 +25,7 @@
 
 #include <allheaders.h>   // leptonica api
 
+#include <M_Utils.h>
 
 #include <iostream>
 using namespace std;
@@ -85,3 +86,48 @@ int Lept_Utils::colorPixCount(PIX* im, LayoutEval::Color color) {
   }
   return count;
 }
+
+// draws horizontal line on the given image with provided color and thickness
+void Lept_Utils::drawHLine(PIX* im, int x1, int x2, int y, LayoutEval::Color color, int thickness) {
+  for(int i = x1; i <= x2; ++i)
+    drawAtXY(im, i, y, color, thickness);
+}
+
+// draws vertical line on the given image with provided color and thickness
+void Lept_Utils::drawVLine(PIX* im, int y1, int y2, int x, LayoutEval::Color color, int thickness) {
+  for(int i = y1; i <= y2; ++i)
+    drawAtXY(im, x, i, color, thickness);
+}
+
+// Draws box from teseract box
+void Lept_Utils::drawBox(Pix* im, TBOX tbox) {
+  TBOX tbox_ = tbox;
+  Box* box = M_Utils::tessTBoxToImBox(&tbox_, im);
+  drawBox(im, box);
+  boxDestroy(&box);
+}
+
+// Draws box with default colro and thickness
+void Lept_Utils::drawBox(Pix* im, Box* box) {
+  drawBox(im, box, LayoutEval::GREEN, 7);
+}
+
+void Lept_Utils::drawBox(Pix* im, TBOX tbox, LayoutEval::Color color, int thickness) {
+  TBOX tbox_ = tbox;
+  Box* box = M_Utils::tessTBoxToImBox(&tbox_, im);
+  drawBox(im, box, color, thickness);
+  boxDestroy(&box);
+}
+
+// draws the box on the image with the provided color and thickness
+void Lept_Utils::drawBox(PIX* im, BOX* box, LayoutEval::Color color, int thickness) {
+  const int left = box->x;
+  const int right = left + box->w;
+  const int top = box->y;
+  const int bottom = top + box->h;
+  drawHLine(im, left, right, top, color, thickness);
+  drawVLine(im, top, bottom, right, color, thickness);
+  drawHLine(im, left, right, bottom, color, thickness);
+  drawVLine(im, top, bottom, left, color, thickness);
+}
+

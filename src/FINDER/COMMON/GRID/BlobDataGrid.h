@@ -14,6 +14,10 @@
 #include <tesseractclass.h>
 #include <bbgrid.h>
 
+#include <BlobMergeData.h>
+
+#include <Lept_Utils.h>
+
 class TesseractRowData;
 class TesseractBlockData;
 class TesseractSentenceData;
@@ -65,7 +69,20 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
   double getNonItalicizedRatio();
   void setNonItalicizedRatio(double nonItalicizedRatio);
 
-  GenericVector<Segmentation*>& getSegments();
+  /**
+   * Appends a segmentation to this grid's list of segmentations
+   */
+  void appendSegmentation(Segmentation* const segmentation);
+
+  /**
+   * Removes the segmentation from this grid's list of segmentations
+   */
+  void removeSegmentation(Segmentation* const segmentation);
+
+  /**
+   * Return a deep copy of all of the segments
+   */
+  GenericVector<Segmentation*> getSegmentsCopy();
 
   /**
    * Return an entry with the exact same bounding box as the one provided
@@ -102,6 +119,8 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
   MathExpressionFinderResults* getSegmentationResults(
       const std::string& resultsDirName);
 
+  LayoutEval::Color getColorFromRes(const RESULT_TYPE restype);
+
   /**
    * Gets a visual display of the results of segmentation.
    * The pix memory is allocated on the heap and owned by the caller
@@ -115,6 +134,8 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
   void show();
 
   void HandleClick(int x, int y);
+
+  int getArea();
 
  private:
 
@@ -142,7 +163,12 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
   // tesseract recognition results
   double nonItalicizedRatio;
 
-  GenericVector<Segmentation*> Segments; // results of segmentation! owned by the results data structure
+  // results of segmentation. each segment owned by first blob that has a reference
+  // to it that is deleted from the grid. The results thus needs to create a copy
+  // of this to avoid memory issues.
+  GenericVector<Segmentation*> segmentations;
+
+  int area;
 };
 
 

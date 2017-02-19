@@ -53,6 +53,11 @@ OtherRecognitionFeatureExtractorDescription::
 
 std::string OtherRecognitionFeatureExtractorDescription
 ::getName() {
+  return getName_();
+}
+
+std::string OtherRecognitionFeatureExtractorDescription
+::getName_() {
   return "OtherRecognitionFeatureExtractor";
 }
 

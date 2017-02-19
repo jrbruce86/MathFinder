@@ -91,6 +91,7 @@ void MathExpressionFinderResults::printResultsToFiles(
     Utils::exec("rm -rf " + resultsDirPath_, true);
   }
   Utils::exec("mkdir " + resultsDirPath_, true);
+  std::cout << "Creating results directory at " << resultsDirPath_ << std::endl;
 
   const std::string resultsDirPath = Utils::checkTrailingSlash(resultsDirPath_);
   const std::string rectfile = resultsDirPath + std::string("results.rect");

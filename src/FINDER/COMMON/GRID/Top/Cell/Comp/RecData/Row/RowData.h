@@ -57,6 +57,9 @@ struct TesseractRowData {
 
   TesseractBlockData* getParentBlock();
 
+  float getAvgWordConf();
+  void setAvgWordConf(float avgWordConf);
+
   double avg_baselinedist; // average distance of a blob from
                            // the row's baseline (only non-zero if
                            // row has at leat one valid word.
@@ -78,6 +81,7 @@ struct TesseractRowData {
 
  private:
 
+  float avgWordConf;
 
 };
 

@@ -29,6 +29,8 @@ public virtual BlobFeatureExtractorDescription {
 
   std::string getName();
 
+  static std::string getName_();
+
   std::string getUniqueName();
 
   RecognitionBasedExtractorCategory* getCategory();

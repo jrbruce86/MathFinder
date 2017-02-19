@@ -40,7 +40,8 @@ class NumAlignedBlobsFeatureExtractor : public virtual BlobFeatureExtractor {
   void enableDownwardFeature();
   void enableUpwardFeature();
 
-  int countCoveredBlobs(BlobData* const blob, BlobDataGrid* const blobDataGrid, BlobSpatial::Direction dir, bool segmode=false);
+  int countCoveredBlobs(BlobData* const blob, BlobDataGrid* const blobDataGrid,
+      BlobSpatial::Direction dir, bool segmode=false, const int dbgSegId=-1);
 
   /**
    * Specialized initialization for when this feature extractor
@@ -69,8 +70,8 @@ class NumAlignedBlobsFeatureExtractor : public virtual BlobFeatureExtractor {
    * to correspond with that blob's segmentation results and some of the paramters are
    * slightly tweaked.
    */
-  bool isNeighborCovered(const TBOX& neighbor, const TBOX& blob, const BlobSpatial::Direction& dir,
-      const bool seg_mode);
+  bool isNeighborCovered(BlobData* const neighbor, BlobData* const blob, const BlobSpatial::Direction& dir,
+      const bool seg_mode, bool* tooFarAway, const int dbgSegId);
 
   int blobDataKey;
 
@@ -86,6 +87,8 @@ class NumAlignedBlobsFeatureExtractor : public virtual BlobFeatureExtractor {
   Pix* rightwardIm; // colors blobs with one or more rightward adjacent neighbors red
   bool indbg;
   bool dbgdontcare;
+
+  BlobDataGrid* blobDataGrid;
 };
 
 #endif /* NUMALIGNEDBLOBSFEATUREEXTRACTOR_H_ */

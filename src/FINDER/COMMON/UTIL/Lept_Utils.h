@@ -28,6 +28,9 @@
 #include <vector>
 #include <iostream>
 #include <assert.h>
+
+#include <baseapi.h>
+
 #define fgthresh 100   // this may need to change depending on the image..
 
 // these are the colors for type-specific pixel evaluation and
@@ -97,28 +100,22 @@ public:
   }
 
   // draws horizontal line on the given image with provided color and thickness
-  static inline void drawHLine(PIX* im, int x1, int x2, int y, LayoutEval::Color color, int thickness) {
-    for(int i = x1; i <= x2; ++i)
-      drawAtXY(im, i, y, color, thickness);
-  }
+  static void drawHLine(PIX* im, int x1, int x2, int y, LayoutEval::Color color, int thickness);
 
   // draws vertical line on the given image with provided color and thickness
-  static inline void drawVLine(PIX* im, int y1, int y2, int x, LayoutEval::Color color, int thickness) {
-    for(int i = y1; i <= y2; ++i)
-      drawAtXY(im, x, i, color, thickness);
-  }
+  static void drawVLine(PIX* im, int y1, int y2, int x, LayoutEval::Color color, int thickness);
+
+  // Draws box from teseract box
+  static void drawBox(Pix* im, TBOX tbox);
+
+  // Draws box with default colro and thickness
+  static void drawBox(Pix* im, Box* box);
+
+  // Draws box from tbox with custom color and thickness
+  static void drawBox(Pix* im, TBOX tbox, LayoutEval::Color color, int thickness);
 
   // draws the box on the image with the provided color and thickness
-  static inline void drawBox(PIX* im, BOX* box, LayoutEval::Color color, int thickness) {
-    const int left = box->x;
-    const int right = left + box->w;
-    const int top = box->y;
-    const int bottom = top + box->h;
-    drawHLine(im, left, right, top, color, thickness);
-    drawVLine(im, top, bottom, right, color, thickness);
-    drawHLine(im, left, right, bottom, color, thickness);
-    drawVLine(im, top, bottom, left, color, thickness);
-  }
+  static void drawBox(PIX* im, BOX* box, LayoutEval::Color color, int thickness);
 
   static int colorPixCount(PIX* im, LayoutEval::Color color);
 

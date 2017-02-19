@@ -34,14 +34,12 @@ class NumAlignedBlobsData : public BlobFeatureExtractionData {
   NumAlignedBlobsData* setDvabcCount(const int dvabcCount);
   int getDvabcCount();
 
+  void clearBuffers();
 
   GenericVector<BlobData*> rhabc_blobs;
   GenericVector<BlobData*> lhabc_blobs;
   GenericVector<BlobData*> uvabc_blobs;
   GenericVector<BlobData*> dvabc_blobs;
-
-  BlobMergeData* blobMergeInfo; // Data which may be useful during segmentation. If so, the
-                                // segmentation step needs access to this data.
 
  private:
   /**

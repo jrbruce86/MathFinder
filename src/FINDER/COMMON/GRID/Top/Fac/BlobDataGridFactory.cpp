@@ -65,13 +65,12 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
    * ---------------
    *    Stage 2:
    * ---------------
-   * Get all of the image's raw connected compents and place them on a 2D search-able grid.
+   * Get all of the image's raw connected components and place them on a 2D search-able grid.
    * The grid entries added include, at this stage, just the connected component image
    * and its bounding box coordinates. More information will be added for each connected
    * component at later stages.
    */
   // Grab the connected components (as images)
-
   Pixa* blobImages = pixaCreate(0);
   Boxa* blobCoords = pixConnComp(image, &blobImages, 8);
   assert(blobImages->n == blobCoords->n); // should be the same.. don't see why not...
@@ -97,6 +96,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     ++total_blobs_grid;
 #endif
   }
+
 #ifdef DBG_INFO_GRID
   {
     std::cout << "total blobs in grid: " << total_blobs_grid << std::endl; // debug
@@ -110,7 +110,6 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
   }
 #endif
 
-
   /**
    * ---------------
    *    Stage 3:
@@ -119,12 +118,9 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
    * result into the grid created in Stage 2 at its appropriate connected component
    * entry.
    */
-  // Note: Take into account all of the features available, remember the inheritance hierarchy
   // Note: While I'm using the mutable iterator, I'm still only changing the pointer through the higher level api.
   //       Only reason I'm using the mutable iterator is so I have public access to everything for readonly purposes
 
-  // Iterate the blocks, and within the blocks the rows to get the sentences.
-  // I'll then map the individual blobs to the sentences to which they belong to later (if they belong to a sentence)
   std::vector<TesseractBlockData*> blocks;
   // The Page_Res is sort of like a Russian doll. There are many layers:
   // BLOCK_RES -> ROW_RES -> WERD_RES -> WERD_CHOICE -> BLOB_CHOICE
@@ -159,19 +155,18 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
         tesseractRowData->aValidWordFound = firstvalidword;
       }
 
-
       // Iterate the words within the row
       WERD_RES_IT wordresit(tesseractRowData->getWordResList());
       wordresit.move_to_first();
       for(int k = 0; k < tesseractRowData->getWordResList()->length(); ++k) { // start iterating words on row on block
         WERD_RES* wordResultData = wordresit.data();
         if(!wordResultData) {
-          assert(false); // asserting false because I don't think this is possible but we'll see
+          //assert(false); // asserting false because I don't think this is possible but we'll see
           continue; // Only care if has results (don't think it should get here.. but if it did this is what I'd do)
         }
+
         WERD_CHOICE* const bestWordChoice = wordResultData->best_choice;
         if(!bestWordChoice) {
-          // assert(false); // Shouldn't happen? We'll see.... (did happen.. whatever)
           continue; // Only care if has results
         }
 
@@ -203,7 +198,6 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
           // get the bounding box of the current recognized character within the word
           TBOX charResultBox = tesseractWordData->getBoundingBox().intersection(
               wordResultData->box_word->BlobBox(i));
-
 
           // get the recognition data for this character (should be at the head of the choice list for this character)
           // iterator over the characters (each entry has a list of choices
@@ -299,7 +293,7 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
               // checks the condition where a blob needs to be split up
               // this happens when Tesseract has figured out that multiple characters might
               // be connected due to noise (sometimes they are just barely connected by one or two pixels)
-              if(curBlobData->getBoundingBox().contains(charResultBox)) {
+              if(M_Utils::almostContains(curBlobData->getBoundingBox(), charResultBox)) {
                 curBlobData->markForDeletion(); // This needs to get removed once it's been split fully
               }
               // create and insert new blob for this data if there isn't already an entry with a matching bounding box
@@ -338,19 +332,11 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     delete sv;
   }
 #endif
-  // Delete entries marked for deletion
-  {
-    BlobDataGridSearch bdgs(blobDataGrid);
-    bdgs.SetUniqueMode(true);
-    bdgs.StartFullSearch();
-    BlobData* b = bdgs.NextFullSearch();
-    while(b != NULL) {
-      if(b->isMarkedForDeletion()) {
-        bdgs.RemoveBBox();
-      }
-      b = bdgs.NextFullSearch();
-    }
-  }
+
+  // Remove already marked entries
+  deleteMarkedEntries(blobDataGrid);
+
+  blobDataGrid->AssertNoDuplicates();
 
 #ifdef DBG_INFO_GRID_MARKED
   {
@@ -381,6 +367,40 @@ BlobDataGrid* BlobDataGridFactory::createBlobDataGrid(Pix* image,
     }
   }
 
+  // Run noise filter
+  {
+    double averageBlobArea = 0;
+    // Compute the average blob size
+    {
+      BlobDataGridSearch bdgs(blobDataGrid);
+      bdgs.StartFullSearch();
+      bdgs.SetUniqueMode(true);
+      BlobData* curBlob = NULL;
+      double totalArea = 0;
+      double totalBlobs = 0;
+      while((curBlob = bdgs.NextFullSearch()) != NULL) {
+        totalArea += (double)(curBlob->bounding_box().area());
+        ++totalBlobs;
+      }
+      averageBlobArea = totalArea / totalBlobs;
+    }
+    // Filter blobs excessively small compared to the average
+    // Using empirically determined constant
+    double areaThresh = averageBlobArea / 10;
+    BlobDataGridSearch bdgs(blobDataGrid);
+    bdgs.StartFullSearch();
+    bdgs.SetUniqueMode(true);
+    BlobData* curBlob = NULL;
+    while((curBlob = bdgs.NextFullSearch()) != NULL) {
+      if(curBlob->getCharRecognitionConfidence() == -20) {
+        if(curBlob->bounding_box().area() < areaThresh) {
+          bdgs.RemoveBBox();
+        }
+      }
+    }
+  }
+
+
   return blobDataGrid;
 }
 
@@ -408,9 +428,6 @@ char* BlobDataGridFactory::getRowValidTessWord(
   return NULL;
 }
 
-//TODO: Modify so that first row with valid words is considered the top row
-//      and discarded, rather than simply the top row. Sometimes there is noise
-//      on the top row.
 void BlobDataGridFactory::findAllRowCharacteristics(BlobDataGrid* const blobDataGrid) {
 
   // Put all of the rows from the blocks on the page onto a single vector
@@ -608,5 +625,19 @@ void BlobDataGridFactory::dbgDisplayHierarchy(
   std::cout << "Showing the blob.\n";
   pixDisplay(blob->getBlobImage(), 100, 100);
   M_Utils::waitForInput();
+}
+
+// Delete entries marked for deletion
+void BlobDataGridFactory::deleteMarkedEntries(
+    BlobDataGrid* const blobDataGrid) {
+  BlobDataGridSearch bdgs(blobDataGrid);
+  bdgs.StartFullSearch();
+  BlobData* b = bdgs.NextFullSearch();
+  while(b != NULL) {
+    if(b->isMarkedForDeletion()) {
+      bdgs.RemoveBBox();
+    }
+    b = bdgs.NextFullSearch();
+  }
 }
 

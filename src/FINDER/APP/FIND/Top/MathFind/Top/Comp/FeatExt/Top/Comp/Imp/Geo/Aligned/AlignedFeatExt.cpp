@@ -33,7 +33,9 @@ NumAlignedBlobsFeatureExtractor::NumAlignedBlobsFeatureExtractor(NumAlignedBlobs
   downwardFeatureEnabled(false),
   upwardFeatureEnabled(false),
   blobDataKey(-1), indbg(false),
-  dbgdontcare(false), highCertaintyThresh(Utils::getCertaintyThresh() / 2) {
+  dbgdontcare(false),
+  highCertaintyThresh(Utils::getCertaintyThresh() / 2),
+  blobDataGrid(NULL) {
   this->description = description;
 }
 
@@ -41,16 +43,17 @@ void NumAlignedBlobsFeatureExtractor::doPreprocessing(BlobDataGrid* const blobDa
   // Get the key that will be used for retrieving data associated with
   // this class for each blob.
   blobDataKey = findOpenBlobDataIndex(blobDataGrid);
+  this->blobDataGrid = blobDataGrid;
 
 #ifdef DBG_DRAW_RIGHTWARD
   rightwardIm = pixCopy(NULL, blobDataGrid->getBinaryImage());
   rightwardIm = pixConvertTo32(rightwardIm);
 #endif
-
   // Determine the adjacent covered neighbors in the rightward, downward,
   // and/or upward directions for each blob depending on which features are
   // enabled
   BlobDataGridSearch gridSearch(blobDataGrid);
+  gridSearch.SetUniqueMode(true);
   gridSearch.StartFullSearch();
   BlobData* blob = NULL;
   while((blob = gridSearch.NextFullSearch()) != NULL) {
@@ -104,9 +107,14 @@ std::vector<DoubleFeature*> NumAlignedBlobsFeatureExtractor::extractFeatures(Blo
 
 
 int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
-    BlobDataGrid* const blobDataGrid, BlobSpatial::Direction dir, bool seg_mode) {
-
+    BlobDataGrid* const blobDataGrid, BlobSpatial::Direction dir, bool seg_mode,
+    const int dbgSegId) {
+//  if(dbgSegId == 0) {
+//    indbg = true;
+//  }
+  this->blobDataGrid = blobDataGrid;
   BlobDataGridSearch bigs(blobDataGrid);
+  bigs.SetUniqueMode(true);
   GenericVector<BlobData*> covered_blobs;
   GenericVector<BlobData*> noncovered_blobs;
 
@@ -117,50 +125,47 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   TBOX bbox = blob->getBoundingBox();
   if(seg_mode) {
     // !!!!!!Segmode should only be true when running the segmentor!!!!!
-
-    NumAlignedBlobsData* data = (NumAlignedBlobsData*)(blob->getVariableDataAt(blobDataKey));
-    TBOX* segbox = data->blobMergeInfo->segment_box;
+    assert(blob->getMergeData() != NULL);
+    segbox = blob->getMergeData()->getSegBox();
     assert(segbox != NULL);
-    // if in segmentation mode, then the blob may already have
-    // covered blobs that were previously found, go ahead and add these to start with
-    if(dir == BlobSpatial::UP)
-      covered_blobs = data->uvabc_blobs;
-    else if(dir == BlobSpatial::DOWN)
-      covered_blobs = data->dvabc_blobs;
-    else if(dir == BlobSpatial::LEFT)
-      covered_blobs = data->lhabc_blobs;
-    else if(dir == BlobSpatial::RIGHT)
-      covered_blobs = data->rhabc_blobs;
-    else
-      assert(false);
+
     blob_box = segbox;
-  }
-  else
+
+  } else {
     blob_box = &bbox;
+  }
+
   assert(blob_box != NULL);
 
   int count = 0;
-  indbg = false;
 #ifdef DBG_COVER_FEATURE
-  bool single_mode = true; // if this is true thne only debugging one blob and its neighbors
-                            // otherwise then debug all of them
-  inT16 dbgleft = -1;
-  inT16 dbgtop = -1;
-  if(dbgleft < 0 || dbgtop < 0) // if i'm not debugging anything in particular debug everything
-    single_mode = false;
-
-  inT16 neighborleft = -1;
-  inT16 neighbortop = -1;
-
-  TBOX blobbox = blob->bounding_box();
-  if(blobbox.left() == dbgleft && blobbox.top() == dbgtop) {
-    std::cout << "found it!\n";
-    M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
-    M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
-    M_Utils::waitForInput();
-    indbg = true;
-  }
+//  inT16 dbgleft = -1;
+//  inT16 dbgtop = -1;
+//  if(dbgleft < 0 || dbgtop < 0) // if i'm not debugging anything in particular debug everything
+//    single_mode = false;
+//
+//  inT16 neighborleft = -1;
+//  inT16 neighbortop = -1;
+//
+//  TBOX blobbox = blob->bounding_box();
+//  if(blobbox.left() == dbgleft && blobbox.top() == dbgtop) {
+//    std::cout << "found it!\n";
+//    M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+//    M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+//    M_Utils::waitForInput();
+//    indbg = true;
+//  }
 #endif
+  // Very strict filter for segmentation mode to avoid false positives:
+//?  if(seg_mode) {
+//?    if((blob->belongsToRecognizedNormalRow() && blob->getAverageWordConfInRow() >= Utils::getCertaintyThresh())
+//?    || blob->belongsToBadRegion()) {
+//?      return 0;
+//?    }
+//    if(blob->belongsToRecognizedWord()) {
+//      return 0;
+//    }
+//?  }
   // Below code and comment currently in question.... Should I do this?? I'm thinking not. All blobs should have this feature I think. Can't rely on Tesseract in face of math, so no telling if it's right or wrong.
   // ----------------COMMENT AND CODE IN QUESTION START---------------------
   // Some filters. First off I don't filter anything if I'm using this at the
@@ -170,17 +175,19 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   // high confidence. I also filter if the blob resides on a row that was
   // found to have a high likelihood of being part of a paragraph (i.e.,
   // 'normal' row of text).
-  if(!seg_mode &&
-      ((blob->belongsToRecognizedWord() &&
-          (blob->getWordRecognitionConfidence() > Utils::getCertaintyThresh()))
-       || blob->belongsToRecognizedNormalRow()
-       || blob->getWordRecognitionConfidence() > highCertaintyThresh)) {
-    return 0;
+  if(!seg_mode) {
+    if((blob->belongsToRecognizedWord() &&
+        blob->getWordRecognitionConfidence() > Utils::getCertaintyThresh())
+        || blob->belongsToRecognizedNormalRow()
+        || blob->getWordRecognitionConfidence() > highCertaintyThresh) {
+      return 0;
+    }
   }
   // ----------------COMMENT AND CODE IN QUESTION END---------------------
   int range;
-  if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT)
+  if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT) {
     range = blob_box->height();
+  }
   else if(dir == BlobSpatial::UP || dir == BlobSpatial::DOWN) {
     range = blob_box->width();
   }
@@ -191,97 +198,141 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
   }
 
   // do beam searches to look for covered blobs
-  // TO consider: For increased efficiency do fewer searches (come up with reasonable empirical
-  //       way of dividing the current blob so enough searches are done but it isn't excessive
+  int closeEnoughThreshold = dir == BlobSpatial::RIGHT || dir == BlobSpatial::UP ? INT_MAX : INT_MIN;
   for(int i = 0; i < range; ++i) {
+    //if(indbg) {
+      //std::cout << "top of for loop!\n";
+    //}
     BlobData* n = NULL; // the neighbor
+    // find nearest neighbor if looking horizontally
     if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT) {
       bigs.StartSideSearch((dir == BlobSpatial::RIGHT) ? blob_box->right() : blob_box->left(),
           blob_box->bottom()+i, blob_box->bottom()+i+1);
-      n = bigs.NextSideSearch((dir == BlobSpatial::RIGHT) ? false : true); // this starts with the current blob
+      n = bigs.NextSideSearch((dir == BlobSpatial::RIGHT) ? false : true); // this starts with the rightmost/leftmost blob in the segmentation or the current blob if not in segmentation mode
     }
+    // find nearest neighbor if looking vertically
     else {
       bigs.StartVerticalSearch(blob_box->left()+i, blob_box->left()+i+1,
           (dir == BlobSpatial::UP) ? blob_box->top() : blob_box->bottom());
       n = bigs.NextVerticalSearch((dir == BlobSpatial::UP) ? false : true);
     }
-    if(n == NULL)
+    if(n == NULL) {
       continue;
+    }
     bool nothing = false;
+    bool tooFarAway = false;
     BlobData* previous_neighbor_ptr = NULL;
     while(n->getBoundingBox() == *blob_box
-        || ((dir == BlobSpatial::RIGHT) ? (n->getBoundingBox().left() <= blob_box->right())
-            : ((dir == BlobSpatial::LEFT) ? (n->getBoundingBox().right() >= blob_box->left())
-              : ((dir == BlobSpatial::UP) ? n->getBoundingBox().bottom() <= blob_box->top()
-                : n->getBoundingBox().top() >= blob_box->bottom())))
-                  || noncovered_blobs.bool_binary_search(n)) {
-      if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT)
+        || ((dir == BlobSpatial::RIGHT) ? (((n->getBoundingBox().left() <= blob_box->right()) && n->left() < closeEnoughThreshold))
+            : ((dir == BlobSpatial::LEFT) ? ((n->getBoundingBox().right() >= blob_box->left()) && n->right() > closeEnoughThreshold)
+              : ((dir == BlobSpatial::UP) ? (n->getBoundingBox().bottom() <= blob_box->top()) && n->bottom() < closeEnoughThreshold
+                : (n->getBoundingBox().top() >= blob_box->bottom()) && n->top() > closeEnoughThreshold)))
+    ) {
+      if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT) {
+        // Look horizontally
         n = bigs.NextSideSearch(dir == BlobSpatial::RIGHT ? false : true);
-      else
+//        if(n != NULL && dir == BlobSpatial::RIGHT) {
+//          if(seg_mode && blob_box->right() >= 2375 && !noncovered_blobs.bool_binary_search(n)) {
+//            std::cout << "Looking at the shown blob as a covered candidate in the " <<
+//                (dir == BlobSpatial::RIGHT ? "righward" : dir== BlobSpatial::LEFT ? "leftward" : "other") << " direction.\n";
+//            M_Utils::dispHlBlobDataSegmentation(blob, blobDataGrid->getBinaryImage());
+//            M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+//            M_Utils::waitForInput();
+//            indbg = true;
+//          } else {
+//            indbg = false;
+//          }
+//        }
+      }
+      else {
+        // Look vertically
         n = bigs.NextVerticalSearch(dir == BlobSpatial::UP ? false : true);
+
+      }
       if(n == NULL) {
         nothing = true;
         break;
       }
     }
-    if(nothing)
+//    if(indbg) {
+//      //std::cout << "Done while loop!!!!!\n";
+//    }
+    if(nothing) {
       continue;
+    }
 #ifdef DBG_COVER_FEATURE
     bool was_added = false;
-    if(indbg) {
-      std::cout << "displaying element found " << ((dir == BlobSpatial::RIGHT) ? "to the right of "
-          : (dir == BlobSpatial::UP) ? "above " : "below ") << "the blob of interest\n";
-      M_Utils::dispHlBlobDataRegion(n, blobDataGrid->getBinaryImage());
-      M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
-      std::cout << "at i: " << i << std::endl;
-      std::cout << "point: " <<  ((dir == BlobSpatial::RIGHT) ? (blob->bottom() + i) :
-          (blob->left() + i)) << std::endl;
-    }
+//    if(indbg && !noncovered_blobs.bool_binary_search(n)) {
+//      std::cout << "displaying element found " << ((dir == BlobSpatial::RIGHT) ? "to the right of "
+//          : (dir == BlobSpatial::UP) ? "above " : "below ") << "the blob of interest\n";
+//      M_Utils::dispHlBlobDataRegion(n, blobDataGrid->getBinaryImage());
+//      M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+//      std::cout << "at i: " << i << std::endl;
+//      std::cout << "point: " <<  ((dir == BlobSpatial::RIGHT) ? (blob->bottom() + i) :
+//          (blob->left() + i)) << std::endl;
+//      M_Utils::waitForInput();
+//    }
 #endif
     // if the neighbor is covered and isn't already on the list
     // then add it to the list (in ascending order)
     dbgdontcare = false;
-    if(!covered_blobs.bool_binary_search(n) && n != blob) {
+    if(!covered_blobs.bool_binary_search(n) && n != blob && !noncovered_blobs.bool_binary_search(n)) {
       // Determine whether or not the neighbor is covered by the current bounding box
       // If in segmentation mode, then determine whether or not the neighbor is covered by the current blob's segmentation box
-      if(isNeighborCovered(n->getBoundingBox(), !seg_mode ? blob->getBoundingBox() : *segbox, dir, seg_mode)) {
+      bool tooFarAway = false;
+      if(isNeighborCovered(n,
+          blob,
+          dir,
+          seg_mode,
+          &tooFarAway,
+          dbgSegId)) {
 #ifdef DBG_COVER_FEATURE
-        if(indbg)
-          was_added = true;
+//        if(indbg && dir == BlobSpatial::DOWN) {
+//          was_added = true;
+//          std::cout << "the displayed element is being added to the covered list\n";
+//          M_Utils::dispHlBlobDataRegion(n, blobDataGrid->getBinaryImage());
+//          M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+//          M_Utils::waitForInput();
+//        }
 #endif
         covered_blobs.push_back(n);
         covered_blobs.sort();
         ++count;
+      } else if(tooFarAway) {
+        closeEnoughThreshold = ((dir == BlobSpatial::RIGHT) ? n->left() :
+            ((dir == BlobSpatial::LEFT) ? n->right() :
+                ((dir == BlobSpatial::UP) ? n->bottom() :
+                    n->top())));
       }
     }
-    if(!noncovered_blobs.bool_binary_search(n) && n != blob) {
-      // if it's already been found to not be covered by the blob
+    if(!noncovered_blobs.bool_binary_search(n)) {
+      // if it's already been found to n turned on, only debugs a segment
+      //                                   // of interest rather than thot be covered by the blob
       // then put it on this list so it won't get tested again
       noncovered_blobs.push_back(n);
       noncovered_blobs.sort();
     }
 #ifdef DBG_COVER_FEATURE
-    if(indbg) {
-      if(was_added) {
-        std::cout << "the displayed element is being added to the covered list\n";
-        M_Utils::waitForInput();
-      }
-      else {
-        std::cout << "the displayed element was not added to the covered list\n";
-        if(!dbgdontcare)
-          M_Utils::waitForInput();
-      }
-    }
+//    if(indbg && !noncovered_blobs.bool_binary_search(n)) {
+//      if(was_added) {
+//
+//      }
+//      else if(!noncovered_blobs.bool_binary_search(n)){
+//        std::cout << "the displayed element was not added to the covered list\n";
+//        if(!dbgdontcare)
+//          M_Utils::waitForInput();
+//      }
+//    }
 #endif
   }
 #ifdef DBG_COVER_FEATURE
-  if(count > 1 && !single_mode) {
-    std::cout << "the highlighted blob is the one being evaluated and has " << count
-         << " covered blobs " << "in the " << ((dir == BlobSpatial::RIGHT) ? " rightward "
-             : ((dir == BlobSpatial::UP) ? " upward " : " downward ")) << "direction\n";
-    M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
-    M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
-    M_Utils::waitForInput();
+//  if(count > 1 && indbg) {
+//    std::cout << "the highlighted blob is the one being evaluated and has " << count
+//         << " covered blobs " << "in the " << ((dir == BlobSpatial::RIGHT) ? " rightward "
+//             : ((dir == BlobSpatial::UP) ? " upward " : " downward ")) << "direction\n";
+//    M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+//    M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+//    M_Utils::waitForInput();
 #ifdef DBG_COVER_FEATURE_ALOT
     for(int j = 0; j < covered_blobs.length(); ++j) {
       cout << "the highlighted blob is covered by the blob previously shown\n";
@@ -290,7 +341,7 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
       M_Utils::waitForInput();
     }
 #endif
-  }
+//  }
 #endif
   NumAlignedBlobsData* const data = (NumAlignedBlobsData*)(blob->getVariableDataAt(blobDataKey));
   if(dir == BlobSpatial::UP)
@@ -323,37 +374,96 @@ int NumAlignedBlobsFeatureExtractor::countCoveredBlobs(BlobData* const blob,
  * to correspond with that blob's segmentation results and some of the paramters are
  * slightly tweaked.
  */
-bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(const TBOX& neighbor,
-    const TBOX& blob_box, const BlobSpatial::Direction& dir, const bool seg_mode) {
-  // Below code and comment currently in question.... Should I do this?? I'm thinking not. All blobs should have this feature I think. Can't rely on Tesseract in face of math, so no telling if it's right or wrong.
-  // ----------------COMMENT AND CODE IN QUESTION START---------------------
-  //if(neighbor->onRowNormal())
-  //  return false;
-  // ----------------COMMENT AND CODE IN QUESTION END---------------------
+bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(BlobData* const neighborBlob,
+    BlobData* const curBlob, const BlobSpatial::Direction& dir,
+    const bool seg_mode, bool* tooFarAway, const int dbgSegId) {
+  bool dbgNeighbor = false;
+//  if(seg_mode && indbg) {
+//    TBOX roi(2004, 4790, 2027, 4846);
+//    BlobSpatial::Direction doi = BlobSpatial::RIGHT;
+//    const int soi = 0;
+//    if(neighborBlob->bounding_box() == roi
+//      && dir == doi && dbgSegId == soi) {
+//      std::cout << "Found the neighbor of interest in the direction of interest for the segment of interest... displaying.\n";
+//      M_Utils::dispHlBlobDataRegion(neighborBlob, blobDataGrid->getBinaryImage());
+//      M_Utils::dispBlobDataRegion(neighborBlob, blobDataGrid->getBinaryImage());
+//      M_Utils::waitForInput();
+//      std::cout << "Showing what its a merge candidate for....\n";
+//      M_Utils::dispHlBlobDataSegmentation(curBlob, blobDataGrid->getBinaryImage());
+//      M_Utils::waitForInput();
+//      dbgNeighbor = true;
+//    } else {
+//      dbgNeighbor = false;
+//    }
+//  }
 
+  // For segmentation mode do some filtering to avoid excessive merging (and false positives)...
+  if(seg_mode) {
+    if((neighborBlob->belongsToRecognizedNormalRow() && neighborBlob->getAverageWordConfInRow() >= Utils::getCertaintyThresh())
+    || neighborBlob->belongsToBadRegion()) {
+      if(indbg) {
+        std::cout << "Neighbor not covered either because it belongs to word with too high confidence, or belongs to a bad region (or both).\n";
+        if(dbgNeighbor) {
+          M_Utils::waitForInput();
+        }
+      }
+      return false;
+    }
+//    if(neighborBlob->getParentChar() == NULL &&
+//        (dir == BlobSpatial::UP || dir == BlobSpatial::DOWN)) {
+//      return false;
+//    }
+//    if(neighborBlob->getParentChar() != NULL
+//        && curBlob->getParentChar() == NULL) {
+//      return false;
+//    }
+//    if(indbg) {
+//      std::cout << "The displayed blob and its candidate neighbor passed the filters....\n";
+//      M_Utils::dispHlBlobDataRegion(curBlob, curBlob->getParentGrid()->getBinaryImage());
+//      M_Utils::dispHlBlobDataRegion(neighborBlob, curBlob->getParentGrid()->getBinaryImage());
+//      M_Utils::waitForInput();
+//    }
+  }
+
+  // ----------------COMMENT AND CODE IN QUESTION END---------------------
+  const TBOX& blob_box = !seg_mode ? curBlob->getBoundingBox() : *(curBlob->getMergeData()->getSegBox());
+  const TBOX& neighbor = neighborBlob->getBoundingBox();
   inT16 neighbor_dist;
   inT16 blob_upper;
   inT16 blob_lower;
   inT16 neighbor_center;
   double dist_thresh_param = (double)2;
-  if(seg_mode)
-    dist_thresh_param = (double)4;
+  if(seg_mode) {
+    if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT) {
+      dist_thresh_param = (double)1; // looser restriction for horizontal
+    } else {
+      if(curBlob->belongsToRecognizedNormalRow() || neighborBlob->belongsToRecognizedNormalRow()) {
+        return false; // tighter restriction for vertical
+      }
+      dist_thresh_param = (double)4; // tighter restriction for vertical
+    }
+  }
   double dist_threshold;
   double area_thresh;
   double dist_to_size_thresh = (double)2;
   if(dir == BlobSpatial::RIGHT || dir == BlobSpatial::LEFT) {
     blob_lower = blob_box.bottom();
     blob_upper = blob_box.top();
-    dist_threshold = (double)blob_box.height() / dist_thresh_param;
+    dist_threshold = std::min(((double)blob_box.height() / dist_thresh_param), 75.0);
     neighbor_dist = (dir == BlobSpatial::RIGHT) ? neighbor.left() - blob_box.right()
         : blob_box.left() - neighbor.right();
-    area_thresh = (double)(blob_box.height()) / (double)32;
+    if(!seg_mode) {
+      area_thresh = (double)(blob_box.height()) / (double)32;
+    } else {
+      area_thresh = (double)(blob_box.height()) / (double)64; // looser restriction for horizontal in segmentation mode
+      dist_to_size_thresh = (double)8;
+    }
     neighbor_center = M_Utils::centery(neighbor);
   }
   else if(dir == BlobSpatial::UP || dir == BlobSpatial::DOWN) {
     blob_lower = blob_box.left();
     blob_upper = blob_box.right();
-    dist_threshold = (double)(blob_box.width()) / dist_thresh_param; // TODO: tweak for seg_mode!!!
+    dist_threshold = std::min(((double)(blob_box.width()) / dist_thresh_param), 25.0); // TODO: tweak for seg_mode!!!
     if(dir == BlobSpatial::UP)
       neighbor_dist = neighbor.bottom() - blob_box.top();
     else
@@ -365,10 +475,10 @@ bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(const TBOX& neighbor,
     std::cout << "ERROR: isNeighborCovered only supports RIGHT, UP, and DOWN directions\n";
     assert(false);
   }
+  // is the neighbor adjacent?
+  if(neighbor_dist <= dist_threshold) {
   // is the neighbor covered?
   if(neighbor_center >= blob_lower && neighbor_center <= blob_upper) {
-    // is the neighbor adjacent?
-    if(neighbor_dist <= dist_threshold) {
       const double area = (double)(neighbor.area());
       if(area > area_thresh) {
         double blobsize = (neighbor.height() >= neighbor.width())
@@ -383,32 +493,41 @@ bool NumAlignedBlobsFeatureExtractor::isNeighborCovered(const TBOX& neighbor,
           if(indbg)
             std::cout << "The neighbor is not covered because it's distance from the "
                  << "blob of interest is too great in relation to it's size.\n";
+          if(dbgNeighbor) M_Utils::waitForInput();
         }
 #endif
       }
 #ifdef DBG_COVER_FEATURE
       else {
-      if(indbg)
-        std::cout << "The neighbor is not covered because it is too small\n";
+        if(indbg) {
+          std::cout << "The neighbor is not covered because it is too small\n";
+          if(dbgNeighbor) M_Utils::waitForInput();
+        }
       }
-#endif
-    }
-#ifdef DBG_COVER_FEATURE
-    else {
-      if(indbg) {
-        std::cout << "The neighbor is not covered because its distance is above the threshold of "
-           << "half of the blob's width\n";
-        dbgdontcare = true;
-      }
-    }
 #endif
   }
 #ifdef DBG_COVER_FEATURE
   else {
-    if(indbg)
+    if(indbg) {
       std::cout << "The neighbor is not covered because its center is outside the boundary\n";
+      if(dbgNeighbor) M_Utils::waitForInput();
+    }
   }
 #endif
+  } else {
+    *tooFarAway = true;
+#ifdef DBG_COVER_FEATURE
+    if(indbg) {
+      std::cout << "The neighbor is not covered because its distance is above the threshold.\n";
+      if(dbgNeighbor) {
+        std::cout << "Neighbor distance: " << neighbor_dist << std::endl;
+        std::cout << "Distance threshold: " << dist_threshold << std::endl;
+        M_Utils::waitForInput();
+      }
+      dbgdontcare = true;
+    }
+#endif
+  }
   return false;
 }
 

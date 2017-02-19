@@ -83,6 +83,7 @@ class BlobData: public ELIST_LINK {
    * due to low image quality or symbols like '=').
    */
   TesseractCharData* getParentChar();
+  std::string getParentCharStr();
   TesseractWordData* getParentWord();
   const char* getParentWordstr();
   TesseractRowData* getParentRow();
@@ -170,6 +171,22 @@ class BlobData: public ELIST_LINK {
   bool belongsToRecognizedNormalRow();
 
   /**
+   * Returns the average confidence for the words in the row to which this
+   * blob belongs. If it doesn't belong to a row then returns the minimum (-20)
+   */
+  float getAverageWordConfInRow();
+
+  /**
+   * Returns true if this blob belongs to a region where Tesseract completely
+   * missed an excessive amount of blobs on the grid. This would occur if
+   * Tesseract completely missed an entire row or paragraph of text (not only
+   * missing it but returning NULL for every entry). In such a case all of the
+   * blobs in that region will be marked such that this method will return false.
+   */
+  bool belongsToBadRegion();
+  void setBadRegion(bool status);
+
+  /**
    * Returns true if this blob was recognized by Tesseract as belonging to the
    * right-most character in a word that is considered 'valid' based on Tesseract's
    * dictionary (has a matching entry in the dictionary).
@@ -183,7 +200,23 @@ class BlobData: public ELIST_LINK {
    */
   bool isLeftmostInWord();
 
-  BlobMergeData& getMergeData();
+  BlobMergeData* getMergeData();
+
+  BlobMergeData** getMergeDataSharedPtr();
+
+  /**
+   * Creates and stores a shared pointer (double pointer) to the provided merge data.
+   * The double pointer is used to deallocate the memory just once even
+   * though it is shared by potentially many blobs.
+   */
+  void setToNewMergeData(Segmentation* const seg, const int segId);
+
+  /**
+   * Stores the provided shared pointer (double pointer) so that this blob
+   * shares the exact same merge data pointer as some other blob and knows when that
+   * some other blob may have nullified that pointer.
+   */
+  void setToExistingMergeData(BlobMergeData** const sharedBlobMergeData);
 
   TBOX bounding_box() const;
 
@@ -229,7 +262,7 @@ class BlobData: public ELIST_LINK {
 
   BlobDataGrid* parentGrid;
 
-  BlobMergeData mergeData;
+  BlobMergeData** mergeData;
 
   TesseractCharData* tesseractCharData;
 
@@ -256,6 +289,9 @@ class BlobData: public ELIST_LINK {
   // markers for grid creation/debugging
   bool markedAsTesseractSplit;
   bool markedForDeletion;
+
+  bool inBadRegion;
+  bool badRegionKnown;
 };
 
 #endif /* BLOBDATA_H_ */

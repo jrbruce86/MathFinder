@@ -33,34 +33,33 @@
 #include <stddef.h>
 #include <assert.h>
 
-#define DBG_SHOW_MERGE_START  // shows the starting blob for a merge
-#define DBG_SHOW_MERGE // shows all the merges that happen between DBG_SHOW_MERGE_START and
-                       // DBG_SHOW_MERGE_FINAL
-//#define DBG_SHOW_MERGE_ONE_SEGMENT // requires DBG_SHOW_MERGE, DBG_SHOW_MERGE_FINAL, and/or
-                                   // DBG_SHOW_MERGE_START to be turned on, only debugs a segment
-                                   // of interest rather than the entire page
-#define DBG_MERGE_VERBOSE // show everything that is being added to the merge list
-#define DBG_MERGE_INTERSECTING // show all the blobs that were merged because they intersect with a segment
-#define DBG_H_ADJACENT
-#define DBG_SHOW_MERGE_FINAL // shows the result of merging
+//#define SHOW_DETECTION_RESULTS // shows the results of detection prior to any cleanup or segmentation
+//#define SHOW_PASS1 // shows the results of the first pass (cleanup prior to segmentation)
+//#define DBG_SHOW_MERGE_START  // shows the starting blob for a merge
+//#define DBG_SHOW_MERGE // shows all the merges that happen between DBG_SHOW_MERGE_START and
+//#define DBG_SHOW_MERGE_ONE_SEGMENT // if turned on, only debugs a segment
+//                                   // of interest rather than threquires DBG_SHOW_MERGE, DBG_SHOW_MERGE_FINAL, and/or
+//                                   // DBG_SHOW_MERGE_START to be turned on, only debugs a segment
+//                                   // of interest rather than the entire page
+//#define DBG_MERGE_VERBOSE // show everything that is being added to the merge list
+//#define DBG_MERGE_INTERSECTING // show all the blobs that were merged because they intersect with a segment
+//#define DBG_H_ADJACENT
+//#define DBG_SHOW_MERGE_FINAL // shows the result of merging
+//#define SHOW_SEGIDS
+//#define SHOW_RECURSIONS
+//#define SHOW_PASSES
 
-#define SHOW_PASS1
-
-#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-int g_dbg_x = 1786; // define the left x coord of roi
-int g_dbg_y = 1506; // define the top y coord of roi
-bool g_dbg_flag = true;
-#endif
+bool g_dbg_flag = false;
 
 HeuristicMerge::HeuristicMerge(MathExpressionFeatureExtractor* const featureExtractor)
 : dbgim(NULL), highCertaintyThresh(Utils::getCertaintyThresh() / 2) {
   this->featureExtractor = featureExtractor;
   this->numAlignedBlobsFeatureExtractor = dynamic_cast<NumAlignedBlobsFeatureExtractor*>(getFeatureExtractor(NumAlignedBlobsFeatureExtractorDescription::getName_()));
   this->numVerticallyStackedFeatureExtractor = dynamic_cast<NumVerticallyStackedBlobsFeatureExtractor*>(getFeatureExtractor(NumVerticallyStackedBlobsFeatureExtractorDescription::getName_()));
+  this->otherFeatureExtractor = dynamic_cast<OtherRecognitionFeatureExtractor*>(getFeatureExtractor(OtherRecognitionFeatureExtractorDescription::getName_()));
 }
 
 void HeuristicMerge::runSegmentation(BlobDataGrid* const blobDataGrid) {
-  std::cout << "starting segmentation....\n";
   // now do the segmentation step
   dbgim = blobDataGrid->getImage(); // allows for optional debugging
 
@@ -69,173 +68,299 @@ void HeuristicMerge::runSegmentation(BlobDataGrid* const blobDataGrid) {
 
   this->blobDataGrid = blobDataGrid;
 
-  BlobDataGridSearch bdgs(blobDataGrid);
+#ifdef SHOW_DETECTION_RESULTS
+  {
+    Pix* detIm = blobDataGrid->getVisualDetectionResultsDisplay();
+    pixDisplay(detIm, 100, 100);
+    std::cout << "Displaying the results of detection prior to any segmentation.\n";
+    Utils::waitForInput();
+    pixDestroy(&detIm);
+  }
+#endif
 
   // pass 1: does some post-processing to get rid of blobs sparsely detected within recognized words
   // marked as valid by Tesseract with high confidence. Gets rid of any blob detected as math
   // that's within a stop word recognized with high confidence by Tesseract. Also gets rid of
   // blobs that are likely to be part of a header (i.e., a number at the top left).
-  bdgs.StartFullSearch();
-  BlobData* curblob = NULL;
-  double sparseness_threshold = .6; // minimum acceptable ratio of math blobs to total blobs in a recognized as valid non-math word
-  std::cout << "Starting segmentation pass 1\n";
-  while((curblob = bdgs.NextFullSearch()) != NULL) {
-    if(curblob->getParentWord() == NULL ||
-        !curblob->getMathExpressionDetectionResult()) {
-      // all of the below filters assume blob was recognized as math and
-      // is also part of some word recognized by Tesseract
-      continue;
-    }
-
-    // filter blobs detected in words recognized by Tesseract to match their
-    // dictionary and be non-math with medium confidence, or that didn't match
-    // a dictionary entry but yet still have high confidence and are non-math.
-    // Any blobs in stopwords recognized with medium confidence are discarded.
-    // Other blobs are set to non math if the word they are in has a lower math
-    // to nonmath ratio than the sparseness threshold.
-    if(!curblob->belongsToRecognizedMathWord()
-        && ((curblob->belongsToRecognizedWord()
-        && (curblob->getWordRecognitionConfidence() >= Utils::getCertaintyThresh() * 2))
-        || (curblob->getWordRecognitionConfidence() >= highCertaintyThresh * 2)
-        || (curblob->getWordAvgRecognitionConfidence() >= highCertaintyThresh))){
-      int num_math_in_word = 0;
-      if(curblob->belongsToRecognizedStopword()) {
-        curblob->setMathExpressionDetectionResult(false);
+  {
+#ifdef SHOW_PASSES
+    std::cout << "Starting segmentation pass 1\n";
+#endif
+    BlobDataGridSearch bdgs(blobDataGrid);
+    bdgs.SetUniqueMode(true);
+    bdgs.StartFullSearch();
+    BlobData* curblob = NULL;
+    const double sparseness_threshold = .6; // minimum acceptable ratio of math blobs to total blobs in a recognized as valid non-math word
+    while((curblob = bdgs.NextFullSearch()) != NULL) {
+      if(curblob->getParentWord() == NULL ||
+          !curblob->getMathExpressionDetectionResult()) {
+        // all of the below filters assume blob was recognized as math and
+        // is also part of some word recognized by Tesseract
         continue;
       }
-      std::vector<BlobData*> wordChildBlobs = getBlobsWithSameParent(curblob);
-      const int numwrdblobs = wordChildBlobs.size();
-      for(int i = 0; i < numwrdblobs; ++i) {
-        BlobData* const wrdblob = wordChildBlobs[i];
-        if(wrdblob->getMathExpressionDetectionResult()) {
-          ++num_math_in_word;
+
+      // Note:: confidence/certainty are used interchangeably to mean the same thing
+      //        tesseract's word confidence is equal to the lowest blob confidence in the word
+      // Filter blobs in words that are likely to be false positives based on
+      // Tesseract's confidence metric. If they match my math dictionary and have
+      // medium confidence I let them pass. But ones that don't meet that criteria
+      // and match a Tesseract dictionary entry with low confidence, have medium confidence
+      // or that have a high average confidence (average confidence of blobs as opposed to minimum)
+      // For blobs passing the above criteria:
+      // Any blobs in stopwords recognized with low confidence are discarded as nonmath.
+      // Other blobs are set to non math if the word they are in has a lower math
+      // to nonmath ratio than the sparseness threshold.
+      const float mediumConf = Utils::getCertaintyThresh();
+      const float lowConf = mediumConf * 2;
+      const float wordConf = curblob->getWordRecognitionConfidence();
+      if(!(curblob->belongsToRecognizedMathWord() && wordConf >= mediumConf)
+          &&  (
+              (curblob->belongsToRecognizedWord() && wordConf >= lowConf)
+              || (curblob->getWordRecognitionConfidence() >= mediumConf)
+              || (curblob->getWordAvgRecognitionConfidence() >= highCertaintyThresh)
+          )
+      ){
+        int num_math_in_word = 0;
+        if(curblob->belongsToRecognizedStopword()) {
+          curblob->setMathExpressionDetectionResult(false);
+          continue;
         }
-      }
-      double math_non_math_wrd_ratio = (double)num_math_in_word / (double)numwrdblobs;
-      if(math_non_math_wrd_ratio < sparseness_threshold) {
+        std::vector<BlobData*> wordChildBlobs = getBlobsWithSameParent(curblob);
+        const int numwrdblobs = wordChildBlobs.size();
         for(int i = 0; i < numwrdblobs; ++i) {
-          wordChildBlobs[i]->setMathExpressionDetectionResult(false);
+          BlobData* const wrdblob = wordChildBlobs[i];
+          if(wrdblob->getMathExpressionDetectionResult()) {
+            ++num_math_in_word;
+          }
+        }
+        double math_non_math_wrd_ratio = (double)num_math_in_word / (double)numwrdblobs;
+        if(math_non_math_wrd_ratio < sparseness_threshold) {
+          for(int i = 0; i < numwrdblobs; ++i) {
+            wordChildBlobs[i]->setMathExpressionDetectionResult(false);
+          }
         }
       }
     }
-  }
-  // Any blobs on the top row are assumed to be header....
-  GenericVector<TesseractWordData*> topRowWords =
-      blobDataGrid->getAllTessRows()[0]->getTesseractWords();
-  for(int i = 0; i < topRowWords.size(); ++i) {
-    std::vector<TesseractCharData*> chars = topRowWords[i]->getChildChars();
-    for(int j = 0; j < chars.size(); ++j) {
-      std::vector<BlobData*> blobs = chars[j]->getBlobs();
-      for(int k = 0; k < blobs.size(); ++k) {
-        blobs[k]->setMathExpressionDetectionResult(false);
+    // Any blobs on the top row are assumed to be header....
+    GenericVector<TesseractWordData*> topRowWords =
+        blobDataGrid->getAllTessRows()[0]->getTesseractWords();
+    for(int i = 0; i < topRowWords.size(); ++i) {
+      std::vector<TesseractCharData*> chars = topRowWords[i]->getChildChars();
+      for(int j = 0; j < chars.size(); ++j) {
+        std::vector<BlobData*> blobs = chars[j]->getBlobs();
+        for(int k = 0; k < blobs.size(); ++k) {
+          blobs[k]->setMathExpressionDetectionResult(false);
+        }
       }
     }
-  }
 
 #ifdef SHOW_PASS1
-  {
-    Pix* pass1Im = blobDataGrid->getVisualDetectionResultsDisplay();
-    pixDisplay(pass1Im, 100, 100);
-    std::cout << "Displaying the results of segmentation pass 1.\n";
-    Utils::waitForInput();
-    pixDestroy(&pass1Im);
-  }
-  return;
+    {
+      Pix* pass1Im = blobDataGrid->getVisualDetectionResultsDisplay();
+      pixDisplay(pass1Im, 100, 100);
+      std::cout << "Displaying the results of segmentation pass 1.\n";
+      Utils::waitForInput();
+      pixDestroy(&pass1Im);
+    }
 #endif
+  }
+
+  // pass 1.5: Go through and get rid of any previously marked covered regions
+  //           While some code is shared between feature extracton and segmentation
+  //           They use different paramaters to do what they need....
+  {
+    BlobDataGridSearch bdgs(blobDataGrid);
+    bdgs.StartFullSearch();
+    bdgs.SetUniqueMode(true);
+    BlobData* curblob = NULL;
+    while((curblob = bdgs.NextFullSearch()) != NULL) {
+      NumAlignedBlobsData* numAlignedBlobsData =
+          numAlignedBlobsFeatureExtractor->getBlobFeatureData(curblob);
+      numAlignedBlobsData->dvabc_blobs.clear();
+      numAlignedBlobsData->uvabc_blobs.clear();
+      numAlignedBlobsData->lhabc_blobs.clear();
+      numAlignedBlobsData->rhabc_blobs.clear();
+    }
+  }
 
   // pass 2: run the segmentation algorithm
-  std::cout << "Running segmentation pass 2.\n";
-  bdgs.StartFullSearch();
-  curblob = NULL;
-  int seg_id = 0;
-  while((curblob = bdgs.NextFullSearch()) != NULL) {
-    if(!curblob->getMathExpressionDetectionResult() || curblob->getMergeData().is_processed)
-      continue;
+  {
+#ifdef SHOW_PASSES
+    std::cout << "Running segmentation pass 2.\n";
+#endif
+    BlobDataGridSearch bdgs(blobDataGrid);
+    bdgs.StartFullSearch();
+    bdgs.SetUniqueMode(true);
+    BlobData* curblob = NULL;
+    int seg_id = 0; // unique id for each segment, incremented after each segment completed
+    while((curblob = bdgs.NextFullSearch()) != NULL) {
+      if(!curblob->getMathExpressionDetectionResult() || curblob->getMergeData() != NULL) {
+        continue;
+      }
 #ifdef DBG_SHOW_MERGE_START
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-    if(curblob->getBoundingBox().left() == g_dbg_x && curblob->getBoundingBox().top() == (dbgim->h - g_dbg_y))
-      g_dbg_flag = true;
-    else
-      g_dbg_flag = false;
-    if(g_dbg_flag) {
+      if(seg_id == 53) {
+        g_dbg_flag = true;
+      } else {
+        g_dbg_flag = false;
+      }
+      if(g_dbg_flag) {
 #endif
-      std::cout << "About the start merging process from the displayed blob:\n";
-      M_Utils::dispHlBlobDataRegion(curblob, dbgim);
-      M_Utils::waitForInput();
+        std::cout << "About to start the merging process from the displayed blob:\n";
+        M_Utils::dispHlBlobDataRegion(curblob, dbgim);
+        M_Utils::dispBlobDataRegion(curblob, dbgim);
+        M_Utils::waitForInput();
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-    }
+      }
 #endif
 #endif
-    decideAndMerge(curblob, seg_id); // recursively merges a blob to its neighbors to create a segmentation
+#ifdef SHOW_SEGIDS
+      std::cout << "Start decideandmerge... segid=" << seg_id << std::endl;
+#endif
+      mergeRecursions = 0;
+      decideAndMerge(curblob, seg_id); // recursively merges a blob to its neighbors to create a segmentation
+#ifdef SHOW_SEGIDS
+      std::cout << "done decideandmerge... segid=" << seg_id << ", took " << mergeRecursions << " recursions.\n";
+#endif
 #ifdef DBG_SHOW_MERGE_FINAL
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-    if(g_dbg_flag) {
+      if(g_dbg_flag) {
 #endif
-      std::cout << "completed merge!\n";
-      std::cout << "Displaying the finalized segment!\n";
-      std::cout << "This is the segment with id: " << curblob->getMergeData().seg_id << std::endl;
-      TBOX* seg_tbox = curblob->getMergeData().segment_box;
-      M_Utils::dispHlTBoxRegion(*seg_tbox, dbgim);
-      M_Utils::waitForInput();
+        std::cout << "completed merge!\n";
+        std::cout << "Displaying the finalized segment!\n";
+        std::cout << "This is the segment with id: " << curblob->getMergeData().seg_id << std::endl;
+        TBOX* seg_tbox = curblob->getMergeData().segment_box;
+        M_Utils::dispHlTBoxRegion(*seg_tbox, dbgim);
+        M_Utils::waitForInput();
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+      }
+#endif
+#endif
+      ++seg_id;
     }
-#endif
-#endif
-    ++seg_id;
   }
+
+  // pass 3: Merge all segments fully/nearly contained within other segments
+  {
+#ifdef SHOW_PASSES
+    std::cout << "Starting segmentation pass 3\n";
+#endif
+    BlobDataGridSearch fullGridSearch(blobDataGrid);
+    fullGridSearch.StartFullSearch();
+    fullGridSearch.SetUniqueMode(true);
+    BlobData* curBlob = NULL;
+    while((curBlob = fullGridSearch.NextFullSearch()) != NULL) {
+      if(curBlob->getMergeData() != NULL) {
+        TBOX* const biggerSegmentBox = curBlob->getMergeData()->getSegBox();
+        BlobDataGridSearch biggerSegmentSearch(blobDataGrid);
+        biggerSegmentSearch.SetUniqueMode(true);
+        biggerSegmentSearch.StartRectSearch(*biggerSegmentBox);
+        BlobData* overlappingBlob = NULL;
+        while((overlappingBlob = biggerSegmentSearch.NextRectSearch()) != NULL) {
+          if(overlappingBlob->getMergeData() != NULL) {
+            if(overlappingBlob->getMergeData()->getSegId() == curBlob->getMergeData()->getSegId()) {
+              // already belongs to the expected segment, move on
+              continue;
+            }
+            TBOX* const smallerSegmentBox = overlappingBlob->getMergeData()->getSegBox();
+            if(M_Utils::almostContains(*biggerSegmentBox, *smallerSegmentBox)) {
+              BlobMergeData* const biggerSegment = curBlob->getMergeData();
+              BlobMergeData* const smallerSegment = overlappingBlob->getMergeData();
+
+              // Remove reference to smaller segment from the grid's results list
+              blobDataGrid->removeSegmentation(smallerSegment->getSegmentation());
+
+              // Delete the shared reference to the smaller segment and nullify
+              delete *(overlappingBlob->getMergeDataSharedPtr());
+              *(overlappingBlob->getMergeDataSharedPtr()) = NULL;
+
+              // Assign all of the blobs in the smaller box to their new segmentation
+              {
+                BlobDataGridSearch smallerSegmentSearch(blobDataGrid);
+                smallerSegmentSearch.SetUniqueMode(true);
+                smallerSegmentSearch.StartRectSearch(*smallerSegmentBox);
+                BlobData* smallerSegBlob = NULL;
+                while((smallerSegBlob = smallerSegmentSearch.NextRectSearch()) != NULL) {
+                  if(smallerSegBlob->getMergeData() == NULL) {
+                    smallerSegBlob->setToExistingMergeData(curBlob->getMergeDataSharedPtr());
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+#ifdef SHOW_PASSES
+  std::cout << "finished segmentation.....\n";
+#endif
 }
 
 // make the merge decision for left, right, up, and down
 // carry out the merge operation(s) for left, right, up, or down if applicable
 void HeuristicMerge::decideAndMerge(BlobData* blob,
     const int& seg_id) {
+  if(mergeRecursions++ > 30) {
+    std::cout << "ERROR Exceeded 30 recursions. Exiting.\n";
+    return; // obviously too many done.
+  }
+#ifdef SHOW_RECURSIONS
+  std::cout << "merge recursion " << mergeRecursions << std::endl;
+#endif
+
+  // initialize the blob's segmentation if it hasn't been initialized yet
+  // if it's not part of an existing segment make a new one for it
+  if(blob->getMergeData() == NULL) {
+    Segmentation* seg = new Segmentation;
+    seg->box = new TBOX(
+        blob->getBoundingBox().left(),
+        blob->getBoundingBox().bottom(),
+        blob->getBoundingBox().right(),
+        blob->getBoundingBox().top());
+    RESULT_TYPE segRes;
+    if(blob->belongsToRecognizedNormalRow())
+      segRes = EMBEDDED;
+    else
+      segRes = DISPLAYED;
+    seg->res = segRes;
+    blobDataGrid->appendSegmentation(seg); // the grid just owns a shallow copy
+    blob->setToNewMergeData(seg, seg_id);
+  }
+
+  BlobMergeData* const blob_merge_info = blob->getMergeData();
+  blob_merge_info->clearBuffers();
+  if(blob_merge_info->getSegId() != seg_id) {
+    return; // this blob was already added to a different segment
+  }
+//  M_Utils::dispHlBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+//  M_Utils::dispBlobDataRegion(blob, blobDataGrid->getBinaryImage());
+//  //M_Utils::waitForInput();
+//  int total = blob_merge_info.down.size()
+//      + blob_merge_info.up.size()
+//      + blob_merge_info.right.size()
+//      + blob_merge_info.left.size()
+//      + blob_merge_info.intersecting.size();
+//  std::cout << "total blobs " << total << std::endl;
 #ifdef DBG_SHOW_MERGE
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
   if(g_dbg_flag) {
 #endif
-    std::cout << "Starting the decideAndMerge with the displayed blob:\n";
+    std::cout << "Starting the recursive algorithm with the displayed region at segment id " << seg_id << " and also showing the current blob.:\n";
+    M_Utils::dispHlBlobDataSegmentation(blob, dbgim);
     M_Utils::dispBlobDataRegion(blob, dbgim);
+    std::cout << "seg area " << blob_merge_info->getSegBox()->area() << std::endl;
     M_Utils::waitForInput();
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
   }
 #endif
 #endif
-  BlobMergeData& blob_merge_info = blob->getMergeData();
-  if(blob_merge_info.seg_id > -1 && blob_merge_info.seg_id != seg_id)
-    return; // this blob was already added to a different segment
-  bool was_already_processed = blob_merge_info.is_processed;
-  blob_merge_info.is_processed = true; // go ahead and flag as processed to prevent endless recursion
-  blob_merge_info.seg_id = seg_id;
-  // initialize the blob's segmentation if it hasn't been initialized yet
-  TBOX*& blob_segment = blob_merge_info.segment_box;
-  // if it's not part of an existing segment make a new one for it
-  if(!blob_segment) {
-    blob_segment = new TBOX(
-        blob->getBoundingBox().left(),
-        blob->getBoundingBox().bottom(),
-        blob->getBoundingBox().right(),
-        blob->getBoundingBox().top());
-    RESULT_TYPE res;
-    if(blob->belongsToRecognizedNormalRow())
-      res = EMBEDDED;
-    else
-      res = DISPLAYED;
-    Segmentation* seg = new Segmentation;
-    seg->box = blob_segment;
-    seg->res = res;
-    blobDataGrid->getSegments().push_back(seg); // the allocated memory is owned at a higher level
+  // Quick sanity check
+  assert(blob_merge_info->getSegId() > -1);
+  if(blob_merge_info->getSegId() != seg_id) {
+    assert(false);
   }
-  if(was_already_processed) {
-    assert(blob_merge_info.seg_id > -1);
-    if(blob_merge_info.seg_id == seg_id) {
-      assert(blob_merge_info.processed_seg_area <= blob_segment->area());
-      if(blob_merge_info.processed_seg_area == blob_segment->area())
-        return;
-    }
-    else
-      return;
-  }
-  blob_merge_info.processed_seg_area = blob_segment->area();
 
   // figure out which blobs aught to be merged to the current segmentation
   mergeDecision(blob, BlobSpatial::LEFT);
@@ -262,154 +387,134 @@ void HeuristicMerge::decideAndMerge(BlobData* blob,
   }
 #endif
 #endif
-
-  // carry out the merge operation on the applicable directions
-  GenericVector<BlobData*> all_merges;
-  const GenericVector<BlobData*>& mergedown = blob_merge_info.down;
+  // carry out the merge operation in the applicable directions
+  bool mergeCarriedOut = blob_merge_info->hasNonEmptyBuffer();
+  const GenericVector<BlobData*>& mergedown = blob_merge_info->down;
   for(int i = 0; i < mergedown.length(); ++i) {
-    if(mergedown[i]->getMergeData().seg_id == -1)
+    if(mergedown[i]->getMergeData() == NULL) {
       mergeOperation(blob, mergedown[i], BlobSpatial::DOWN);
-    all_merges.push_back(mergedown[i]);
+    }
   }
-  const GenericVector<BlobData*>& mergeup = blob_merge_info.up;
+  const GenericVector<BlobData*>& mergeup = blob_merge_info->up;
   for(int i = 0; i < mergeup.length(); ++i) {
-    if(mergeup[i]->getMergeData().seg_id == -1)
+    if(mergeup[i]->getMergeData() == NULL) {
       mergeOperation(blob, mergeup[i], BlobSpatial::UP);
-    all_merges.push_back(mergeup[i]);
+    }
   }
-  const GenericVector<BlobData*>& mergeright = blob_merge_info.right;
+  const GenericVector<BlobData*>& mergeright = blob_merge_info->right;
   for(int i = 0; i < mergeright.length(); ++i) {
-    if(mergeright[i]->getMergeData().seg_id == -1)
+    if(mergeright[i]->getMergeData() == NULL) {
       mergeOperation(blob, mergeright[i], BlobSpatial::RIGHT);
-    all_merges.push_back(mergeright[i]);
+    }
   }
-  const GenericVector<BlobData*>& mergeleft = blob_merge_info.left;
+  const GenericVector<BlobData*>& mergeleft = blob_merge_info->left;
   for(int i = 0; i < mergeleft.length(); ++i) {
-    if(mergeleft[i]->getMergeData().seg_id == -1)
+    if(mergeleft[i]->getMergeData() == NULL) {
       mergeOperation(blob, mergeleft[i], BlobSpatial::LEFT);
-    all_merges.push_back(mergeleft[i]);
+    }
   }
-  const GenericVector<BlobData*>& intersecting = blob_merge_info.intersecting;
+  const GenericVector<BlobData*>& intersecting = blob_merge_info->intersecting;
   for(int i = 0; i < intersecting.length(); ++i) {
-    if(intersecting[i]->getMergeData().seg_id == -1)
+    if(intersecting[i]->getMergeData() == NULL) {
       mergeOperation(blob, intersecting[i], BlobSpatial::INTERSECT);
-    all_merges.push_back(intersecting[i]);
+    }
   }
-  // recursively repeat for each merged region
-  for(int i = 0; i < all_merges.length(); ++i)
-    decideAndMerge(all_merges[i], seg_id);
+
+   //Look for horizontal merge on updated segment prior to jumping into recursion
+  if(g_dbg_flag) {
+    std::cout << "Looking for rightward merge.\n";
+  }
+  BlobData* const hMergeRight = lookForHorizontalMerge(
+      blob->getMergeData()->getSegBox(), blobDataGrid, BlobSpatial::RIGHT, seg_id);
+  if(g_dbg_flag) {
+    std::cout << "Looking for leftward merge\n";
+  }
+  BlobData* const hMergeLeft = lookForHorizontalMerge(
+      blob->getMergeData()->getSegBox(), blobDataGrid, BlobSpatial::LEFT, seg_id);
+  if(hMergeRight != NULL) {
+    if(hMergeRight->getMergeData() == NULL) {
+#ifdef DBG_H_ADJACENT
+      std::cout << "Merging the blob to the right.\n";
+#endif
+      mergeOperation(blob, hMergeRight, BlobSpatial::RIGHT);
+      mergeCarriedOut = true; // so know we need to recurse
+    }
+#ifdef DBG_H_ADJACENT
+    else {
+      std::cout << "Can't merge horizontal adjacent right since blob owned by a segment\n";
+    }
+#endif
+  }
+  if(hMergeLeft != NULL) {
+    if(hMergeLeft->getMergeData() == NULL) {
+#ifdef DBG_H_ADJACENT
+      std::cout << "Merging the blob to the left.\n";
+#endif
+      mergeOperation(blob, hMergeLeft, BlobSpatial::LEFT);
+      mergeCarriedOut = true; // so know we need to recurse
+    }
+#ifdef DBG_H_ADJACENT
+    else {
+      std::cout << "Can't merge horizontal adjacent left since blob owned by another segment\n";
+    }
+#endif
+  }
+
+#ifdef DBG_SHOW_MERGE
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+  if(g_dbg_flag) {
+#endif
+  if(!mergeCarriedOut) {
+    std::cout << "No merges. Here's the current segmentation:\n";
+    M_Utils::dispHlBlobDataSegmentation(blob, dbgim);
+    M_Utils::waitForInput();
+  }
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+  }
+#endif
+#endif
+
+  // recursively repeat for the newly merged segmentation
+  // don't recurse if no merge carried out
+  if(mergeCarriedOut) {
+    // just need to do merge on one blob doesn't matter which as
+    // they are all part of the same segmentation
+    decideAndMerge(blob, seg_id);
+  }
 }
 
 void HeuristicMerge::mergeDecision(BlobData* blob, BlobSpatial::Direction dir) {
   assert(dir == BlobSpatial::LEFT || dir == BlobSpatial::RIGHT
       || dir == BlobSpatial::UP || dir == BlobSpatial::DOWN);
-  BlobMergeData& merge_info = blob->getMergeData();
-
+  BlobMergeData* merge_info = blob->getMergeData();
+//std::cout << "in mergeDecision " << (dir == BlobSpatial::LEFT ? "left."
+//    : dir == BlobSpatial::RIGHT ? "right." : dir == BlobSpatial::UP ?
+//        "up." : "down.") << "\n";
   // Get the blob's data associated with the feature extractor
   NumAlignedBlobsData* numAlignedBlobsData = numAlignedBlobsFeatureExtractor->getBlobFeatureData(blob);
+  numAlignedBlobsData->clearBuffers(); // only care about what is computed here (not on prev recursions)
 
-  GenericVector<BlobData*> covered_merges; // stores blob merged by the "cover feature"
-  GenericVector<BlobData*> stacked_merges;
-  BlobData* h_adjacent = NULL;
+  //GenericVector<BlobData*> stacked_merges;
 
+  numAlignedBlobsFeatureExtractor->countCoveredBlobs(
+      blob, blobDataGrid, dir, true, merge_info->getSegId());
 
   // horizontal merge decision
+  GenericVector<BlobData*> covered_merges; // stores blob merged by the "cover feature"
   if(dir == BlobSpatial::LEFT || dir == BlobSpatial::RIGHT) {
-    int count = numAlignedBlobsFeatureExtractor->countCoveredBlobs(blob, blobDataGrid, dir, true);
     assert(covered_merges.empty());
-    if(dir == BlobSpatial::LEFT)
-      covered_merges = numAlignedBlobsData->lhabc_blobs;
-    else
-      covered_merges = numAlignedBlobsData->rhabc_blobs;
-    // is there something to the left or right that's not on the covered list
-    // but that is still adjacent?
-    TBOX* segbox = merge_info.segment_box;
-    BlobDataGridSearch bdgs(blobDataGrid);
-    //const inT16 segbox_center_y = segbox->bottom() + (segbox->height() / 2);
-    bdgs.StartSideSearch((dir == BlobSpatial::RIGHT) ? segbox->right() : segbox->left(),
-        segbox->bottom(), segbox->top());
-    BlobData* n = bdgs.NextSideSearch((dir == BlobSpatial::RIGHT) ? false : true);
-    while((n->getBoundingBox() == blob->getBoundingBox()) ||
-        ((dir == BlobSpatial::RIGHT) ? (n->getBoundingBox().left() <= segbox->right())
-            : (n->getBoundingBox().right() >= segbox->left()))
-              || (n->getBoundingBox().top() < segbox->bottom() || n->getBoundingBox().bottom() > segbox->top())) {
-      n = bdgs.NextSideSearch((dir == BlobSpatial::RIGHT) ? false : true);
-      if(n == NULL)
-        break;
-    }
-    if(n != NULL) {
-      if(NumVerticallyStackedBlobsFeatureExtractor::isAdjacent(n, blob, dir, merge_info.segment_box))
-        h_adjacent = n;
-    }
-    // if there weren't any covered or horizontally adjacent blobs found yet
-    // see if there's something directly to the right or left of the current
-    // blob that may constitute an operator or operand depending upon the situation
-    if(h_adjacent == NULL && covered_merges.empty()) {
-      bdgs.StartSideSearch((dir == BlobSpatial::RIGHT) ? blob->getBoundingBox().right() : blob->getBoundingBox().left(),
-          blob->getBoundingBox().bottom(), blob->getBoundingBox().top());
-      n = bdgs.NextSideSearch((dir == BlobSpatial::RIGHT) ? false : true);
-      while((n->getBoundingBox() == blob->getBoundingBox()) ||
-          ((dir == BlobSpatial::RIGHT) ? (n->getBoundingBox().left() <= blob->getBoundingBox().right())
-              : (n->getBoundingBox().right() >= blob->getBoundingBox().left()))
-                || (n->getBoundingBox().top() < blob->getBoundingBox().bottom() || n->getBoundingBox().bottom() > blob->getBoundingBox().top())) {
-        n = bdgs.NextSideSearch((dir == BlobSpatial::RIGHT) ? false : true);
-        if(n == NULL)
-          break;
-        // has to be DIRECTLY to the right or left of the current blob
-        // in order to be of significance, otherwise just move on
-        if((!(n->getBoundingBox() == blob->getBoundingBox()))
-            && wasAlreadyMerged(n, blob)) {
-          n = NULL;
-          break;
-        }
-      }
-      // is the current symbol an operator? if so whatever was found in the given
-      // direction should be an operand!
-      if(isOperator(blob)) {
-        if(n != NULL) {
-#ifdef DBG_SHOW_MERGE
-#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-          if(g_dbg_flag) {
-#endif
-            std::cout << "The horizontally adjacent blob is an operand.\n";
-#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-          }
-#endif
-#endif
-          h_adjacent = n;
-        }
-      }
-      else { // if whatever was found is an operator then this is likely an operand to it!
-        if(n != NULL) {
-          if(isOperator(n)) {
-#ifdef DBG_SHOW_MERGE
-#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-          if(g_dbg_flag) {
-#endif
-            std::cout << "The horizontally adjacent blob is an operator.\n";
-#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
-          }
-#endif
-#endif
-            h_adjacent = n;
-          }
-        }
-      }
+    if(dir == BlobSpatial::LEFT) {
+      covered_merges = filterAlreadyMerged(numAlignedBlobsData->lhabc_blobs);
+    } else {
+      covered_merges = filterAlreadyMerged(numAlignedBlobsData->rhabc_blobs);
     }
   }
   else { // vertical merge decision
-    // using cover feature (on the segment rather than on the blob though!)
-    int count = numAlignedBlobsFeatureExtractor->countCoveredBlobs(blob, blobDataGrid, dir, true);
     assert(covered_merges.empty());
     if(dir == BlobSpatial::DOWN)
-      covered_merges = numAlignedBlobsData->dvabc_blobs;
+      covered_merges = filterAlreadyMerged(numAlignedBlobsData->dvabc_blobs);
     else
-      covered_merges = numAlignedBlobsData->uvabc_blobs;
-
-    // using stack feature
-    stacked_merges =
-        numVerticallyStackedFeatureExtractor
-        ->getBlobFeatureData(blob)->getStackedBlobs();
+      covered_merges = filterAlreadyMerged(numAlignedBlobsData->uvabc_blobs);
   }
 
 #ifdef DBG_SHOW_MERGE
@@ -423,103 +528,246 @@ void HeuristicMerge::mergeDecision(BlobData* blob, BlobSpatial::Direction dir) {
     for(int i = 0; i < covered_merges.length(); ++i) {
       std::cout << "Displaying covered merge " << i << std::endl;
       M_Utils::dispBlobDataRegion(covered_merges[i], dbgim);
+      covered_merges[i]->bounding_box().print();
       M_Utils::waitForInput();
     }
 #endif
-    std::cout << "Found " << stacked_merges.length() << " " <<
-        ((dir == BlobSpatial::UP) ? "upward" : (dir == BlobSpatial::DOWN) ? "downward"
-            : (dir == BlobSpatial::RIGHT) ? "rightward" : "leftward") << " stacked merges\n";
-#ifdef DBG_MERGE_VERBOSE
-    for(int i = 0; i < stacked_merges.length(); ++i) {
-      std::cout << "Displaying stacked merge " << i << std::endl;
-      M_Utils::dispBlobDataRegion(stacked_merges[i], dbgim);
-      M_Utils::waitForInput();
-    }
-#endif
-    if(h_adjacent != NULL) {
-      std::cout << "Found a " << ((dir == BlobSpatial::RIGHT) ? "rightward" : "leftward") << " horizontal merge\n";
-#ifdef DBG_MERGE_VERBOSE
-      std::cout << "Displaying the horizontal merge:\n";
-      M_Utils::dispBlobDataRegion(h_adjacent, dbgim);
-      M_Utils::waitForInput();
-#endif
-    }
-    else
-      std::cout << "Found 0 " << ((dir == BlobSpatial::RIGHT) ? "rightward" : "leftward") << " horizontal merges\n";
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
   }
 #endif
 #endif
 
   // add all the blobs to be merged in the given direction onto the mergeinfo for this blob
-  GenericVector<BlobData*>& merge_list = (dir == BlobSpatial::UP) ? merge_info.up :
-      (dir == BlobSpatial::DOWN) ? merge_info.down : (dir == BlobSpatial::RIGHT) ? merge_info.right :
-          merge_info.left;
+  GenericVector<BlobData*>& merge_list = (dir == BlobSpatial::UP) ? merge_info->up :
+      (dir == BlobSpatial::DOWN) ? merge_info->down : (dir == BlobSpatial::RIGHT) ? merge_info->right :
+          merge_info->left;
   for(int i = 0; i < covered_merges.length(); ++i) {
-    const BlobMergeData& covered_mergeinfo = covered_merges[i]->getMergeData();
-    if(covered_mergeinfo.seg_id > -1)
+    if(covered_merges[i]->getMergeData() != NULL) {
       continue; // the covered blob is part of a different segment or was already
                 // merged to this one so should not be merged again
+    }
     merge_list.push_back(covered_merges[i]);
-  }
-  for(int i = 0; i < stacked_merges.length(); ++i) {
-    const BlobMergeData& stacked_mergeinfo = stacked_merges[i]->getMergeData();
-    if(stacked_mergeinfo.seg_id > -1)
-      continue; // the covered blob is part of a different segment or was already
-                // merged to this one so should not be merged again
-    merge_list.push_back(stacked_merges[i]);
-  }
-  if(h_adjacent != NULL) {
-    const BlobMergeData& h_adj_mergeinfo = h_adjacent->getMergeData();
-    if(h_adj_mergeinfo.seg_id == -1)
-      merge_list.push_back(h_adjacent);
   }
 }
 
-void HeuristicMerge::checkIntersecting(BlobData* blob) {
-  BlobMergeData& mergeinfo = blob->getMergeData();
-  GenericVector<BlobData*> intersecting;
-  TBOX* segbox = mergeinfo.segment_box;
-  const int& segid = mergeinfo.seg_id;
+
+/**
+ * Look horizontally for a blob adjacent to either the leftmost or rightmost
+ * blob in the given segment box. Only works horizontally not vertically.
+ * Returns the horizontally adjacent blob if found, otherwise returns null
+ *
+ */
+BlobData* HeuristicMerge::lookForHorizontalMerge(
+    TBOX* const segmentBox, BlobDataGrid* const blobDataGrid,
+    BlobSpatial::Direction dir, const int& segId) {
+  assert(isHorizontal(dir));
+  bool leftToRight = false;
+  if(dir == BlobSpatial::RIGHT) {
+    leftToRight = true;
+  }
+  // Get the rightmost/leftmost blob in the segment
+  BlobData* sideBlob = NULL;
+  TBOX segmentBoxVal = *segmentBox;
   BlobDataGridSearch bdgs(blobDataGrid);
+  if(leftToRight) {
+    bdgs.StartSideSearch(segmentBox->right(), segmentBox->bottom(), segmentBox->top());
+    sideBlob = bdgs.NextSideSearch(true); // find the blob all the way to the top right
+  } else {
+    bdgs.StartSideSearch(segmentBox->left(), segmentBox->bottom(), segmentBox->top());
+    sideBlob = bdgs.NextSideSearch(false); // find the blob all the way to the top left
+  }
+  if(sideBlob == NULL) {
+    if(g_dbg_flag) {
+      std::cout << "Couldn't find sideblob!!!!\n";
+    }
+    return NULL;
+  } else if(!sideBlob->bounding_box().overlap(segmentBoxVal)) {
+    if(g_dbg_flag) {
+      std::cout << "Found sideblob but doesn't intersect the segment!!!!\n";
+    }
+    return NULL;
+  } else {
+    if(g_dbg_flag) {
+      std::cout << "Found sideblob that intersects the segment. showing on top of the highlighted segmentation\n";
+      M_Utils::dispHlTBoxRegion(segmentBoxVal, blobDataGrid->getBinaryImage());
+      M_Utils::dispBlobDataRegion(sideBlob, blobDataGrid->getBinaryImage());
+      M_Utils::waitForInput();
+    }
+  }
+
+  bdgs.StartSideSearch(leftToRight ? segmentBox->right() : segmentBox->left(),
+      segmentBox->bottom(), segmentBox->top());
+  bdgs.SetUniqueMode(true);
+  BlobData* n = bdgs.NextSideSearch(!leftToRight);
+  while((n->bounding_box() == sideBlob->bounding_box())
+      || segmentBox->contains(n->bounding_box())
+      || n->getMergeData() != NULL
+      || (leftToRight ? (n->left() <= segmentBox->right() || n->left() <= sideBlob->right())
+          : (n->right() >= segmentBox->left() || n->right() >= sideBlob->left()))
+      || (n->top() < segmentBox->bottom())
+      || (n->bottom() > segmentBox->top()))
+  {
+    n = bdgs.NextSideSearch(!leftToRight);
+    if(n == NULL) {
+#ifdef DBG_SHOW_MERGE
+      if(g_dbg_flag) {
+        std::cout << "Couldn't find neighbor to sideblob\n";
+      }
+#endif
+      return NULL;
+    }
+    if(n->getMergeData() != NULL) {
+      if(n->getMergeData()->getSegId() == segId) {
+        if(g_dbg_flag) {
+          std::cout << "Can't add neighbor to merge since already part of this segment.\n";
+          std::cout << "segbox: "; M_Utils::dispTBoxAsCoords(segmentBoxVal);
+          std::cout << "neighbor: "; M_Utils::dispTBoxAsCoords(n->bounding_box());
+          std::cout << "sideblob: "; M_Utils::dispTBoxAsCoords(sideBlob->bounding_box());
+          std::cout << "Showing neighbor on top of highlighted segment.\n";
+          M_Utils::dispHlTBoxRegion(segmentBoxVal, blobDataGrid->getBinaryImage());
+          M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+          M_Utils::waitForInput();
+        }
+      } else {
+#ifdef DBG_SHOW_MERGE
+        if(g_dbg_flag) {
+          std::cout << "Can't add neighbor to merge since owned by different one\n";
+        }
+#endif
+        return NULL;
+      }
+    }
+  }
+  if(n != NULL) {
+#ifdef DBG_SHOW_MERGE
+    if(g_dbg_flag) {
+      std::cout << "checking adjacent!!!!!!!!!!!!!!!\n";
+    }
+#endif
+    if(NumVerticallyStackedBlobsFeatureExtractor::isAdjacent(n, sideBlob, dir, true))
+    {
+#ifdef DBG_H_ADJACENT
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+      if(g_dbg_flag) {
+#endif
+      std::cout << "Found a horizontal merge in the " << (leftToRight ? "rightward" : "leftward") << " direction. Showing the adjacent blob.\n";
+      M_Utils::dispHlTBoxRegion(segmentBoxVal, blobDataGrid->getBinaryImage());
+      M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+      M_Utils::waitForInput();
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+      }
+#endif
+#endif
+#ifdef DBG_SHOW_MERGE
+      if(g_dbg_flag) {
+        std::cout << "Found an adjacent!!!!!!!!!!!!!!!1\n";
+      }
+#endif
+      bool passesFilter = true;
+      if(n->belongsToRecognizedWord()
+          && n->getWordAvgRecognitionConfidence() > Utils::getCertaintyThresh() * 2
+          && n->getCharRecognitionConfidence() > Utils::getCertaintyThresh()) {
+        if(!n->belongsToRecognizedMathWord()) {
+#ifdef DBG_SHOW_MERGE
+          if(g_dbg_flag) {
+            std::cout << "However, will not merge since the neighbor belongs to a recognized non-math word with good confidence.\n";
+            std::cout << "Avg word rec conf: " << n->getWordAvgRecognitionConfidence() << std::endl;
+            std::cout << "Char rec conf: " << n->getCharRecognitionConfidence() << std::endl;
+            M_Utils::waitForInput();
+          }
+#endif
+          passesFilter = false;
+        }
+      }
+      if(passesFilter) {
+        return n;
+      }
+    }
+
+    // if there weren't any covered or horizontally adjacent blobs found yet
+    // see if there's something directly to the right or left of the current
+    // blob that may constitute an operator or operand depending upon the situation
+
+    // is the current symbol an operator? if so whatever was found in the given
+    // direction should be an operand!
+    if(isOperator(sideBlob)) {
+#ifdef DBG_SHOW_MERGE
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+      if(g_dbg_flag) {
+#endif
+#ifdef DBG_H_ADJACENT
+        std::cout << "The horizontally adjacent blob is an operand to the sideblob which is " << sideBlob->getParentCharStr() << std::endl;
+        M_Utils::dispHlTBoxRegion(segmentBoxVal, blobDataGrid->getBinaryImage());
+        M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+        M_Utils::waitForInput();
+#endif
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+      }
+#endif
+#endif
+      return n;
+    }
+    else { // if whatever was found is an operator then this is likely an operand to it!
+      if(isOperator(n)) {
+#ifdef DBG_SHOW_MERGE
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+        if(g_dbg_flag) {
+#endif
+#ifdef DBG_H_ADJACENT
+          std::cout << "The horizontally adjacent blob is an operator: " << n->getParentCharStr() << std::endl;
+          M_Utils::dispHlTBoxRegion(segmentBoxVal, blobDataGrid->getBinaryImage());
+          M_Utils::dispBlobDataRegion(n, blobDataGrid->getBinaryImage());
+          M_Utils::waitForInput();
+#endif
+#ifdef DBG_SHOW_MERGE_ONE_SEGMENT
+        }
+#endif
+#endif
+        return n;
+      }
+#ifdef DBG_SHOW_MERGE
+      else {
+        std::cout << "The neighbor is not an operator: " << n->getParentCharStr() << std::endl;
+      }
+#endif
+    }
+  }
+  return NULL;
+}
+
+void HeuristicMerge::checkIntersecting(BlobData* blob) {
+  //std::cout << "Checking for intersecting blobs to current segmentation.\n";
+  BlobMergeData* const mergeinfo = blob->getMergeData();
+  assert(mergeinfo != NULL); // sanity
+  GenericVector<BlobData*> intersecting;
+  const int& segid = mergeinfo->getSegId();
+  BlobDataGridSearch bdgs(blobDataGrid);
+  bdgs.SetUniqueMode(true);
+  TBOX* const segbox = mergeinfo->getSegBox();
   bdgs.StartRectSearch(*segbox);
   BlobData* n = NULL;
   while((n = bdgs.NextRectSearch()) != NULL) {
-    const BlobMergeData& neighbor_mergeinfo = n->getMergeData();
-    const int& n_segid = neighbor_mergeinfo.seg_id;
-    if(((n_segid == -1) && (n_segid != segid))
+    if(n->getMergeData() == NULL
         && !intersecting.binary_search(n)) {
       intersecting.push_back(n);
       intersecting.sort();
     }
   }
-  mergeinfo.intersecting = intersecting;
+  mergeinfo->intersecting = intersecting;
 }
 
 void HeuristicMerge::mergeOperation(BlobData* merge_from, BlobData* to_merge,
     BlobSpatial::Direction merge_dir) {
   assert(merge_dir == BlobSpatial::RIGHT || merge_dir == BlobSpatial::LEFT || merge_dir == BlobSpatial::UP
       || merge_dir == BlobSpatial::DOWN  || merge_dir == BlobSpatial::INTERSECT);
-  BlobMergeData& merge_from_info = merge_from->getMergeData();
-  BlobMergeData& to_merge_info = to_merge->getMergeData();
-  assert(to_merge_info.seg_id == -1); // shouldn't have been merged yet
-  BlobSpatial::Direction opposite_dir = (merge_dir == BlobSpatial::UP) ? BlobSpatial::DOWN : (merge_dir == BlobSpatial::DOWN) ? BlobSpatial::UP
-      : (merge_dir == BlobSpatial::RIGHT) ? BlobSpatial::LEFT : (merge_dir == BlobSpatial::LEFT) ? BlobSpatial::RIGHT : BlobSpatial::INTERSECT;
-  // logically connect the blob being merged so they are connected both ways
-  if(opposite_dir == BlobSpatial::UP)
-    to_merge_info.up.push_back(merge_from);
-  else if(opposite_dir == BlobSpatial::DOWN)
-    to_merge_info.down.push_back(merge_from);
-  else if(opposite_dir == BlobSpatial::LEFT)
-    to_merge_info.left.push_back(merge_from);
-  else if(opposite_dir == BlobSpatial::RIGHT)
-    to_merge_info.right.push_back(merge_from);
-  else
-    to_merge_info.intersecting.push_back(merge_from);
+
+  BlobMergeData** merge_from_info = merge_from->getMergeDataSharedPtr();
+  assert(to_merge->getMergeData() == NULL); // shouldn't have been merged yet
+
   // assign merged blob to the segment it's being merged with
-  TBOX*& segbox = merge_from_info.segment_box;
-  to_merge_info.segment_box = segbox;
+  to_merge->setToExistingMergeData(merge_from_info);
   // expand the segment to accomodate the blob being merged if necessary
+  TBOX* segbox = (*merge_from_info)->getSegBox();
   TBOX merged_box = to_merge->getBoundingBox();
   if(!segbox->contains(merged_box)) {
     if(merged_box.right() > segbox->right())
@@ -531,12 +779,12 @@ void HeuristicMerge::mergeOperation(BlobData* merge_from, BlobData* to_merge,
     if(merged_box.left() < segbox->left())
       segbox->move_left_edge(merged_box.left() - segbox->left());
   }
-  to_merge_info.seg_id = merge_from_info.seg_id;
+
 #ifdef DBG_SHOW_MERGE
 #ifdef DBG_SHOW_MERGE_ONE_SEGMENT
   if(g_dbg_flag) {
 #endif
-    std::cout << "Finished merge operation. Showing the updated segmented and what was merged.\n";
+    std::cout << "Finished merge operation. Showing the updated segmentation and what was merged.\n";
     std::cout << "Showing what is being merged in the "
          << ((merge_dir == BlobSpatial::UP) ? "upward" : (merge_dir == BlobSpatial::DOWN) ? "downward"
              : (merge_dir == BlobSpatial::RIGHT) ? "rightward" : (merge_dir == BlobSpatial::LEFT) ? "leftward"
@@ -553,28 +801,38 @@ void HeuristicMerge::mergeOperation(BlobData* merge_from, BlobData* to_merge,
 }
 
 bool HeuristicMerge::isOperator(BlobData* blob) {
-  TesseractWordData* const word = blob->getParentWord();
-  if(word == NULL) {
+  if(blob->getCharRecognitionConfidence() < Utils::getCertaintyThresh() * 3) {
+    // if it's a really low confidence then rule it out here
     return false;
   }
-  const char* blobtxt = word->wordstr();
-  if(!blobtxt)
+  TesseractCharData* parentChar = blob->getParentChar();
+  if(parentChar == NULL) {
     return false;
+  }
+  const char* blobtxt = parentChar->getUnicode().c_str();
+  if(!blobtxt) {
+    return false;
+  }
   if(Utils::stringCompare(blobtxt, ">") ||
      Utils::stringCompare(blobtxt, "<") ||
      Utils::stringCompare(blobtxt, "=") ||
      Utils::stringCompare(blobtxt, "+") ||
-     Utils::stringCompare(blobtxt, "-"))
+     Utils::stringCompare(blobtxt, "-")) {
     return true;
+  }
   return false;
 }
 
 // returns true if the neighbor is already part of the blob's segmentation
 bool HeuristicMerge::wasAlreadyMerged(BlobData* neighbor, BlobData* blob) {
-  const BlobMergeData& blob_m = blob->getMergeData();
-  const BlobMergeData& neighbor_m = neighbor->getMergeData();
-  const int& blob_seg_id = blob_m.seg_id;
-  const int& neighbor_seg_id = neighbor_m.seg_id;
+  const BlobMergeData* blob_m = blob->getMergeData();
+  assert(blob_m != NULL); // sanity
+  const BlobMergeData* neighbor_m = neighbor->getMergeData();
+  if(neighbor_m == NULL) {
+    return false;
+  }
+  const int& blob_seg_id = blob_m->getSegId();
+  const int& neighbor_seg_id = neighbor_m->getSegId();
   if(neighbor_seg_id == blob_seg_id)
     return true;
   return false;
@@ -629,4 +887,20 @@ BlobFeatureExtractor* HeuristicMerge::getFeatureExtractor(const std::string& nam
   }
   return blobsFeatureExtractor;
 }
+
+GenericVector<BlobData*> HeuristicMerge::filterAlreadyMerged(
+    const GenericVector<BlobData*> inputVector) {
+  GenericVector<BlobData*> filteredVector;
+  for(int i = 0; i < inputVector.size(); ++i) {
+    if(inputVector[i]->getMergeData() == NULL) {
+      filteredVector.push_back(inputVector[i]);
+    }
+  }
+  return filteredVector;
+}
+
+bool HeuristicMerge::isHorizontal(BlobSpatial::Direction dir) {
+  return dir == BlobSpatial::LEFT || dir == BlobSpatial::RIGHT;
+}
+
 

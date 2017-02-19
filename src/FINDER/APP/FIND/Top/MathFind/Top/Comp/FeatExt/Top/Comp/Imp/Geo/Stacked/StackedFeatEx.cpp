@@ -223,34 +223,50 @@ int NumVerticallyStackedBlobsFeatureExtractor::countStacked(BlobData* const blob
 
 bool NumVerticallyStackedBlobsFeatureExtractor::isAdjacent(
     BlobData* const neighbor, BlobData* const curblob,
-    const BlobSpatial::Direction dir, const bool seg_mode, TBOX* dimblob) {
+    const BlobSpatial::Direction dir, const bool seg_mode, TBOX* dimBox) {
+//  if(seg_mode) {
+//    if((neighbor->getParentChar() == NULL &&
+//        curblob->getParentChar() != NULL) ||
+//        (neighbor->getParentChar() != NULL &&
+//        curblob->getParentChar() == NULL)) {
+//      return false;
+//    }
+//  }
   TBOX cb_boundbox = curblob->getBoundingBox();
-  if(dimblob == NULL)
-    dimblob = &cb_boundbox;
-  double cutoff = (double)dimblob->area() / (double)16;
-  if((double)(neighbor->getBoundingBox().area()) < cutoff)
+  if(dimBox == NULL)
+    dimBox = &cb_boundbox;
+  double cutoff = (double)dimBox->area() / (double)16;
+  if(seg_mode) {
+    cutoff *= 2; // less restrictive in segmentation mode
+  }
+  if((double)(neighbor->getBoundingBox().area()) < cutoff) {
+    //std::cout << "isAdjacent below cutoff!!!!!!\n";
     return false;
+  }
   bool vert = (dir == BlobSpatial::UP || dir == BlobSpatial::DOWN) ? true : false;
   bool ascending = (vert ? ((dir == BlobSpatial::UP) ? true : false)
       : ((dir == BlobSpatial::RIGHT) ? true : false));
-  double dist_thresh = (double)(vert ? dimblob->height() : dimblob->width());
+  double dist_thresh = (double)(vert ? dimBox->height() : dimBox->width());
   double thresh_param = 2;
-//  if(seg_mode)
-//    thresh_param = 4;
+  if(seg_mode) {
+    thresh_param = 1; // less restrictive in segmentation mode
+  }
   dist_thresh /= thresh_param;
   double distop1, distop2; // dist = distop1 - distop2
   if(vert) {
-    distop1 = ascending ? (double)neighbor->getBoundingBox().bottom() : (double)curblob->getBoundingBox().bottom();
-    distop2 = ascending ? (double)curblob->getBoundingBox().top() : (double)neighbor->getBoundingBox().top();
+    distop1 = ascending ? (double)neighbor->bottom() : (double)curblob->bottom();
+    distop2 = ascending ? (double)curblob->top() : (double)neighbor->top();
   }
   else {
-    distop1 = ascending ? (double)neighbor->getBoundingBox().left() : (double)curblob->getBoundingBox().left();
-    distop2 = ascending ? (double)curblob->getBoundingBox().right() : (double)neighbor->getBoundingBox().right();
+    distop1 = ascending ? (double)neighbor->left() : (double)curblob->left();
+    distop2 = ascending ? (double)curblob->right() : (double)neighbor->right();
   }
   assert(distop1 >= distop2);
   double dist = distop1 - distop2;
-  if(dist <= dist_thresh)
+  if(dist <= dist_thresh) {
     return true;
+  }
+  //std::cout << "is adjacent... tooo far away!!!!!!!!!\n";
   return false;
 }
 

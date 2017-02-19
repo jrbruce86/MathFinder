@@ -15,6 +15,7 @@
 #include <Direction.h>
 #include <AlignedFeatExt.h>
 #include <StackedFeatExt.h>
+#include <OtherRec.h>
 
 #include <allheaders.h>
 
@@ -29,18 +30,19 @@ class HeuristicMerge : public virtual MathExpressionSegmentor {
 
   ~HeuristicMerge();
 
- protected:
+ private:
   void setDbgImg(Pix* im);
   void decideAndMerge(BlobData* blob, const int& seg_id);
   void mergeDecision(BlobData* blob, BlobSpatial::Direction dir);
+  BlobData* lookForHorizontalMerge(TBOX* const segmentBox,
+      BlobDataGrid* const blobDataGrid, BlobSpatial::Direction dir, const int& segId);
   void checkIntersecting(BlobData* blob);
   void mergeOperation(BlobData* merge_from, BlobData* to_merge,
       BlobSpatial::Direction merge_dir);
 
   bool isOperator(BlobData* blob);
   bool wasAlreadyMerged(BlobData* neighbor, BlobData* blob);
-
- private:
+  bool isHorizontal(BlobSpatial::Direction dir);
 
   /**
    * Gets a list of all of the blobs having the same parent as the given blob
@@ -54,15 +56,26 @@ class HeuristicMerge : public virtual MathExpressionSegmentor {
    */
   BlobFeatureExtractor* getFeatureExtractor(const std::string& name);
 
+  /**
+   * Filters out the blobs in the input vector that were already merged
+   * to some other segmentation (their segmentation data structure has
+   * already been assigned an id).
+   */
+  GenericVector<BlobData*> filterAlreadyMerged(
+      const GenericVector<BlobData*> blobs);
+
   MathExpressionFeatureExtractor* featureExtractor;
 
   Pix* dbgim;
 
   NumAlignedBlobsFeatureExtractor* numAlignedBlobsFeatureExtractor;
   NumVerticallyStackedBlobsFeatureExtractor* numVerticallyStackedFeatureExtractor;
+  OtherRecognitionFeatureExtractor* otherFeatureExtractor;
   BlobDataGrid* blobDataGrid;
 
   const float highCertaintyThresh;
+
+  int mergeRecursions;
 };
 
 #endif

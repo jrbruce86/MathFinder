@@ -144,10 +144,7 @@ BOX* M_Utils::getBlobDataBox(BlobData* b, PIX* im) {
 }
 
 bool M_Utils::almostContains(TBOX box1, TBOX box2) {
-  int adjustment = 1;//(int)((double)(box1.area()) * (double).02);
-//  if(adjustment == 0) {
-//    adjustment = 1;
-//  }
+  const int adjustment = 1;
   TBOX biggerBox1(
       box1.left() - adjustment,
       box1.bottom() - adjustment,
@@ -252,6 +249,19 @@ void M_Utils::dispBlobDataRegion(BlobData* bb, PIX* im) {
 void M_Utils::dispHlBlobDataRegion(BlobData* bb, PIX* im) {
   TBOX t = bb->getBoundingBox();
   dispHlTBoxRegion(t, im);
+}
+
+void M_Utils::dispHlBlobDataSegmentation(BlobData* bb, Pix* im) {
+  if(bb->getMergeData() == NULL) {
+    std::cout << "Error, can't display blob's segmentation since it has none.\n";
+    M_Utils::waitForInput();
+  }
+  TBOX* t = bb->getMergeData()->getSegBox();
+  TBOX blobBox = bb->bounding_box();
+  if(t == NULL) {
+    t = &blobBox;
+  }
+  dispHlTBoxRegion(*t, im);
 }
 
 void M_Utils::dispHlTBoxRegion(TBOX tbox, PIX* im) {

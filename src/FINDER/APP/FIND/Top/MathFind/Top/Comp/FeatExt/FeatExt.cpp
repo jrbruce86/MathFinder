@@ -12,7 +12,7 @@
 #include <M_Utils.h>
 
 //#define DBG_FEAT_EXT
-#define DBG_AFTER_EXTRACTION
+//#define DBG_AFTER_EXTRACTION
 //#define DBG_FEAT_EXT_WAIT
 //#define DBG_FEATURE_ORDERING
 

@@ -51,7 +51,7 @@ class NumVerticallyStackedBlobsFeatureExtractor
    * dimblob's dimensions for the thresholding.
    */
   static bool isAdjacent(BlobData* const neighbor, BlobData* const curblob, const BlobSpatial::Direction dir,
-      const bool seg_mode, TBOX* const dimblob=NULL);
+      const bool seg_mode=false, TBOX* const dimblob=NULL);
 
   void doSegmentationInit(BlobDataGrid* blobDataGrid);
 

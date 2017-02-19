@@ -54,6 +54,8 @@ class BlobDataGridFactory {
       TesseractWordData* tesseractWordData,
       TesseractCharData* tesseractCharData,
       BlobData* blob, Pix* image);
+
+  void deleteMarkedEntries(BlobDataGrid* const blobDataGrid);
 };
 
 

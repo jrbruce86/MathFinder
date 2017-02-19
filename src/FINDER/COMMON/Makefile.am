@@ -54,6 +54,7 @@ tesspath=../../THIRDPARTY/Tesseract
 
 libCOMMON_la_CPPFLAGS = -IGRID \
 -IGRID/Top/Cell/Comp/Spatial/Merge \
+-IGRID/Top/Cell/Comp/Spatial \
 -IGRID/Top/Cell \
 -IGRID/Top/Cell/Comp/Data \
 -IGRID/Top/Cell/Comp/Data/DoubleFeat \

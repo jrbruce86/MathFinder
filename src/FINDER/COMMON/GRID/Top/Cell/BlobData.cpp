@@ -19,7 +19,10 @@ BlobData::BlobData(TBOX box, PIX* blobImage, BlobDataGrid* parentGrid)
       tesseractCharData(NULL),
       minTesseractCertainty(-20),
       markedAsTesseractSplit(false),
-      markedForDeletion(false) {
+      markedForDeletion(false),
+      inBadRegion(false),
+      badRegionKnown(false),
+      mergeData(NULL) {
   this->box = box;
   this->blobImage = blobImage;
   this->parentGrid = parentGrid;
@@ -27,6 +30,15 @@ BlobData::BlobData(TBOX box, PIX* blobImage, BlobDataGrid* parentGrid)
 
 BlobData::~BlobData() {
   pixDestroy(&blobImage);
+  // If this blob has a reference to a segment (a shared pointer to it)
+  // need to delete it only if it hasn't been deleted yet by another blob
+  if(mergeData != NULL) {
+    // Delete the memory if not deleted yet
+    if(*mergeData != NULL) {
+      delete *mergeData;
+      *mergeData = NULL;
+    }
+  }
 }
 
 TBOX BlobData::bounding_box() const {
@@ -55,6 +67,13 @@ void BlobData::setCharacterRecognitionData(TesseractCharData* tesseractCharRecog
  */
 TesseractCharData* BlobData::getParentChar() {
   return tesseractCharData;
+}
+
+std::string BlobData::getParentCharStr() {
+  if(getParentChar() == NULL) {
+    return "";
+  }
+  return getParentChar()->getUnicode();
 }
 
 const char* BlobData::getParentWordstr() {
@@ -174,15 +193,111 @@ bool BlobData::belongsToRecognizedStopword() {
   return getParentWord()->getResultMatchesStopword();
 }
 
-BlobMergeData& BlobData::getMergeData() {
+BlobMergeData* BlobData::getMergeData() {
+  if(mergeData == NULL) {
+    return NULL;
+  }
+  return *mergeData;
+}
+
+BlobMergeData** BlobData::getMergeDataSharedPtr() {
+//  if(mergeData == NULL) {
+//    std::cout << "Error: Attempt to grab null shared pointer.\n";
+//    assert(false); // sanity
+//  }
   return mergeData;
 }
+
+void BlobData::setToNewMergeData(
+    Segmentation* const seg, const int segId) {
+  this->mergeData = new BlobMergeData*[1];
+  this->mergeData[0] = new BlobMergeData(seg, segId);
+}
+
+void BlobData::setToExistingMergeData(BlobMergeData** sharedBlobMergeData) {
+  this->mergeData = sharedBlobMergeData;
+}
+
 
 bool BlobData::belongsToRecognizedNormalRow() {
   if(getParentRow() == NULL) {
     return false;
   }
   return getParentRow()->getIsConsideredNormal();
+}
+
+float BlobData::getAverageWordConfInRow() {
+  if(getParentRow() == NULL) {
+    return -20;
+  }
+  if(getParentRow()->getAvgWordConf() > -1) {
+    return getParentRow()->getAvgWordConf();
+  }
+  TesseractRowData* const row = getParentRow();
+  float sum = 0;
+  float total = 0;
+  for(int i = 0; i < row->getTesseractWords().size(); ++i) {
+    TesseractWordData* const word = row->getTesseractWords()[i];
+    if(word->bestchoice() == NULL) {
+      continue;
+    }
+    sum += word->bestchoice()->certainty();
+    ++total;
+  }
+  getParentRow()->setAvgWordConf(sum / total);
+  return getParentRow()->getAvgWordConf();
+}
+
+bool BlobData::belongsToBadRegion() {
+  if(getParentRow() != NULL) {
+    return false;
+  }
+  if(badRegionKnown) {
+    return inBadRegion;
+  }
+  BlobDataGridSearch search(parentGrid);
+  BlobData* cur = this;
+  search.StartSideSearch(cur->right(), cur->bottom(), cur->top());
+  const bool rightToLeft = true;
+  const bool leftToRight = !rightToLeft;
+  float total_bad = 0;
+  float total_good = 0;
+  const float ok_thresh = .4;
+  const int enough = 20;
+  while((cur = search.NextSideSearch(leftToRight)) != NULL) {
+    if(cur->getParentChar() == NULL || cur->belongsToBadRegion() || cur->getCharRecognitionConfidence() == -20) {
+      ++total_bad;
+    } else {
+      ++total_good;
+    }
+    if((total_good + total_bad) == enough) {
+      break;
+    }
+  }
+  if((total_good / total_bad) < ok_thresh) {
+    // bad region detected
+    inBadRegion = true;
+  } else {
+    inBadRegion = false;
+  }
+  inBadRegion = true;
+  // Update all the blobs looked at earlier to have the same status
+  cur = this;
+  search.StartSideSearch(cur->right(), cur->bottom(), cur->top());
+  int total = 0;
+  while((cur = search.NextSideSearch(leftToRight)) != NULL) {
+    cur->setBadRegion(inBadRegion);
+    ++total;
+    if(total == enough) {
+      break;
+    }
+  }
+  return inBadRegion;
+}
+
+void BlobData::setBadRegion(bool status) {
+  inBadRegion = status;
+  badRegionKnown = true;
 }
 
 bool BlobData::isRightmostInWord() {

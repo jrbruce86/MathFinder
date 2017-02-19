@@ -11,10 +11,13 @@
 #include <stddef.h>
 #include <baseapi.h>
 
+#include <Direction.h>
+
 enum RESULT_TYPE {DISPLAYED, EMBEDDED, LABEL};
 
 
 class BlobData;
+
 
 struct Segmentation {
 
@@ -22,26 +25,41 @@ struct Segmentation {
 
   ~Segmentation();
 
-  TBOX* box;
+  TBOX* box; // This memory is managed by the BlobMergeData
 
   RESULT_TYPE res;
 };
 
-struct BlobMergeData {
+class BlobMergeData {
 
-  BlobMergeData();
+ public:
 
-  bool is_processed;
-  inT32 processed_seg_area; // the segment area for when the blob was processed
-                          // blob may need to be reprocessed if this area differs
-                          // when the same blob is reached multiple times
-  int seg_id; // unique identifier for each segment
+  BlobMergeData(Segmentation* const seedSeg, const int segId);
+
+  ~BlobMergeData();
+
+  bool hasNonEmptyBuffer();
+
+  void clearBuffers(); // clear the merge buffers
+
+  TBOX* getSegBox();
+
+  int getSegId() const ;
+
+  Segmentation* getSegmentation();
+
+  // buffers
   GenericVector<BlobData*> left;
   GenericVector<BlobData*> right;
   GenericVector<BlobData*> up;
   GenericVector<BlobData*> down;
   GenericVector<BlobData*> intersecting;
-  TBOX* segment_box; // stored in the BlobInfoGrid class's "Segments" GenericVector
+
+ private:
+
+  int seg_id; // unique identifier for each segment
+
+  Segmentation* segmentation; // The grid's view of the segment
 };
 
 

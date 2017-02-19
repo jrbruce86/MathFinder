@@ -16,6 +16,8 @@ void MathExpressionFinderUsage::printUsage() {
       << "MathFinder [path]\n"
       << "Where [path] is the path either to a single image or a directory "
       << "containing multiple images.\n\n"
+      << "To run with just detection and not segmentation run as follows:\n"
+      << "MathFinder -d [path]\n\n"
       << "For all other options including training, evaluation, groundtruth "
       << "generation, and documentation, there is an interactive menu which can "
       << "be run as follows:\n"

@@ -30,6 +30,7 @@ BlobDataGrid::BlobDataGrid(const int& gridsize,
   this->image = image;
   this->imageName = imageName;
   this->binaryImage = NULL;
+  this->area = gridheight_ * gridwidth_;
 }
 
 // TODO: Make sure to deallocate things as necessary
@@ -42,15 +43,45 @@ BlobDataGrid::~BlobDataGrid() {
 
   pixDestroy(&binaryImage);
 
-  BlobDataGridSearch search(this);
-  search.StartFullSearch();
-  BlobData* blob = NULL;
-  while((blob = search.NextFullSearch()) != NULL) {
-    if(blob != NULL) {
-      delete blob;
-      blob = NULL;
+  // First grab any shared (double) pointers. Have to delete them after the blobs are deleted
+  GenericVector<BlobMergeData**> mergeDataShared;
+  {
+    BlobDataGridSearch search(this);
+    search.SetUniqueMode(true);
+    search.StartFullSearch();
+    BlobData* blob = NULL;
+    while((blob = search.NextFullSearch()) != NULL) {
+      BlobMergeData** mergeData = blob->getMergeDataSharedPtr();
+      if(mergeData != NULL) {
+        if(!mergeDataShared.bool_binary_search(mergeData)) {
+          mergeDataShared.push_back(mergeData);
+          mergeDataShared.sort();
+        }
+      }
     }
   }
+
+  // Now delete all of the blobs
+  {
+    BlobDataGridSearch search(this);
+    search.StartFullSearch();
+    BlobData* blob = NULL;
+    while((blob = search.NextFullSearch()) != NULL) {
+      if(blob != NULL) {
+        delete blob;
+        blob = NULL;
+      }
+    }
+  }
+
+  // Now delete any shared pointers
+  for(int i = 0; i < mergeDataShared.size(); ++i) {
+    delete [] mergeDataShared[i];
+  }
+
+  // the segments are owned by the blobs (first one deleted who
+  // has the shared pointer to the segment will delete that segment)
+  segmentations.clear();
 }
 
 std::vector<TesseractBlockData*>& BlobDataGrid::getTesseractBlocks() {
@@ -91,8 +122,32 @@ void BlobDataGrid::setNonItalicizedRatio(double nonItalicizedRatio) {
   this->nonItalicizedRatio = nonItalicizedRatio;
 }
 
-GenericVector<Segmentation*>& BlobDataGrid::getSegments() {
-  return Segments;
+void BlobDataGrid::appendSegmentation(Segmentation* const segmentation) {
+  segmentations.push_back(segmentation);
+}
+
+void BlobDataGrid::removeSegmentation(Segmentation* const segmentation) {
+  TBOX* const boxToRemove = segmentation->box;
+  for(int i = 0; i < segmentations.size(); ++i) {
+    TBOX* const curBox = segmentations[i]->box;
+    if(*curBox == *boxToRemove) {
+      segmentations.remove(i);
+      break;
+    }
+  }
+}
+
+GenericVector<Segmentation*> BlobDataGrid::getSegmentsCopy() {
+  GenericVector<Segmentation*> copyVec;
+  for(int i = 0; i < segmentations.size(); ++i) {
+    TBOX* const segBox = segmentations[i]->box;
+    const RESULT_TYPE segRes = segmentations[i]->res;
+    Segmentation* const segCopy = new Segmentation();
+    segCopy->box = new TBOX(segBox->left(), segBox->bottom(), segBox->right(), segBox->top());
+    segCopy->res = segRes;
+    copyVec.push_back(segCopy);
+  }
+  return copyVec;
 }
 
 BlobData* BlobDataGrid::getEntryWithBoundingBox(const TBOX box) {
@@ -151,6 +206,7 @@ Pix* BlobDataGrid::getVisualDetectionResultsDisplay() {
   while((blob = search.NextFullSearch()) != NULL) {
     if(blob->getMathExpressionDetectionResult()) {
       M_Utils::drawHlBlobDataRegion(blob, display, LayoutEval::RED);
+      Lept_Utils::drawBox(display, blob->getBoundingBox(), LayoutEval::RED, 7);
     }
   }
 
@@ -160,7 +216,7 @@ Pix* BlobDataGrid::getVisualDetectionResultsDisplay() {
 MathExpressionFinderResults* BlobDataGrid::getSegmentationResults(
     const std::string& resultsDirName) {
   return MathExpressionFinderResultsBuilder()
-      .setResults(getSegments())
+      .setResults(getSegmentsCopy())
       ->setVisualResultsDisplay(getVisualSegmentationResultsDisplay())
       ->setResultsName(getImageName())
       ->setResultsDirName(resultsDirName)
@@ -168,19 +224,23 @@ MathExpressionFinderResults* BlobDataGrid::getSegmentationResults(
       ->build();
 }
 
+LayoutEval::Color BlobDataGrid::getColorFromRes(const RESULT_TYPE restype) {
+  return ((restype == DISPLAYED) ?
+      LayoutEval::RED : (restype == EMBEDDED) ? LayoutEval::BLUE
+          : LayoutEval::GREEN);
+}
+
 Pix* BlobDataGrid::getVisualSegmentationResultsDisplay() {
 
   Pix* display = pixCopy(NULL, getBinaryImage());
   display = pixConvertTo32(display);
 
-  GenericVector<Segmentation*> segments = getSegments();
-  for(int i = 0; i < segments.length(); ++i ) {
-    const Segmentation* seg = segments[i];
+  for(int i = 0; i < segmentations.length(); ++i ) {
+    const Segmentation* seg = segmentations[i];
     BOX* bbox = M_Utils::tessTBoxToImBox(seg->box, getBinaryImage());
     const RESULT_TYPE& restype = seg->res;
-    M_Utils::drawHlBoxRegion(bbox, display, ((restype == DISPLAYED) ?
-        LayoutEval::RED : (restype == EMBEDDED) ? LayoutEval::BLUE
-            : LayoutEval::GREEN));
+    M_Utils::drawHlBoxRegion(bbox, display, getColorFromRes(restype));
+    Lept_Utils::drawBox(display, bbox, getColorFromRes(restype), 10);
     boxDestroy(&bbox);
   }
 
@@ -210,6 +270,11 @@ void BlobDataGrid::HandleClick(int x, int y) {
     std::cout << "Character certainty: " << bb->getCharRecognitionConfidence() << std::endl;
   } else std::cout << "NULL\n";
   std::cout << "the word corresponding to the blob you clicked:\n";
+  if(bb->belongsToBadRegion()) {
+    std::cout << "The blob belongs to a 'bad' region.\n";
+  } else {
+    std::cout << "The blob does not belong to a 'bad' region.\n";
+  }
   if(bb->getParentWordstr() != NULL) {
     std::cout << bb->getParentWordstr() << std::endl;
     std::cout << "Word certainty: " << bb->getWordRecognitionConfidence() << std::endl;
@@ -224,9 +289,11 @@ void BlobDataGrid::HandleClick(int x, int y) {
   if(bb->isMarkedAsTesseractSplit()) {
     std::cout << "Marked as split by Tesseract.\n";
   }
-  std::cout << "The tesseract blob boundingbox: \n";
+  std::cout << "The tesseract blob boundingbox in normal coords: \n";
   TBOX t = bb->bounding_box();
   M_Utils::dispTBoxLeptCoords(t, getBinaryImage());
+  std::cout << "In tesseract coords:\n";
+  std::cout << "(left, bottom, right, top) = " << t.left() << ", " << t.bottom() << ", " << t.right() << ", " << t.top() << std::endl;
   if(bb->getParentWord() != NULL) {
     std::cout << "The tesseract word bounding box: \n";
     M_Utils::dispTBoxLeptCoords(bb->getParentWord()->getBoundingBox(), getBinaryImage());
@@ -276,3 +343,6 @@ void BlobDataGrid::HandleClick(int x, int y) {
 #endif
 }
 
+int BlobDataGrid::getArea() {
+  return area;
+}

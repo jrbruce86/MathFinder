@@ -84,7 +84,7 @@ class M_Utils {
   // given element
   static BOX* getBlobDataBox(BlobData* b, PIX* im);
 
-  // Returns true of box2 is almost contained within box1
+  // Returns true if box2 is almost contained within box1
   // Almost contained indicates they would be contained if adjusted
   // by only a few pixels (a small percentage of the actual size of
   // the containing box)
@@ -128,6 +128,9 @@ class M_Utils {
   // similar to dispBlobInfoRegion but displays the entire image with
   // the foreground pixels of the blob of interest highlighted in red
   static void dispHlBlobDataRegion(BlobData* bb, PIX* im);
+
+  // similar to above display methods but displays the blob's segmentation
+  static void dispHlBlobDataSegmentation(BlobData* bb, Pix* im);
 
   // similar to previous but takes tbox as input instead of blobinfo
   static void dispHlTBoxRegion(TBOX tbox, PIX* im);

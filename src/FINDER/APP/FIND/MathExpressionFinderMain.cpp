@@ -43,13 +43,19 @@ int main(int argc, char* argv[]) {
   if(argc == 2) {
     if(std::string(argv[1]) == std::string("-m")) { // interactive menu
       runInteractiveMenu();
+      return 0;
     } else {
-      runFinder(argv[1]);
+      runFinder(argv[1]); // assume given path as second arg
+      return 0;
     }
-  } else {
-    MathExpressionFinderUsage::printUsage();
+  } else if(argc == 3) {
+    if(std::string(argv[1]) == std::string("-d")) {
+      runFinder(argv[2], true); // assume path is third arg
+      return 0;
+    }
   }
-
+  // if gets here then input wasn't expected
+  MathExpressionFinderUsage::printUsage();
 }
 
 void runInteractiveMenu() {
@@ -65,7 +71,7 @@ void runInteractiveMenu() {
   delete mainMenu;
 }
 
-void runFinder(char* path) {
+void runFinder(char* path, bool doJustDetection) {
 
   const std::string trainedFinderPath =
       FinderTrainingPaths::getTrainedFinderRoot();
@@ -120,8 +126,12 @@ void runFinder(char* path) {
           &recognitionCategory,
           finderInfo);
 
-  std::vector<MathExpressionFinderResults*> results =
-      finder->findMathExpressions(images, imageNames);
+  std::vector<MathExpressionFinderResults*> results;
+  if(!doJustDetection) {
+    results = finder->findMathExpressions(images, imageNames);
+  } else {
+    results = finder->detectMathExpressions(images, imageNames);
+  }
 
   pixaDestroy(&images); // destroy finished image(s)
 
@@ -132,7 +142,12 @@ void runFinder(char* path) {
 
   // Write the results to a directory in the current location (creates
   // the directory)
-  MathExpressionFinderResults::printResultsToFiles(results, finderInfo->getFinderName());
+  std::string resultsDirName = getResultsNameFromPath(imagePath);
+  if(doJustDetection) {
+    resultsDirName = resultsDirName + "_detection_only";
+  }
+  MathExpressionFinderResults::printResultsToFiles(results,
+      resultsDirName);
 
   // Destroy results
   for(int i = 0; i < results.size(); ++i) {
@@ -144,6 +159,13 @@ void runFinder(char* path) {
   delete finderInfo;
 }
 
+std::string getResultsNameFromPath(std::string path) {
+  if(Utils::existsDirectory(path)) {
+    return path.substr(path.find_last_of('/') + 1);
+  } else {
+    return DatasetSelectionMenu::getFileNameFromPath(path);
+  }
+}
 
 /**
  * Method put in for quickly debugging a trainer (not meant to be invoked

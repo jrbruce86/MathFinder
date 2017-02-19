@@ -9,8 +9,8 @@
 
 #include <DoubleFeature.h>
 
-NumAlignedBlobsData::NumAlignedBlobsData(NumAlignedBlobsFeatureExtractorDescription* const description)
-: blobMergeInfo(NULL) {
+NumAlignedBlobsData::NumAlignedBlobsData(
+    NumAlignedBlobsFeatureExtractorDescription* const description) {
   this->description = description;
 }
 
@@ -50,3 +50,9 @@ int NumAlignedBlobsData::getDvabcCount() {
   return dvabcCount;
 }
 
+void NumAlignedBlobsData::clearBuffers() {
+  rhabc_blobs.clear();
+  lhabc_blobs.clear();
+  dvabc_blobs.clear();
+  uvabc_blobs.clear();
+}
