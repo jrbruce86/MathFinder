@@ -37,6 +37,7 @@ class MathExpressionFinderResults {
 
   MathExpressionFinderResults(
       Pix* const visualResultsDisplay,
+      Pix* const visualResultsEvalDisplay,
       GenericVector<Segmentation*> results,
       std::string resultsName,
       std::string resultsDirName,
@@ -48,6 +49,7 @@ class MathExpressionFinderResults {
    * The getters
    */
   Pix* getVisualResultsDisplay();
+  Pix* getVisualResultsEvalDisplay();
   GenericVector<Segmentation*> getSegmentationResults();
   std::string getResultsName();
   std::string getResultsDirName();
@@ -69,6 +71,7 @@ class MathExpressionFinderResults {
   void ensureNoDuplicates();
 
   Pix* visualResultsDisplay;
+  Pix* visualResultsEvalDisplay;
   GenericVector<Segmentation*> segmentationResults;
   std::string resultsName;
   std::string resultsDirName;
@@ -82,6 +85,7 @@ class MathExpressionFinderResultsBuilder {
  public:
   MathExpressionFinderResultsBuilder();
   MathExpressionFinderResultsBuilder* setVisualResultsDisplay(Pix* const visualResultsDispaly);
+  MathExpressionFinderResultsBuilder* setVisualEvalResultsDisplay(Pix* const visualResultsDispaly);
   MathExpressionFinderResultsBuilder* setResults(GenericVector<Segmentation*> results);
   MathExpressionFinderResultsBuilder* setResultsName(std::string resultsName);
   MathExpressionFinderResultsBuilder* setResultsDirName(std::string resultsDirName);
@@ -89,6 +93,7 @@ class MathExpressionFinderResultsBuilder {
   MathExpressionFinderResults* build();
  private:
   Pix* visualResultsDisplay;
+  Pix* visualResultsEvalDisplay;
   GenericVector<Segmentation*> results;
   std::string resultsName;
   std::string resultsDirName;

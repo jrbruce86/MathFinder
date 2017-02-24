@@ -75,6 +75,11 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
   void appendSegmentation(Segmentation* const segmentation);
 
   /**
+   * Returns the segmentation with the box if it exists otherwise null
+   */
+  Segmentation* getSegmentationWithBox(const TBOX& segBox, int excludeIndex=-1);
+
+  /**
    * Removes the segmentation from this grid's list of segmentations
    */
   void removeSegmentation(Segmentation* const segmentation);
@@ -110,7 +115,7 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
    * Gets a visual display of the results of detection.
    * The pix memory is allocated on the heap and owned by the caller
    */
-  Pix* getVisualDetectionResultsDisplay();
+  Pix* getVisualDetectionResultsDisplay(const bool drawBox=true);
 
   /**
    * Builds out and returns the results of segmentation. The allocated memory
@@ -122,10 +127,17 @@ class BlobDataGrid : public tesseract::BBGrid<BlobData, BlobData_CLIST, BlobData
   LayoutEval::Color getColorFromRes(const RESULT_TYPE restype);
 
   /**
-   * Gets a visual display of the results of segmentation.
+   * Gets a visual display of the results of segmentation. Includes
+   * boxes showing the segmentations as well as foreground coloring
    * The pix memory is allocated on the heap and owned by the caller
    */
-  Pix* getVisualSegmentationResultsDisplay();
+  Pix* getVisualSegmentationResultsDisplay(const bool drawBox=true);
+
+  /**
+   * Gets a visual display of the results of segmentation used for evaluation
+   * purposes. Same as the above, but only does foreground coloring.
+   */
+  Pix* getVisualSegmentationEvalResultsDisplay();
 
   /**
    * Show the grid, waiting for enter to be pressed before deleting the

@@ -92,7 +92,13 @@ public:
     int endx = startx + thickness;
     int endy = starty + thickness;
     for(int i = starty; i < endy; ++i) {
+      if(i < 0 || i >= im->h) {
+        continue;
+      }
       for(int j = startx; j < endx; ++j) {
+        if(j < 0 || j >= im->w) {
+          continue;
+        }
         l_uint32* curpix = startpix + l_uint32(j + (i*im->w));
         setPixelRGB(im, curpix, j, i, color);
       }

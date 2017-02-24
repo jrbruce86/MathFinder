@@ -22,7 +22,7 @@
 #include "Utils.h"
 using namespace Utils;
 
-#define debug 0
+#define debug 1
 //#define SHOW_HYP_VERTICES
 //#define SHOW_VERTICES
 //#define SHOW_TRUE_NEGATIVES
@@ -31,7 +31,7 @@ using namespace Utils;
 //#define SHOW_UNDERSEGMENTATIONS
 // saves the tracker to a file, optionally displays as well if DISPLAY_ON is turned on
 #define SHOW_HYP_TRACKER_FINAL
-#define DISPLAY_ON
+//#define DISPLAY_ON
 
 #define DBG_MISSING_GT_SEG
 

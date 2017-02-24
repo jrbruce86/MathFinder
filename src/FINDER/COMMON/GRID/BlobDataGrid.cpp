@@ -126,6 +126,15 @@ void BlobDataGrid::appendSegmentation(Segmentation* const segmentation) {
   segmentations.push_back(segmentation);
 }
 
+Segmentation* BlobDataGrid::getSegmentationWithBox(const TBOX& segBox, int excludeIndex) {
+  for(int i = 0; i < segmentations.size(); ++i) {
+    if(*(segmentations[i]->box) == segBox && excludeIndex != i) {
+      return segmentations[i];
+    }
+  }
+  return NULL;
+}
+
 void BlobDataGrid::removeSegmentation(Segmentation* const segmentation) {
   TBOX* const boxToRemove = segmentation->box;
   for(int i = 0; i < segmentations.size(); ++i) {
@@ -169,6 +178,7 @@ MathExpressionFinderResults* BlobDataGrid::getDetectionResults(
   return MathExpressionFinderResultsBuilder()
       .setResults(getDetectionSegments())
       ->setVisualResultsDisplay(getVisualDetectionResultsDisplay())
+      ->setVisualEvalResultsDisplay(getVisualDetectionResultsDisplay(false))
       ->setResultsName(getImageName())
       ->setResultsDirName(resultsDirName)
       ->setRunMode(DETECT)
@@ -195,7 +205,7 @@ GenericVector<Segmentation*> BlobDataGrid::getDetectionSegments() {
   return detectedSegments; // returns a copy (ok since its just a vec of pointers)
 }
 
-Pix* BlobDataGrid::getVisualDetectionResultsDisplay() {
+Pix* BlobDataGrid::getVisualDetectionResultsDisplay(const bool drawBox) {
 
   Pix* display = pixCopy(NULL, getBinaryImage());
   display = pixConvertTo32(display);
@@ -206,7 +216,9 @@ Pix* BlobDataGrid::getVisualDetectionResultsDisplay() {
   while((blob = search.NextFullSearch()) != NULL) {
     if(blob->getMathExpressionDetectionResult()) {
       M_Utils::drawHlBlobDataRegion(blob, display, LayoutEval::RED);
-      Lept_Utils::drawBox(display, blob->getBoundingBox(), LayoutEval::RED, 7);
+      if(drawBox) {
+        Lept_Utils::drawBox(display, blob->getBoundingBox(), LayoutEval::RED, 7);
+      }
     }
   }
 
@@ -218,6 +230,7 @@ MathExpressionFinderResults* BlobDataGrid::getSegmentationResults(
   return MathExpressionFinderResultsBuilder()
       .setResults(getSegmentsCopy())
       ->setVisualResultsDisplay(getVisualSegmentationResultsDisplay())
+      ->setVisualEvalResultsDisplay(getVisualSegmentationEvalResultsDisplay())
       ->setResultsName(getImageName())
       ->setResultsDirName(resultsDirName)
       ->setRunMode(FIND)
@@ -230,21 +243,24 @@ LayoutEval::Color BlobDataGrid::getColorFromRes(const RESULT_TYPE restype) {
           : LayoutEval::GREEN);
 }
 
-Pix* BlobDataGrid::getVisualSegmentationResultsDisplay() {
-
+Pix* BlobDataGrid::getVisualSegmentationResultsDisplay(const bool drawBox) {
   Pix* display = pixCopy(NULL, getBinaryImage());
   display = pixConvertTo32(display);
-
   for(int i = 0; i < segmentations.length(); ++i ) {
     const Segmentation* seg = segmentations[i];
-    BOX* bbox = M_Utils::tessTBoxToImBox(seg->box, getBinaryImage());
+    BOX* bbox = M_Utils::tessTBoxToImBox(seg->box, display);
     const RESULT_TYPE& restype = seg->res;
     M_Utils::drawHlBoxRegion(bbox, display, getColorFromRes(restype));
-    Lept_Utils::drawBox(display, bbox, getColorFromRes(restype), 10);
+    if(drawBox) {
+      Lept_Utils::drawBox(display, bbox, getColorFromRes(restype), 10);
+    }
     boxDestroy(&bbox);
   }
-
   return display;
+}
+
+Pix* BlobDataGrid::getVisualSegmentationEvalResultsDisplay() {
+  return getVisualSegmentationResultsDisplay(false);
 }
 
 void BlobDataGrid::show() {

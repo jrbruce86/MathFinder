@@ -72,7 +72,6 @@ void runInteractiveMenu() {
 }
 
 void runFinder(char* path, bool doJustDetection) {
-
   const std::string trainedFinderPath =
       FinderTrainingPaths::getTrainedFinderRoot();
   Utils::exec(std::string("mkdir -p ") + trainedFinderPath, true);
@@ -105,8 +104,9 @@ void runFinder(char* path, bool doJustDetection) {
     std::vector<std::string> imagePaths =
         DatasetSelectionMenu::findImagePaths(imagePath);
     for(int i = 0; i < imagePaths.size(); ++i) {
+      std::cout << "image path " << imagePaths[i] << std::endl;;
       pixaAddPix(images,
-          Utils::leptReadAndBinarizeImg(imagePath),
+          Utils::leptReadAndBinarizeImg(imagePaths[i]),
           L_INSERT);
       imageNames.push_back(DatasetSelectionMenu::getFileNameFromPath(imagePaths[i]));
     }
@@ -161,6 +161,9 @@ void runFinder(char* path, bool doJustDetection) {
 
 std::string getResultsNameFromPath(std::string path) {
   if(Utils::existsDirectory(path)) {
+    if(path.at(path.size() - 1) == '/') {
+      path.erase(path.size() - 1, 1);
+    }
     return path.substr(path.find_last_of('/') + 1);
   } else {
     return DatasetSelectionMenu::getFileNameFromPath(path);

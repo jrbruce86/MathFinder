@@ -25,11 +25,13 @@
  */
 MathExpressionFinderResults::MathExpressionFinderResults(
     Pix* const visualResultsDisplay,
+    Pix* const visualResultsEvalDisplay,
     GenericVector<Segmentation*> results,
     std::string resultsName,
     std::string resultsDirName,
     RunMode runMode) {
   this->visualResultsDisplay = visualResultsDisplay;
+  this->visualResultsEvalDisplay = visualResultsEvalDisplay;
   this->segmentationResults = results;
   this->resultsName = resultsName;
   this->resultsDirName = resultsDirName;
@@ -41,6 +43,7 @@ MathExpressionFinderResults::MathExpressionFinderResults(
  */
 MathExpressionFinderResults::~MathExpressionFinderResults() {
   pixDestroy(&visualResultsDisplay);
+  pixDestroy(&visualResultsEvalDisplay);
   for(int i = 0; i < segmentationResults.length(); ++i) {
     delete segmentationResults[i];
   }
@@ -53,6 +56,11 @@ MathExpressionFinderResults::~MathExpressionFinderResults() {
 Pix* MathExpressionFinderResults::getVisualResultsDisplay() {
   return visualResultsDisplay;
 }
+
+Pix* MathExpressionFinderResults::getVisualResultsEvalDisplay() {
+  return visualResultsEvalDisplay;
+}
+
 
 GenericVector<Segmentation*> MathExpressionFinderResults::getSegmentationResults() {
   return segmentationResults;
@@ -121,10 +129,18 @@ void MathExpressionFinderResults::printResultsToFiles(
       boxDestroy(&bbox);
     }
 
-    // save the image
+    // save the images
     pixWrite((imgname + (std::string)".png").c_str(),
         imageResults->getVisualResultsDisplay(),
         IFF_PNG);
+    const std::string evalColoredDir = resultsDirPath + std::string("coloredEval/");
+    Utils::exec(std::string("mkdir -p ") + evalColoredDir);
+    const std::string evalColoredIm = evalColoredDir + imageResults->getResultsName();
+    pixWrite((evalColoredIm + (std::string)".png").c_str(),
+        imageResults->getVisualResultsEvalDisplay(),
+        IFF_PNG);
+
+    // flush file stream
     rectstream.flush();
   }
 
@@ -166,6 +182,12 @@ MathExpressionFinderResultsBuilder* MathExpressionFinderResultsBuilder::setVisua
   return this;
 }
 
+MathExpressionFinderResultsBuilder* MathExpressionFinderResultsBuilder::setVisualEvalResultsDisplay(
+    Pix* const visualResultsEvalDisplay) {
+  this->visualResultsEvalDisplay = visualResultsEvalDisplay;
+  return this;
+}
+
 MathExpressionFinderResultsBuilder* MathExpressionFinderResultsBuilder::setResults(
     GenericVector<Segmentation*> results) {
   this->results = results;
@@ -195,6 +217,7 @@ MathExpressionFinderResultsBuilder* MathExpressionFinderResultsBuilder::setRunMo
  */
 MathExpressionFinderResults* MathExpressionFinderResultsBuilder::build() {
   return new MathExpressionFinderResults(visualResultsDisplay,
+      visualResultsEvalDisplay,
       results,
       resultsName,
       resultsDirName,

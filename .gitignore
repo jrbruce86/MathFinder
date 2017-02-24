@@ -48,3 +48,4 @@ MathFinderGtGen
 moc_mainWindow.cpp
 moc_pageTab.cpp
 qrc_icons.cpp
+coloredImages/

@@ -1,3 +1,4 @@
+0.png displayed -1 -1 -1 -1
 1.png embedded 1141 477 1187 538
 1.png embedded 1482 554 1537 626
 1.png embedded 2785 642 2908 713
@@ -24,7 +25,6 @@
 1.png displayed 691 2545 739 2597
 1.png displayed 924 3047 973 3086
 1.png displayed 1375 3287 1436 3330
-1.png displayed 924 3044 973 3090
 1.png displayed 927 3284 976 3333
 1.png displayed 947 3388 1012 3453
 1.png displayed 778 3161 814 3216
@@ -123,7 +123,6 @@
 6.png embedded 765 3482 817 3534
 6.png embedded 1028 3466 1303 3547
 6.png embedded 1388 3440 2153 3576
-6.png embedded 1371 3437 2156 3579
 6.png displayed 827 3722 1559 3877
 6.png displayed 1657 3725 2380 3877
 6.png displayed 785 3910 2425 4069

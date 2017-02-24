@@ -272,15 +272,24 @@ std::vector<std::string> DatasetSelectionMenu::findImagePaths(
       imagePaths.push_back(dirPath + fileNames[i]);
     }
   }
-  return imagePaths;
+  return sortFilePathsNumerically(imagePaths);
+}
+
+std::vector<std::string> DatasetSelectionMenu::sortFilePathsNumerically(
+    const std::vector<std::string>& unsortedFilePaths) {
+  GenericVector<int> numVals;
+  std::vector<std::string> sortedFilePaths;
+  sortedFilePaths.resize(unsortedFilePaths.size());
+  for(int i = 0; i < sortedFilePaths.size(); ++i) {
+    sortedFilePaths[getFileNumFromPath(unsortedFilePaths[i])] = unsortedFilePaths[i];
+  }
+  return sortedFilePaths;
 }
 
 std::vector<std::string> DatasetSelectionMenu::findGroundtruthImagePaths(
     std::string groundtruthDirPath) {
-
   // Get the image paths
   std::vector<std::string> trainingImagePaths = findImagePaths(groundtruthDirPath);
-
   // Make sure they are in the right order
   std::vector<std::string> trainingImagePathsOrdered;
   for(int i = 0; i < trainingImagePaths.size(); ++i) {

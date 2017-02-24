@@ -30,7 +30,7 @@ Evaluator::Evaluator(
   this->groundtruthDirPath = Utils::checkTrailingSlash(groundtruthDirPath);
   this->typeSpecificMode = typeSpecificMode;
 
-  this->coloredGroundtruthImageDirPath = Utils::checkTrailingSlash(this->groundtruthDirPath) + coloredImageSubDirName;
+  this->coloredGroundtruthImageDirPath = Utils::checkTrailingSlash(this->groundtruthDirPath) + coloredImageSubDirName + std::string("/");
 
   this->groundtruthRectFilePath = this->groundtruthDirPath + std::string("groundtruth.rect");
   this->resultsRectFilePath = this->resultsDirPath + std::string("results.rect");
@@ -61,11 +61,14 @@ void Evaluator::evaluateSingleRun() {
 
   // Grab the paths to the colored images
   coloredGroundtruthImagePaths = DatasetSelectionMenu::findGroundtruthImagePaths(coloredGroundtruthImageDirPath);
-  coloredResultsImagePaths = DatasetSelectionMenu::findGroundtruthImagePaths(resultsDirPath);
+  coloredResultsImagePaths = DatasetSelectionMenu::findGroundtruthImagePaths(
+      Utils::checkTrailingSlash(resultsDirPath) + std::string("coloredEval/"));
+
   if(coloredGroundtruthImagePaths.size() != coloredResultsImagePaths.size()) {
     std::cout << "ERROR there are different numbers of colored images in the groundtruth from the results dirs.\n";
     return;
   }
+
   if(coloredGroundtruthImagePaths.size() != inputImagePaths.size()) {
     std::cout << "ERROR there are different numbers of colored images than there are input images.\n";
     return;
@@ -202,27 +205,26 @@ void Evaluator::evaluateMultipleRuns() {
  */
 HypothesisMetrics Evaluator::getEvaluationMetrics(
     const std::string typenamespec, const int i) {
-
   std::string evalTopDir = resultsDirPath + std::string("MathFinderEvaluationResults/");
   if(!Utils::existsDirectory(evalTopDir)) {
-    Utils::exec((std::string)"mkdir " + evalTopDir);
+    Utils::exec((std::string)"mkdir -p " + evalTopDir);
   }
   std::string outfile_dir_verbose = evalTopDir + (std::string)"verbose/";
   if(!Utils::existsDirectory(outfile_dir_verbose))
-    Utils::exec((std::string)"mkdir " + outfile_dir_verbose);
+    Utils::exec((std::string)"mkdir -p " + outfile_dir_verbose);
   std::string dbgdir = Utils::checkTrailingSlash(evalTopDir) + (std::string)"dbg/";
   if(!Utils::existsDirectory(dbgdir))
-    Utils::exec((std::string)"mkdir " + dbgdir);
-  std::string this_dbgdir = Utils::checkTrailingSlash(dbgdir) + inputImagePaths[i] + std::string("/");
+    Utils::exec((std::string)"mkdir -p " + dbgdir);
+  std::string this_dbgdir = Utils::checkTrailingSlash(dbgdir) + Utils::intToString(i) + std::string("/");
   if(!Utils::existsDirectory(this_dbgdir))
-    Utils::exec((std::string)"mkdir " + this_dbgdir);
-  std::string outfile = evalTopDir + inputImagePaths[i] + (std::string)"_metrics";
+    Utils::exec((std::string)"mkdir -p " + this_dbgdir);
+  std::string outfile = Utils::checkTrailingSlash(evalTopDir) + Utils::intToString(i) + (std::string)"_metrics";
   FILE* out;
   if(!(out = fopen(outfile.c_str(), "w"))) {
     std::cout << "ERROR: Could not create " << outfile << " file\n";
     throw std::exception();
   }
-  std::string outfile_verbose = outfile_dir_verbose + inputImagePaths[i] +
+  std::string outfile_verbose = Utils::checkTrailingSlash(outfile_dir_verbose) + Utils::intToString(i) +
       (std::string)"_metrics_verbose";
   FILE* out_verbose;
   if(!(out_verbose = fopen(outfile_verbose.c_str(), "w"))) {
@@ -281,8 +283,8 @@ bool Evaluator::colorGroundtruthBlobs() {
   // Make sure the directory is fresh
   if(Utils::existsDirectory(coloredGroundtruthImageDirPath)) {
     Utils::exec(std::string("rm -rf ") + coloredGroundtruthImageDirPath);
-    Utils::exec(std::string("mkdir -p ") + coloredGroundtruthImageDirPath);
   }
+  Utils::exec(std::string("mkdir -p ") + coloredGroundtruthImageDirPath);
 
   // open the groundtruth text file which holds all of the math rectangles
   std::ifstream gtFileStream;

@@ -50,6 +50,8 @@ class DatasetSelectionMenu : public virtual MenuBase {
 
  private:
 
+  static std::vector<std::string> sortFilePathsNumerically(const std::vector<std::string>& strings);
+
   std::string promptNewDatasetDirPath();
 
   std::string promptSelectExistingGroundtruth();
