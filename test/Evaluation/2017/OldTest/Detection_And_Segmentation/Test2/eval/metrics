@@ -1,0 +1,257 @@
+  Page 0:
+    Result type 'all' metrics:
+      TPR: 0.843649
+      FPR: 0.0776968
+      ACC: 0.90712
+      TNR: 0.922303
+      PPV: 0.722029
+      FDR: 0.277971
+      NPV: 0.961027
+      Oversegmentations: 8
+      Oversegmentation Severity: 4.875
+      Undersegmentations: 1
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 10/45
+      Completely Missed Region Ratio: 0.311111
+      Falsely Detected Region Count: 16
+  Page 1:
+    Result type 'all' metrics:
+      TPR: 0.874913
+      FPR: 0.1023
+      ACC: 0.891716
+      TNR: 0.8977
+      PPV: 0.752802
+      FDR: 0.247198
+      NPV: 0.952729
+      Oversegmentations: 2
+      Oversegmentation Severity: 2
+      Undersegmentations: 3
+      Undersegmentation Severity: 2.66667
+      Correctly Segmented Ratio: 7/38
+      Completely Missed Region Ratio: 0.289474
+      Falsely Detected Region Count: 14
+  Page 2:
+    Result type 'all' metrics:
+      TPR: 0.927681
+      FPR: 0.113167
+      ACC: 0.904318
+      TNR: 0.886833
+      PPV: 0.859845
+      FDR: 0.140155
+      NPV: 0.94248
+      Oversegmentations: 17
+      Oversegmentation Severity: 3.11765
+      Undersegmentations: 2
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 5/51
+      Completely Missed Region Ratio: 0.0392157
+      Falsely Detected Region Count: 11
+  Page 3:
+    Result type 'all' metrics:
+      TPR: 0.988692
+      FPR: 0.0887124
+      ACC: 0.929141
+      TNR: 0.911288
+      PPV: 0.769656
+      FDR: 0.230344
+      NPV: 0.996294
+      Oversegmentations: 3
+      Oversegmentation Severity: 3
+      Undersegmentations: 3
+      Undersegmentation Severity: 2.66667
+      Correctly Segmented Ratio: 10/37
+      Completely Missed Region Ratio: 0.0810811
+      Falsely Detected Region Count: 17
+  Page 4:
+    Result type 'all' metrics:
+      TPR: 0.880417
+      FPR: 0.027787
+      ACC: 0.962962
+      TNR: 0.972213
+      PPV: 0.780264
+      FDR: 0.219736
+      NPV: 0.986403
+      Oversegmentations: 11
+      Oversegmentation Severity: 2.63636
+      Undersegmentations: 0
+      Undersegmentation Severity: 0
+      Correctly Segmented Ratio: 5/30
+      Completely Missed Region Ratio: 0.133333
+      Falsely Detected Region Count: 7
+  Page 5:
+    Result type 'all' metrics:
+      TPR: 0.976728
+      FPR: 0.0418836
+      ACC: 0.962315
+      TNR: 0.958116
+      PPV: 0.871671
+      FDR: 0.128329
+      NPV: 0.992975
+      Oversegmentations: 10
+      Oversegmentation Severity: 3.2
+      Undersegmentations: 5
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 10/41
+      Completely Missed Region Ratio: 0.0487805
+      Falsely Detected Region Count: 27
+  Page 6:
+    Result type 'all' metrics:
+      TPR: 0.853085
+      FPR: 0.0589191
+      ACC: 0.925464
+      TNR: 0.941081
+      PPV: 0.757525
+      FDR: 0.242475
+      NPV: 0.967413
+      Oversegmentations: 12
+      Oversegmentation Severity: 2.16667
+      Undersegmentations: 2
+      Undersegmentation Severity: 2.5
+      Correctly Segmented Ratio: 13/59
+      Completely Missed Region Ratio: 0.237288
+      Falsely Detected Region Count: 21
+  Page 7:
+    Result type 'all' metrics:
+      TPR: 0.939332
+      FPR: 0.0183849
+      ACC: 0.97598
+      TNR: 0.981615
+      PPV: 0.887087
+      FDR: 0.112913
+      NPV: 0.990586
+      Oversegmentations: 7
+      Oversegmentation Severity: 2.42857
+      Undersegmentations: 0
+      Undersegmentation Severity: 0
+      Correctly Segmented Ratio: 12/37
+      Completely Missed Region Ratio: 0.135135
+      Falsely Detected Region Count: 8
+  Page 8:
+    Result type 'all' metrics:
+      TPR: 0.935074
+      FPR: 0.0379301
+      ACC: 0.959356
+      TNR: 0.96207
+      PPV: 0.733737
+      FDR: 0.266263
+      NPV: 0.992513
+      Oversegmentations: 12
+      Oversegmentation Severity: 3.33333
+      Undersegmentations: 1
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 7/32
+      Completely Missed Region Ratio: 0
+      Falsely Detected Region Count: 30
+  Page 9:
+    Result type 'all' metrics:
+      TPR: 0.749824
+      FPR: 0.0129033
+      ACC: 0.952169
+      TNR: 0.987097
+      PPV: 0.909345
+      FDR: 0.0906547
+      NPV: 0.958085
+      Oversegmentations: 3
+      Oversegmentation Severity: 3.66667
+      Undersegmentations: 0
+      Undersegmentation Severity: 0
+      Correctly Segmented Ratio: 13/31
+      Completely Missed Region Ratio: 0.322581
+      Falsely Detected Region Count: 12
+  Page 10:
+    Result type 'all' metrics:
+      TPR: 0.888241
+      FPR: 0.072603
+      ACC: 0.920997
+      TNR: 0.927397
+      PPV: 0.705057
+      FDR: 0.294943
+      NPV: 0.976995
+      Oversegmentations: 15
+      Oversegmentation Severity: 3.8
+      Undersegmentations: 1
+      Undersegmentation Severity: 5
+      Correctly Segmented Ratio: 14/53
+      Completely Missed Region Ratio: 0.0754717
+      Falsely Detected Region Count: 11
+  Page 11:
+    Result type 'all' metrics:
+      TPR: 0.943129
+      FPR: 0.0530442
+      ACC: 0.946662
+      TNR: 0.946956
+      PPV: 0.596227
+      FDR: 0.403773
+      NPV: 0.995037
+      Oversegmentations: 2
+      Oversegmentation Severity: 2
+      Undersegmentations: 1
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 10/28
+      Completely Missed Region Ratio: 0.142857
+      Falsely Detected Region Count: 12
+  Page 12:
+    Result type 'all' metrics:
+      TPR: 0.900436
+      FPR: 0.0170829
+      ACC: 0.964383
+      TNR: 0.982917
+      PPV: 0.938564
+      FDR: 0.0614362
+      NPV: 0.971479
+      Oversegmentations: 12
+      Oversegmentation Severity: 2.75
+      Undersegmentations: 3
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 20/62
+      Completely Missed Region Ratio: 0.241935
+      Falsely Detected Region Count: 7
+  Page 13:
+    Result type 'all' metrics:
+      TPR: 0.915464
+      FPR: 0.0366291
+      ACC: 0.95613
+      TNR: 0.963371
+      PPV: 0.816521
+      FDR: 0.183479
+      NPV: 0.984616
+      Oversegmentations: 6
+      Oversegmentation Severity: 2.33333
+      Undersegmentations: 1
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 17/53
+      Completely Missed Region Ratio: 0.207547
+      Falsely Detected Region Count: 6
+  Page 14:
+    Result type 'all' metrics:
+      TPR: 0.924146
+      FPR: 0.0677888
+      ACC: 0.931816
+      TNR: 0.932211
+      PPV: 0.412893
+      FDR: 0.587107
+      NPV: 0.99582
+      Oversegmentations: 6
+      Oversegmentation Severity: 2.66667
+      Undersegmentations: 1
+      Undersegmentation Severity: 2
+      Correctly Segmented Ratio: 7/25
+      Completely Missed Region Ratio: 0.16
+      Falsely Detected Region Count: 36
+-----------------------------------------
+Average Metrics for Dataset:
+  Result Type: all
+    TPR: 0.902721
+    FPR: 0.0551222
+    ACC: 0.939369
+    TNR: 0.944878
+    PPV: 0.767548
+    FDR: 0.232452
+    NPV: 0.97763
+    Average Oversegmentations: 8.4
+    Average Oversegmentation Severity: 2.93162
+    Average Undersegmentations: 1.6
+    Average Undersegmentation Severity: 1.92222
+    Average Correctly Segmented Ratio: 0.260847
+    Average Completely Missed Region Ratio: 0.161721
+    Average Falsely Detected Region Count: 15.6667
