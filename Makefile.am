@@ -14,6 +14,7 @@ shareDir=/usr/local/share
 
 #Warning requires tabs below (really annoying). The following adds the extra stuff to make life easier (removable by uninstalling)
 install-exec-hook: 
+	cp src/TOOLS/EVALUATION/getOverallAvg.py $(toolsDestDir)/MathFinderGetOverallAvg.py; \
 	cp $(toolsSrcDir)/MathFinderGtGen/MathFinderGtGen $(toolsDestDir)/MathFinderGtGen; \
 	cp $(toolsSrcDir)/select_random/select_random $(toolsDestDir)/MathFinderselect_random; \
 	cp $(toolsSrcDir)/select_training/select_training $(toolsDestDir)/MathFinderselect_training; \

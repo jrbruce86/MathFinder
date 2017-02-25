@@ -21,6 +21,9 @@ AC_CONFIG_FILES([Makefile
                 src/TOOLS/GROUNDTRUTH_GENERATION/select_training/Makefile
                 src/TOOLS/GROUNDTRUTH_GENERATION/Makefile])
 
+AC_CONFIG_FILES([src/TOOLS/EVALUATION/getOverallAvg.py:src/TOOLS/EVALUATION/getOverallAvg.py], \
+[chmod +x src/TOOLS/EVALUATION/getOverallAvg.py])
+
 AC_CONFIG_FILES([src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha:src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha], \
 [chmod +x src/TOOLS/GROUNDTRUTH_GENERATION/scripts/removealpha])
 
