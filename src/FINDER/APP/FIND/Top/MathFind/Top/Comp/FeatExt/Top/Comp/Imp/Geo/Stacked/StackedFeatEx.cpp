@@ -21,7 +21,7 @@
 #include <stddef.h>
 #include <assert.h>
 
-#define DBG_SHOW_STACKED_FEATURE
+//#define DBG_SHOW_STACKED_FEATURE
 //#define DBG_SHOW_INDIVIDUAL_STACKED_FEATURE
 //#define DBG_STACKED_FEATURE_ALOT
 //#define DBG_DISPLAY
