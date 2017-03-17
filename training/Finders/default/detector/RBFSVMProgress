@@ -1,0 +1,499 @@
+done pushing back samples
+
+done randomizing samples
+
+done setting up normalizing
+
+done normalizing each sample
+
+Started coarse training for RBF Kernel.
+
+Predictor Path: /home/jrbruce86/.mathfinder/training/Finders/e/detector/RBFSVMPredictor
+
+Running cross validation for C:       0.001  Gamma:       1e-07
+
+C:       0.001  Gamma:       1e-07  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma: 1.29155e-06
+
+C:       0.001  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma:  1.6681e-05
+
+C:       0.001  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma: 0.000215443
+
+C:       0.001  Gamma: 0.000215443  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma:  0.00278256
+
+C:       0.001  Gamma:  0.00278256  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma:   0.0359381
+
+C:       0.001  Gamma:   0.0359381  cross validation accuracy (positive, negative):     0.18386,    0.998111
+
+Running cross validation for C:       0.001  Gamma:    0.464159
+
+C:       0.001  Gamma:    0.464159  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma:     5.99484
+
+C:       0.001  Gamma:     5.99484  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma:     77.4264
+
+C:       0.001  Gamma:     77.4264  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:       0.001  Gamma:        1000
+
+C:       0.001  Gamma:        1000  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma:       1e-07
+
+C:  0.00464159  Gamma:       1e-07  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma: 1.29155e-06
+
+C:  0.00464159  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma:  1.6681e-05
+
+C:  0.00464159  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma: 0.000215443
+
+C:  0.00464159  Gamma: 0.000215443  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma:  0.00278256
+
+C:  0.00464159  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.292456,    0.991879
+
+Running cross validation for C:  0.00464159  Gamma:   0.0359381
+
+C:  0.00464159  Gamma:   0.0359381  cross validation accuracy (positive, negative):    0.700702,     0.96702
+
+Running cross validation for C:  0.00464159  Gamma:    0.464159
+
+C:  0.00464159  Gamma:    0.464159  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma:     5.99484
+
+C:  0.00464159  Gamma:     5.99484  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma:     77.4264
+
+C:  0.00464159  Gamma:     77.4264  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:  0.00464159  Gamma:        1000
+
+C:  0.00464159  Gamma:        1000  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:   0.0215443  Gamma:       1e-07
+
+C:   0.0215443  Gamma:       1e-07  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:   0.0215443  Gamma: 1.29155e-06
+
+C:   0.0215443  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:   0.0215443  Gamma:  1.6681e-05
+
+C:   0.0215443  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:   0.0215443  Gamma: 0.000215443
+
+C:   0.0215443  Gamma: 0.000215443  cross validation accuracy (positive, negative):   0.0022807,    0.999967
+
+Running cross validation for C:   0.0215443  Gamma:  0.00278256
+
+C:   0.0215443  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.445614,    0.984786
+
+Running cross validation for C:   0.0215443  Gamma:   0.0359381
+
+C:   0.0215443  Gamma:   0.0359381  cross validation accuracy (positive, negative):     0.76193,     0.96407
+
+Running cross validation for C:   0.0215443  Gamma:    0.464159
+
+C:   0.0215443  Gamma:    0.464159  cross validation accuracy (positive, negative):     0.79193,    0.969473
+
+Running cross validation for C:   0.0215443  Gamma:     5.99484
+
+C:   0.0215443  Gamma:     5.99484  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:   0.0215443  Gamma:     77.4264
+
+C:   0.0215443  Gamma:     77.4264  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:   0.0215443  Gamma:        1000
+
+C:   0.0215443  Gamma:        1000  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:         0.1  Gamma:       1e-07
+
+C:         0.1  Gamma:       1e-07  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:         0.1  Gamma: 1.29155e-06
+
+C:         0.1  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:         0.1  Gamma:  1.6681e-05
+
+C:         0.1  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:         0.1  Gamma: 0.000215443
+
+C:         0.1  Gamma: 0.000215443  cross validation accuracy (positive, negative):    0.380175,    0.990487
+
+Running cross validation for C:         0.1  Gamma:  0.00278256
+
+C:         0.1  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.799474,    0.945343
+
+Running cross validation for C:         0.1  Gamma:   0.0359381
+
+C:         0.1  Gamma:   0.0359381  cross validation accuracy (positive, negative):    0.772982,    0.969208
+
+Running cross validation for C:         0.1  Gamma:    0.464159
+
+C:         0.1  Gamma:    0.464159  cross validation accuracy (positive, negative):    0.814386,    0.970534
+
+Running cross validation for C:         0.1  Gamma:     5.99484
+
+C:         0.1  Gamma:     5.99484  cross validation accuracy (positive, negative):    0.147193,    0.998376
+
+Running cross validation for C:         0.1  Gamma:     77.4264
+
+C:         0.1  Gamma:     77.4264  cross validation accuracy (positive, negative):   0.0131579,    0.999834
+
+Running cross validation for C:         0.1  Gamma:        1000
+
+C:         0.1  Gamma:        1000  cross validation accuracy (positive, negative): 0.000701754,           1
+
+Running cross validation for C:    0.464159  Gamma:       1e-07
+
+C:    0.464159  Gamma:       1e-07  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:    0.464159  Gamma: 1.29155e-06
+
+C:    0.464159  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:    0.464159  Gamma:  1.6681e-05
+
+C:    0.464159  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):   0.0375439,    0.999702
+
+Running cross validation for C:    0.464159  Gamma: 0.000215443
+
+C:    0.464159  Gamma: 0.000215443  cross validation accuracy (positive, negative):    0.556316,    0.973119
+
+Running cross validation for C:    0.464159  Gamma:  0.00278256
+
+C:    0.464159  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.820351,    0.934836
+
+Running cross validation for C:    0.464159  Gamma:   0.0359381
+
+C:    0.464159  Gamma:   0.0359381  cross validation accuracy (positive, negative):    0.762632,      0.9764
+
+Running cross validation for C:    0.464159  Gamma:    0.464159
+
+C:    0.464159  Gamma:    0.464159  cross validation accuracy (positive, negative):    0.818246,    0.980577
+
+Running cross validation for C:    0.464159  Gamma:     5.99484
+
+C:    0.464159  Gamma:     5.99484  cross validation accuracy (positive, negative):    0.520526,    0.992211
+
+Running cross validation for C:    0.464159  Gamma:     77.4264
+
+C:    0.464159  Gamma:     77.4264  cross validation accuracy (positive, negative):    0.118246,    0.998508
+
+Running cross validation for C:    0.464159  Gamma:        1000
+
+C:    0.464159  Gamma:        1000  cross validation accuracy (positive, negative):   0.0322807,    0.999702
+
+Running cross validation for C:     2.15443  Gamma:       1e-07
+
+C:     2.15443  Gamma:       1e-07  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:     2.15443  Gamma: 1.29155e-06
+
+C:     2.15443  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:     2.15443  Gamma:  1.6681e-05
+
+C:     2.15443  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):    0.405614,    0.989659
+
+Running cross validation for C:     2.15443  Gamma: 0.000215443
+
+C:     2.15443  Gamma: 0.000215443  cross validation accuracy (positive, negative):     0.80614,    0.931787
+
+Running cross validation for C:     2.15443  Gamma:  0.00278256
+
+C:     2.15443  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.775965,    0.966357
+
+Running cross validation for C:     2.15443  Gamma:   0.0359381
+
+C:     2.15443  Gamma:   0.0359381  cross validation accuracy (positive, negative):    0.757544,    0.982002
+
+Running cross validation for C:     2.15443  Gamma:    0.464159
+
+C:     2.15443  Gamma:    0.464159  cross validation accuracy (positive, negative):     0.82193,    0.984388
+
+Running cross validation for C:     2.15443  Gamma:     5.99484
+
+C:     2.15443  Gamma:     5.99484  cross validation accuracy (positive, negative):    0.682982,    0.985979
+
+Running cross validation for C:     2.15443  Gamma:     77.4264
+
+C:     2.15443  Gamma:     77.4264  cross validation accuracy (positive, negative):    0.319825,    0.994266
+
+Running cross validation for C:     2.15443  Gamma:        1000
+
+C:     2.15443  Gamma:        1000  cross validation accuracy (positive, negative):     0.14614,    0.998276
+
+Running cross validation for C:          10  Gamma:       1e-07
+
+C:          10  Gamma:       1e-07  cross validation accuracy (positive, negative):           0,           1
+
+Running cross validation for C:          10  Gamma: 1.29155e-06
+
+C:          10  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):    0.210175,    0.995293
+
+Running cross validation for C:          10  Gamma:  1.6681e-05
+
+C:          10  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):    0.674035,    0.970268
+
+Running cross validation for C:          10  Gamma: 0.000215443
+
+C:          10  Gamma: 0.000215443  cross validation accuracy (positive, negative):    0.804211,    0.931621
+
+Running cross validation for C:          10  Gamma:  0.00278256
+
+C:          10  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.765614,    0.972058
+
+Running cross validation for C:          10  Gamma:   0.0359381
+
+C:          10  Gamma:   0.0359381  cross validation accuracy (positive, negative):    0.771754,    0.983991
+
+Running cross validation for C:          10  Gamma:    0.464159
+
+C:          10  Gamma:    0.464159  cross validation accuracy (positive, negative):    0.831754,    0.984388
+
+Running cross validation for C:          10  Gamma:     5.99484
+
+C:          10  Gamma:     5.99484  cross validation accuracy (positive, negative):    0.682105,    0.984024
+
+Running cross validation for C:          10  Gamma:     77.4264
+
+C:          10  Gamma:     77.4264  cross validation accuracy (positive, negative):    0.320877,    0.993039
+
+Running cross validation for C:          10  Gamma:        1000
+
+C:          10  Gamma:        1000  cross validation accuracy (positive, negative):    0.146316,    0.998078
+
+Running cross validation for C:     46.4159  Gamma:       1e-07
+
+C:     46.4159  Gamma:       1e-07  cross validation accuracy (positive, negative):  0.00157895,    0.999967
+
+Running cross validation for C:     46.4159  Gamma: 1.29155e-06
+
+C:     46.4159  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):    0.489474,    0.976135
+
+Running cross validation for C:     46.4159  Gamma:  1.6681e-05
+
+C:     46.4159  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):    0.800877,     0.93172
+
+Running cross validation for C:     46.4159  Gamma: 0.000215443
+
+C:     46.4159  Gamma: 0.000215443  cross validation accuracy (positive, negative):    0.807544,    0.933643
+
+Running cross validation for C:     46.4159  Gamma:  0.00278256
+
+C:     46.4159  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.751579,    0.977494
+
+Running cross validation for C:     46.4159  Gamma:   0.0359381
+
+C:     46.4159  Gamma:   0.0359381  cross validation accuracy (positive, negative):     0.79386,     0.98462
+
+Running cross validation for C:     46.4159  Gamma:    0.464159
+
+C:     46.4159  Gamma:    0.464159  cross validation accuracy (positive, negative):     0.83807,    0.982665
+
+Running cross validation for C:     46.4159  Gamma:     5.99484
+
+C:     46.4159  Gamma:     5.99484  cross validation accuracy (positive, negative):    0.683509,    0.981505
+
+Running cross validation for C:     46.4159  Gamma:     77.4264
+
+C:     46.4159  Gamma:     77.4264  cross validation accuracy (positive, negative):    0.319825,    0.992244
+
+Running cross validation for C:     46.4159  Gamma:        1000
+
+C:     46.4159  Gamma:        1000  cross validation accuracy (positive, negative):    0.146316,    0.998011
+
+Running cross validation for C:     215.443  Gamma:       1e-07
+
+C:     215.443  Gamma:       1e-07  cross validation accuracy (positive, negative):    0.377193,    0.990653
+
+Running cross validation for C:     215.443  Gamma: 1.29155e-06
+
+C:     215.443  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):    0.801579,    0.937885
+
+Running cross validation for C:     215.443  Gamma:  1.6681e-05
+
+C:     215.443  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):    0.806491,    0.931588
+
+Running cross validation for C:     215.443  Gamma: 0.000215443
+
+C:     215.443  Gamma: 0.000215443  cross validation accuracy (positive, negative):    0.774912,    0.964435
+
+Running cross validation for C:     215.443  Gamma:  0.00278256
+
+C:     215.443  Gamma:  0.00278256  cross validation accuracy (positive, negative):     0.75193,    0.980113
+
+Running cross validation for C:     215.443  Gamma:   0.0359381
+
+C:     215.443  Gamma:   0.0359381  cross validation accuracy (positive, negative):    0.798421,    0.985747
+
+Running cross validation for C:     215.443  Gamma:    0.464159
+
+C:     215.443  Gamma:    0.464159  cross validation accuracy (positive, negative):    0.841404,     0.98114
+
+Running cross validation for C:     215.443  Gamma:     5.99484
+
+C:     215.443  Gamma:     5.99484  cross validation accuracy (positive, negative):    0.676667,    0.980212
+
+Running cross validation for C:     215.443  Gamma:     77.4264
+
+C:     215.443  Gamma:     77.4264  cross validation accuracy (positive, negative):    0.319123,    0.991912
+
+Running cross validation for C:     215.443  Gamma:        1000
+
+C:     215.443  Gamma:        1000  cross validation accuracy (positive, negative):    0.146316,    0.998011
+
+Running cross validation for C:        1000  Gamma:       1e-07
+
+C:        1000  Gamma:       1e-07  cross validation accuracy (positive, negative):    0.558421,    0.973384
+
+Running cross validation for C:        1000  Gamma: 1.29155e-06
+
+C:        1000  Gamma: 1.29155e-06  cross validation accuracy (positive, negative):    0.802807,    0.931621
+
+Running cross validation for C:        1000  Gamma:  1.6681e-05
+
+C:        1000  Gamma:  1.6681e-05  cross validation accuracy (positive, negative):    0.806842,    0.931588
+
+Running cross validation for C:        1000  Gamma: 0.000215443
+
+C:        1000  Gamma: 0.000215443  cross validation accuracy (positive, negative):    0.764211,    0.970865
+
+Running cross validation for C:        1000  Gamma:  0.00278256
+
+C:        1000  Gamma:  0.00278256  cross validation accuracy (positive, negative):    0.748772,    0.982632
+
+Running cross validation for C:        1000  Gamma:   0.0359381
+
+C:        1000  Gamma:   0.0359381  cross validation accuracy (positive, negative):    0.805263,    0.986013
+
+Running cross validation for C:        1000  Gamma:    0.464159
+
+C:        1000  Gamma:    0.464159  cross validation accuracy (positive, negative):    0.842632,    0.979151
+
+Running cross validation for C:        1000  Gamma:     5.99484
+
+C:        1000  Gamma:     5.99484  cross validation accuracy (positive, negative):    0.670702,    0.979549
+
+Running cross validation for C:        1000  Gamma:     77.4264
+
+C:        1000  Gamma:     77.4264  cross validation accuracy (positive, negative):    0.319474,     0.99125
+
+Running cross validation for C:        1000  Gamma:        1000
+
+C:        1000  Gamma:        1000  cross validation accuracy (positive, negative):    0.146316,    0.998011
+
+Best Result: (positive, negative)0.841404, 0.98114
+. Gamma =    0.464159. C =     215.443
+
+C:         100  gamma:    0.464159  cross validation accuracy:    0.841754,    0.982068
+
+C:        1000  gamma:    0.464159  cross validation accuracy:    0.842632,    0.979151
+
+C:         100  gamma:     4.64159  cross validation accuracy:    0.722982,    0.979185
+
+C:          10  gamma:    0.464159  cross validation accuracy:    0.831754,    0.984388
+
+C:         100  gamma:   0.0464159  cross validation accuracy:    0.799649,    0.985847
+
+C:     195.052  gamma:    0.254821  cross validation accuracy:    0.826316,     0.98419
+
+C:     86.5007  gamma:    0.388143  cross validation accuracy:    0.834912,    0.982831
+
+C:     170.833  gamma:    0.573288  cross validation accuracy:    0.844386,    0.980676
+
+C:     302.217  gamma:    0.530742  cross validation accuracy:     0.84614,    0.980312
+
+C:     955.692  gamma:    0.529247  cross validation accuracy:    0.846316,     0.97829
+
+C:     270.575  gamma:    0.659268  cross validation accuracy:    0.848596,    0.978919
+
+C:     430.409  gamma:    0.706124  cross validation accuracy:    0.852632,    0.977594
+
+C:     956.957  gamma:      1.1552  cross validation accuracy:    0.861404,     0.97408
+
+C:        1000  gamma:     1.27254  cross validation accuracy:    0.861579,    0.974014
+
+C:     874.768  gamma:     1.36698  cross validation accuracy:    0.864386,    0.973914
+
+C:     819.452  gamma:     1.56763  cross validation accuracy:    0.865789,    0.973682
+
+C:     704.124  gamma:     1.56085  cross validation accuracy:    0.865965,    0.973948
+
+C:     695.657  gamma:     1.81574  cross validation accuracy:    0.867719,    0.973086
+
+C:     723.583  gamma:     2.45325  cross validation accuracy:    0.868596,    0.972754
+
+C:     840.708  gamma:     2.50969  cross validation accuracy:    0.860702,    0.972754
+
+C:     624.719  gamma:     2.54822  cross validation accuracy:    0.869298,    0.972655
+
+C:     655.108  gamma:     2.94324  cross validation accuracy:     0.82193,    0.974047
+
+C:     560.384  gamma:     2.29216  cross validation accuracy:    0.868772,     0.97292
+
+C:      636.92  gamma:     2.36796  cross validation accuracy:    0.869123,     0.97292
+
+C:     642.563  gamma:     2.30591  cross validation accuracy:    0.868947,    0.972854
+
+C:     616.717  gamma:      2.4158  cross validation accuracy:    0.869474,    0.972953
+
+C:     596.987  gamma:     2.46347  cross validation accuracy:    0.868772,    0.972887
+
+C:     610.837  gamma:     2.40314  cross validation accuracy:    0.869298,     0.97292
+
+C:     626.515  gamma:     2.44142  cross validation accuracy:    0.868421,    0.972887
+
+C:     614.534  gamma:     2.39332  cross validation accuracy:    0.869298,    0.972953
+
+Optimal C after BOBYQA:     616.717
+
+Optimal gamma after BOBYQA:      2.4158
+
+BOBYQA Score: 1.84243
+
+Running cross validation again on optimal c and gamma to get the true positive and true negative rate (should sum up to the score above.
+
+C:     616.717  Gamma:      2.4158  cross validation accuracy (positive, negative): 0.869474, 0.972953
+
+about to do training
+
+setting normalizer
+
+calling trainer.train()
+
+The number of support vectors in the final learned function is: 6824
+
+done with trainFinalClassifier
+
+done with savePredictor
+
+Training Complete! The predictor has been saved to /home/jrbruce86/.mathfinder/training/Finders/e/detector/RBFSVMPredictor
+
