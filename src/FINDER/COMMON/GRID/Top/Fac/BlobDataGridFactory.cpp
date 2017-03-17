@@ -465,7 +465,7 @@ void BlobDataGridFactory::findAllRowCharacteristics(BlobDataGrid* const blobData
         ++valid_words_cur_row;
       }
     }
-    if(valid_words_cur_row > 0) { // shouldn't be 0... but sometimes is when the engine is confused so...
+    if(valid_words_cur_row > 0) { // shouldn't be 0... but just in case
       ++num_rows_with_valid;
     }
     row->setValidWordCount(valid_words_cur_row);

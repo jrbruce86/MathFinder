@@ -35,6 +35,8 @@
 
 //#define SHOW_DETECTION_RESULTS // shows the results of detection prior to any cleanup or segmentation
 //#define SHOW_PASS1 // shows the results of the first pass (cleanup prior to segmentation)
+//#define WRITE_PASS1
+//#define DISP_PASS1
 //#define DBG_SHOW_MERGE_START  // shows the starting blob for a merge
 //#define DBG_SHOW_MERGE // shows all the merges that happen between DBG_SHOW_MERGE_START and
 //#define DBG_SHOW_MERGE_ONE_SEGMENT // if turned on, only debugs a segment
@@ -157,9 +159,19 @@ void HeuristicMerge::runSegmentation(BlobDataGrid* const blobDataGrid) {
 #ifdef SHOW_PASS1
     {
       Pix* pass1Im = blobDataGrid->getVisualDetectionResultsDisplay();
+#ifdef DISP_PASS1
       pixDisplay(pass1Im, 100, 100);
       std::cout << "Displaying the results of segmentation pass 1.\n";
       Utils::waitForInput();
+#endif
+#ifdef WRITE_PASS1
+     pixWrite(
+         (std::string("Filtered_Detection_Im") +
+             blobDataGrid->getImageName() +
+             std::string(".png")).c_str(),
+         pass1Im,
+         IFF_PNG);
+#endif
       pixDestroy(&pass1Im);
     }
 #endif

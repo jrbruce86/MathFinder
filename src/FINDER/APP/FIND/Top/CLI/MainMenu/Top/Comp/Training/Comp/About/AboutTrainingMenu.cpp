@@ -19,7 +19,7 @@ std::string AboutTrainingMenu::getName() const {
 
 void AboutTrainingMenu::doTask() {
   std::cout << "This software provides a framework for training, testing, and evaluating document layout analysis techniques. \
-[insert canned description on document layout analysis]. More specifically this software focuses on finding math regions \
+More specifically this software focuses on finding math regions \
 in document pages which may or may not contain math. The purpose of this layotu analysis is for increasing the accuracy \
 of OCR on a wider variety pages. [Insert more stuff from article] \n\
 \

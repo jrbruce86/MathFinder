@@ -105,6 +105,7 @@ void OtherRecognitionFeatureExtractor
   double avgwhr = 0;
   double count = 0;
   while((blob = bdgs.NextFullSearch()) != NULL) {
+    //TODO add restriction that the blob has a confidence over a threshold
     if(blob->belongsToRecognizedWord() && blob->belongsToRecognizedNormalRow()) {
       avgheight += (double)blob->getBoundingBox().height();
       avgwhr += ((double)blob->getBoundingBox().width() / (double)blob->getBoundingBox().height());
@@ -163,7 +164,7 @@ void OtherRecognitionFeatureExtractor
         TesseractCharData* curChar = chars[k];
         assert(curChar->getParentWord()->getParentRow() != NULL);
         assert(curChar->getParentWord()->getParentRow()->getBoundingBox() == row->getBoundingBox());
-        if(curChar->getParentWord()->getIsValidTessWord()) {
+        if(curChar->getParentWord()->getIsValidTessWord()) { // should be confidence oh well
           double dist = findBaselineDist(curChar);
           avg_baseline_dist_ += dist;
           ++count;
@@ -414,7 +415,7 @@ std::vector<DoubleFeature*> OtherRecognitionFeatureExtractor::extractFeatures(Bl
     TesseractRowData* const rowData =
         blob->getParentRow();
     if(rowData != NULL) {
-      if(rowData->getHasValidTessWord()) {
+      if(rowData->getHasValidTessWord()) {  //TODO (by TODO i mean I wont do this but should've). This should have met some sort of row-level confidence threshold to be meaningful... oh well.
         double rowheight = -1;
         double avg_baseline_dist_ = (double)-1;
         // find the average baseline for the blob's row

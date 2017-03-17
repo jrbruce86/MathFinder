@@ -223,7 +223,7 @@ void SubOrSuperscriptsFeatureExtractor::setBlobSubSuperScript(BlobData* const bl
       continue; // too small
     inT16 h_dist = neighbor->getBoundingBox().left() - blob->getBoundingBox().right();
     if(h_dist > h_adj_thresh)
-      continue; // too far away
+      continue; // too far away // TODO should probably break here....
     // ----------------COMMENT AND/OR CODE IN QUESTION START---------------------
     if(neighbor->belongsToRecognizedWord()
         && neighbor->getWordRecognitionConfidence() > wordCertaintyThresh) {

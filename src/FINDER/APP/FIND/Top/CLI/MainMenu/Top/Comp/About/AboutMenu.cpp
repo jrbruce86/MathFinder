@@ -21,10 +21,10 @@ std::string AboutMenu::getName() const {
 }
 
 void AboutMenu::doTask() {
-  std::cout << "This software provides a framework for training, testing, and evaluating document layout analysis techniques.\
-[insert canned description on document layout analysis]. More specifically this software focuses on finding math regions \
+  std::cout << "This software provides a framework for training, testing, and evaluating document layout analysis techniques. \
+More specifically this software focuses on finding math regions \
 in document pages which may or may not contain math. The purpose of this layotu analysis is for increasing the accuracy \
-of OCR on a wider variety pages. [Insert more stuff from article] \n\
+of OCR on a wider variety of pages. \n\
 \n\
 \n\
 A trained math finder using this framework consists of three primary parts:\n\

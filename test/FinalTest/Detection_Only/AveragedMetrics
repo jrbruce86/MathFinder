@@ -1,0 +1,96 @@
+Overall Averages
+TPR: 0.7802074
+FPR: 0.09387354
+ACC: 0.8893278
+TNR: 0.9061266
+PPV: 0.643061
+FDR: 0.356939
+NPV: 0.9520214
+AverageOversegmentations: 22.78666
+AverageOversegmentationSeverity: 13.07274
+AverageUndersegmentations: 0.05333334
+AverageUndersegmentationSeverity: 0.1466666
+AverageCorrectlySegmentedRatio: 0.12626396
+AverageCompletelyMissedRegionRatio: 0.10753886
+AverageFalselyDetectedRegionCount: 106.49352
+
+Test1
+TPR: 0.798596
+FPR: 0.171323
+ACC: 0.821326
+TNR: 0.828677
+PPV: 0.55741
+FDR: 0.44259
+NPV: 0.940882
+Average Oversegmentations: 17.8667
+Average Oversegmentation Severity: 12.8769
+Average Undersegmentations: 0
+Average Undersegmentation Severity: 0
+Average Correctly Segmented Ratio: 0.172904
+Average Completely Missed Region Ratio: 0.0788382
+Average Falsely Detected Region Count: 85.3333
+
+Test2
+TPR: 0.783384
+FPR: 0.0600503
+ACC: 0.913837
+TNR: 0.93995
+PPV: 0.715033
+FDR: 0.284967
+NPV: 0.95076
+Average Oversegmentations: 29.5333
+Average Oversegmentation Severity: 11.7019
+Average Undersegmentations: 0.2
+Average Undersegmentation Severity: 0.6
+Average Correctly Segmented Ratio: 0.157785
+Average Completely Missed Region Ratio: 0.0918307
+Average Falsely Detected Region Count: 116.867
+
+Test3
+TPR: 0.791492
+FPR: 0.103992
+ACC: 0.890385
+TNR: 0.896008
+PPV: 0.599738
+FDR: 0.400262
+NPV: 0.95758
+Average Oversegmentations: 22.1333
+Average Oversegmentation Severity: 14.8593
+Average Undersegmentations: 0
+Average Undersegmentation Severity: 0
+Average Correctly Segmented Ratio: 0.130214
+Average Completely Missed Region Ratio: 0.119489
+Average Falsely Detected Region Count: 134.867
+
+Test4
+TPR: 0.754433
+FPR: 0.0733439
+ACC: 0.909562
+TNR: 0.926656
+PPV: 0.627907
+FDR: 0.372093
+NPV: 0.962422
+Average Oversegmentations: 23.1333
+Average Oversegmentation Severity: 15.1881
+Average Undersegmentations: 0.0666667
+Average Undersegmentation Severity: 0.133333
+Average Correctly Segmented Ratio: 0.0587278
+Average Completely Missed Region Ratio: 0.0778394
+Average Falsely Detected Region Count: 111.667
+
+Test5
+TPR: 0.773132
+FPR: 0.0606585
+ACC: 0.911529
+TNR: 0.939342
+PPV: 0.715217
+FDR: 0.284783
+NPV: 0.948463
+Average Oversegmentations: 21.2667
+Average Oversegmentation Severity: 10.7375
+Average Undersegmentations: 0
+Average Undersegmentation Severity: 0
+Average Correctly Segmented Ratio: 0.111689
+Average Completely Missed Region Ratio: 0.169697
+Average Falsely Detected Region Count: 83.7333
+
