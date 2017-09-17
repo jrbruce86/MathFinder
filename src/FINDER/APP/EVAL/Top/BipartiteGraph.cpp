@@ -277,7 +277,7 @@ void BipartiteGraph::makeEdges(Bipartite::GraphChoice graph) {
       int notcounted2 = countColorPixels(overlap, edge_from_pix, color,
           edge_from_pix_tracker, !typemode, intersect2);
       if(debug) {
-        if(intersect1 != intersect2) {
+        if((intersect1 != intersect2) && !typemode) {
           cout << "edge from " << (make_edges_from == &Hypothesis ? "hypthesis" : "groundtruth")
                << " to " << (make_edges_for == &Hypothesis ? "hypthesis" : "groundtruth")
                << " has an unexpected number of color pixels at region of intersection!\n";
@@ -302,10 +302,13 @@ void BipartiteGraph::makeEdges(Bipartite::GraphChoice graph) {
           pixDisplay(edge_for_pix, 100, 100);
         }
       }
-      // the region of overlap should have the same number of color-coded pixels in each image
-      assert(intersect1 == intersect2);
+      // the region of overlap should have the same number of color-coded pixels in each image (unless in typemode
+      // in which cases it's possible for there to be overlap in the result... but there shouldn't be in the groundtruth...
+      if(!typemode) {
+        assert(intersect1 == intersect2);
       // the foreground region of all vertices should have already been counted
-      assert(notcounted1 == 0 && notcounted2 == 0);
+        assert(notcounted1 == 0 && notcounted2 == 0);
+      }
       Edge edge;
       edge.vertexptr = &(*edgevert);
       edge.pixfg_intersecting = intersect1;
@@ -711,7 +714,7 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
   // if the specificity (TNR) was perfect
   const int total_false_neg_pix = hypmetrics.total_false_negative_pix;
   const int hyp_true_negatives = total_hyp_negative - total_false_neg_pix;
-  if(hyp_true_negatives != counted_truenegatives) {
+  if((hyp_true_negatives != counted_truenegatives) && !typemode) {
     if(!(hypmetrics.total_positive_fg_pix == 0)) {
     cout << "ERROR: the total false negatives and true negatives "
          << "counted don't add up to the total negatives "
@@ -742,7 +745,7 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
 
   //assert(specificity == (1.-hypmetrics.total_fallout));
   double oneminusfpr = (double)1- (double)hypmetrics.total_fallout;
-  if(specificity != oneminusfpr) {
+  if((specificity != oneminusfpr) && !typemode) {
     if((gt_true_negatives - hypmetrics.total_false_positive_pix)
         == hyp_true_negatives) {
       cout << "WARNING: The specificity and 1-FPR are not equal, however ";
@@ -820,7 +823,7 @@ HypothesisMetrics BipartiteGraph::getHypothesisMetrics() {
   trackerDrawSegmentations();
 
 #ifdef SHOW_HYP_TRACKER_FINAL
-  string final_tracker_im = tracker_dir + filename + (string)"evalResults.png";
+  string final_tracker_im = tracker_dir + filename + (string)"_" + type + (string)"_evalResults.png";
   cout << "Displaying the final hypothesis tracker image and/or saving it to "
        << final_tracker_im << endl;
   pixWrite(final_tracker_im.c_str(), hyp_tracker, IFF_PNG);

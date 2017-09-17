@@ -99,9 +99,9 @@ void Evaluator::evaluateSingleRun() {
       HypothesisMetrics emb_metrics = getEvaluationMetrics(
           (std::string)"embedded", i);
       page_metrics.push_back(emb_metrics);
-      HypothesisMetrics label_metrics = getEvaluationMetrics(
-          (std::string)"label", i);
-      page_metrics.push_back(label_metrics);
+      //HypothesisMetrics label_metrics = getEvaluationMetrics(
+     //     (std::string)"label", i);
+     // page_metrics.push_back(label_metrics); // not doing label for now.... (and/or ever)
     }
     else {
       // evaluate all of the above types (considering them all the same)
@@ -398,8 +398,8 @@ bool Evaluator::verifyResultsAndGroundtruthPaths() {
 
   // Verify the results .rect file has the expected name
   if(!Utils::existsFile(resultsRectFilePath)) {
-    std::cout << "ERROR: The groundtruth .rect file is expected to be named as follows: "
-        << groundtruthRectFilePath << ". A file with that path could not be found.\n";
+    std::cout << "ERROR: The results .rect file is expected to be named as follows: "
+        << resultsRectFilePath << ". A file with that path could not be found.\n";
     return false;
   }
 
