@@ -4,7 +4,7 @@
       FPR: 0
       ACC: 1
       TNR: 1
-      PPV: 0
+      PPV: 1
       FDR: 0
       NPV: 1
       Oversegmentations: 0
@@ -245,7 +245,7 @@ Average Metrics for Dataset:
     FPR: 0.0776037
     ACC: 0.928323
     TNR: 0.922396
-    PPV: 0.668521
+    PPV: 0.735187
     FDR: 0.264813
     NPV: 0.989022
     Average Oversegmentations: 5.93333
